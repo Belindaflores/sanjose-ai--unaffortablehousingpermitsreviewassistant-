@@ -1,0 +1,279 @@
+Build a functional web app prototype for an AI-assisted building permit review system for the County of Santa Clara Department of Planning and Development.
+
+The purpose of the prototype is to help County permit staff manage a large volume of building and housing permit applications more efficiently. The AI should NOT make the final legal decision to approve or deny a permit. Instead, it should assist County employees by screening applications, identifying missing information, flagging potential issues, prioritizing applications, and routing them for human review.
+
+The prototype should focus especially on housing development applications, including affordable housing and projects intended to serve underserved communities.
+
+Create a clean, professional government-style interface that looks realistic but is clearly a student prototype.
+
+The application should have two main user views:
+
+1. Applicant / Contractor Portal
+
+Create a page where a contractor, builder, architect, or developer can submit a permit application.
+
+Include fields such as:
+
+* Applicant name
+* Company name
+* Email
+* Project name
+* Project address
+* Permit type
+* Project type
+* Number of housing units
+* Affordable housing project: Yes or No
+* Estimated project cost
+* Project description
+* Upload documents section
+
+For the document upload section, include example categories such as:
+
+* Site plan
+* Architectural plans
+* Structural plans
+* Energy compliance documents
+* Fire/life safety documents
+* Environmental documents
+* Other supporting documents
+
+The applicant should be able to click a "Submit for AI Pre-Screening" button.
+
+After submission, simulate an AI review.
+
+The system should return a clear application status such as:
+
+* Ready for Human Review
+* Missing Information
+* Potential Issues Detected
+* Additional Agency Review Required
+
+Display a checklist showing which documents were received and which documents may still be missing.
+
+Also display a section called "AI Pre-Screening Summary."
+
+Example output:
+
+"Application appears mostly complete. Structural plans and architectural plans were received. Energy compliance documentation appears to be missing. The project may require additional fire review. This application has been forwarded to a County employee for final review."
+
+Clearly display a disclaimer:
+
+"AI provides preliminary screening assistance only. Final permit decisions are made by authorized County staff."
+
+2. County Employee Dashboard
+
+Create a dashboard for County permit technicians, building plans examiners, and planning staff.
+
+The dashboard should show a queue of submitted permit applications.
+
+Include columns such as:
+
+* Application ID
+* Project name
+* Applicant
+* Project type
+* Housing units
+* Affordable housing
+* Submission date
+* AI status
+* Priority
+* Assigned department
+* Review status
+
+Use mock data for at least 8-10 permit applications.
+
+Allow County employees to filter applications by:
+
+* New applications
+* Missing documents
+* Potential issues
+* Affordable housing
+* High priority
+* Ready for review
+* Additional agency review
+
+When a County employee clicks an application, open a detailed review page.
+
+The detailed review page should include:
+
+* Applicant information
+* Project information
+* Submitted documents
+* AI completeness score
+* AI-generated flags
+* AI-generated summary
+* Recommended routing
+* Timeline/history of the permit
+* Notes section for County staff
+
+Create buttons for County staff such as:
+
+* Mark Ready for Review
+* Request More Information
+* Send to Planning Review
+* Send to Building Review
+* Send to Fire Review
+* Send to Environmental Review
+* Escalate to Senior Reviewer
+* Mark Approved
+* Mark Revisions Required
+
+Final approval should only happen when a County employee clicks the approval button.
+
+AI Features
+
+Simulate AI functionality without needing a real AI API.
+
+Create rule-based logic that analyzes the application.
+
+For example:
+
+If architectural plans are missing:
+Flag "Architectural plans missing."
+
+If structural plans are missing:
+Flag "Structural review documents missing."
+
+If the project is over 20 housing units:
+Flag "Large housing development — additional review may be required."
+
+If affordable housing is Yes:
+Mark the project as "Housing Priority Review."
+
+If fire/life safety documents are missing on a larger project:
+Flag "Possible Fire Marshal review needed."
+
+If several required documents are present:
+Mark the application as "Ready for Human Review."
+
+Generate a short AI summary dynamically based on these rules.
+
+Priority System
+
+Create a simple priority system:
+
+High Priority:
+Affordable housing projects or projects serving underserved communities.
+
+Medium Priority:
+Standard residential developments.
+
+Normal Priority:
+Other permit applications.
+
+Make it clear that prioritization is an administrative recommendation and does not guarantee approval.
+
+Status Tracking
+
+Applicants should be able to view a simple permit status timeline.
+
+Example:
+
+Application Submitted
+↓
+AI Pre-Screening Complete
+↓
+County Intake Review
+↓
+Planning Review
+↓
+Building Review
+↓
+Additional Agency Review if needed
+↓
+Final County Decision
+
+Show completed steps and the current step visually.
+
+Dashboard Analytics
+
+Create a small analytics section for County managers.
+
+Include example metrics such as:
+
+* Total applications received
+* Applications awaiting review
+* Applications missing information
+* Applications ready for review
+* Affordable housing applications
+* Average simulated processing time
+* Applications requiring additional agency review
+
+Include simple charts or visual cards.
+
+Design Requirements
+
+Use a professional, simple government dashboard design.
+
+Use:
+
+* White background
+* Dark blue navigation
+* Light gray sections
+* Simple cards
+* Easy-to-read tables
+* Professional buttons
+* Responsive layout
+
+Include a header such as:
+
+"Santa Clara County Permit Review Assistant"
+
+Underneath, include:
+
+"AI-Assisted Permit Intake and Review Prototype"
+
+Add a clear badge somewhere that says:
+
+"Student Prototype — Not an Official County System"
+
+Main Navigation
+
+Include:
+
+* Dashboard
+* New Application
+* Applications
+* Analytics
+* Help
+
+Demo Mode
+
+Make the app easy to demonstrate in class.
+
+Preload several applications that show different scenarios:
+
+1. Complete affordable housing application
+2. Application missing structural plans
+3. Application requiring fire review
+4. Large apartment development
+5. Small residential project
+6. Application missing multiple documents
+7. Affordable housing project marked high priority
+8. Application already approved by staff
+
+Technical Requirements
+
+Build this as a functional frontend web application.
+
+Use React if appropriate.
+
+Store data locally using browser local storage or mock JSON data.
+
+Do not require authentication.
+
+Do not require external APIs.
+
+Make buttons functional.
+
+Allow new applications to be added to the permit queue.
+
+Make status changes update dynamically.
+
+Make filters work.
+
+Make the prototype polished enough to demonstrate in a university presentation.
+
+At the bottom of relevant pages include:
+
+"AI recommendations are advisory only. All permit approvals, denials, code interpretations, and regulatory decisions remain the responsibility of authorized County personnel."

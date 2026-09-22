@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Santa Clara Permit Review Assistant"
+description = "A functional student prototype for AI-assisted building permit intake, screening, routing, and human review for Santa Clara County staff."
+version = "1.0.0"
+id = "artifacts/permit-review-assistant"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21915
+
+[services.development]
+run = "pnpm --filter @workspace/permit-review-assistant run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/permit-review-assistant", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/permit-review-assistant/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21915"
+BASE_PATH = "/"
