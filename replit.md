@@ -1,10 +1,11 @@
-# [Project name]
+# Santa Clara Permit Review Assistant
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A student prototype for AI-assisted permit intake, database-backed application records, and human County review workflows.
 
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/permit-review-assistant run dev` — run the web app through its managed workflow
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -22,15 +23,23 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- Web app: `artifacts/permit-review-assistant`
+- API routes: `artifacts/api-server/src/routes`
+- API contract: `lib/api-spec/openapi.yaml`
+- Database schema: `lib/db/src/schema`
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Seeded classroom demo records remain browser-local; applications submitted through the intake form are also saved to PostgreSQL and appear on Application Records.
+- Rule-based AI screening remains client-side and explainable. The database stores both the applicant input and generated screening output.
+- Final approval remains an explicit staff action; AI never approves or denies a permit.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Applicant permit intake with document completeness checks and rule-based pre-screening
+- County staff dashboard, filters, review details, routing, notes, and human decisions
+- Persistent Application Records page, newest first
+- Workload analytics and classroom demo reset for local seed data
 
 ## User preferences
 
@@ -38,7 +47,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Re-run API code generation after every OpenAPI change.
+- Demo reset does not delete persistent Application Records.
 
 ## Pointers
 
