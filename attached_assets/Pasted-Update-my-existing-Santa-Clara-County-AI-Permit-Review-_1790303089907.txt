@@ -1,0 +1,93 @@
+Update my existing Santa Clara County AI Permit Review Assistant prototype by adding persistent database storage.
+Do NOT rebuild or redesign the existing app from scratch. Keep the current layout, styling, functionality, and permit-review workflow unless changes are necessary to support the database requirement.
+The goal is to make the app remember submitted permit applications even after the browser tab is closed or the app is restarted.
+1. Add Persistent Database Storage
+Add a real persistent database supported by Replit.
+Every time a user performs the app's main action — submitting a permit application for AI pre-screening — save a record to the database.
+Each saved permit application should include at minimum:
+    •    Application ID
+    •    Applicant name
+    •    Company name
+    •    Project name
+    •    Project address
+    •    Permit type
+    •    Project type
+    •    Number of housing units
+    •    Affordable housing: Yes/No
+    •    Project description
+    •    Submitted documents/checklist
+    •    AI pre-screening status
+    •    AI-generated screening summary
+    •    AI flags or missing-document warnings
+    •    Priority level
+    •    Assigned review department if applicable
+    •    Date and timestamp of submission
+The database record should contain both the USER INPUT and the AI OUTPUT.
+Do not use browser-only temporary state for these records. The data must remain available after the browser tab is closed and reopened.
+2. Create a Separate Records Page
+Add a new navigation item called:
+"Application Records"
+Create a separate page that displays every saved permit application from the database.
+Show the records with the NEWEST application first.
+Each record should clearly display:
+    •    Application ID
+    •    Project name
+    •    Applicant name
+    •    Project address
+    •    Project type
+    •    Housing units
+    •    Affordable housing status
+    •    AI status
+    •    Priority
+    •    AI summary
+    •    Timestamp
+Allow the user to click a record to view more details if helpful.
+The page should match the professional government-style appearance of the existing prototype.
+3. Connect Existing Permit Submission to Database
+When the user clicks the existing button:
+"Submit for AI Pre-Screening"
+the app should:
+    1    Process the application using the existing AI/rule-based screening logic.
+    2    Generate the AI status, flags, priority, and screening summary.
+    3    Save the original application input AND generated AI results to the database.
+    4    Save the current timestamp.
+    5    Show the screening result to the user.
+    6    Make the saved application immediately appear on the Application Records page.
+Do not require the user to press a separate Save button.
+4. Persistence Requirement
+Make sure records survive:
+    •    page refresh
+    •    closing the browser tab
+    •    reopening the app
+    •    navigating between pages
+Do not use only React state or temporary browser memory.
+5. Testing / Assignment Requirement
+I need to demonstrate that persistence works for a class assignment.
+Make sure I can submit at least two permit applications containing my student ID:
+[242]
+I may place "[242]" in the applicant name, project name, or project description.
+For example:
+Project Name:
+"[242] Affordable Housing Development Test"
+and
+Project Name:
+"[242] Residential Permit Test"
+Both applications must remain visible on the Application Records page after I close and reopen the app.
+Do NOT automatically create these two records. I will enter them manually so I can demonstrate the feature myself.
+6. Keep Existing Features
+Preserve the existing:
+    •    Applicant / Contractor Portal
+    •    County Employee Dashboard
+    •    AI pre-screening
+    •    document completeness checking
+    •    AI flags
+    •    priority system
+    •    application status
+    •    analytics
+    •    existing mock permit data
+    •    professional government-style design
+The database addition should extend the existing prototype rather than replace it.
+7. Important
+After completing the changes, test the full workflow:
+Submit permit application → AI pre-screening → database save → Application Records page → close/reopen app → records are still present.
+If there are errors, fix them before considering the task complete.

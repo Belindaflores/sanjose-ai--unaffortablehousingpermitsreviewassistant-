@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: permit-applications
+    description: Persistent permit application records
 paths:
   /healthz:
     get:
@@ -24,6 +26,68 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /permit-applications:
+    get:
+      operationId: listPermitApplications
+      tags: [permit-applications]
+      summary: List saved permit applications
+      description: Returns saved permit applications newest first.
+      responses:
+        "200":
+          description: Saved permit applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PermitApplication"
+    post:
+      operationId: createPermitApplication
+      tags: [permit-applications]
+      summary: Save a screened permit application
+      description: Persists applicant input and the rule-based pre-screening output.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermitApplication"
+      responses:
+        "201":
+          description: Saved permit application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermitApplication"
+        "409":
+          description: An application with this ID already exists
+  /permit-applications/{id}:
+    patch:
+      operationId: updatePermitApplication
+      tags: [permit-applications]
+      summary: Update a saved permit application
+      description: Persists County staff review actions and notes for an application.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermitApplication"
+      responses:
+        "200":
+          description: Updated permit application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermitApplication"
+        "404":
+          description: Saved permit application not found
 components:
   schemas:
     HealthStatus:
@@ -33,4 +97,158 @@ components:
           type: string
       required:
         - status
+    PermitDocument:
+      type: object
+      properties:
+        category:
+          type: string
+        label:
+          type: string
+        required:
+          type: boolean
+        received:
+          type: boolean
+        fileName:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+      required: [category, label, required, received]
+    PermitTimelineEvent:
+      type: object
+      properties:
+        label:
+          type: string
+        status:
+          type: string
+          enum: [completed, current, upcoming]
+        date:
+          type: string
+        detail:
+          type: string
+      required: [label, status, date, detail]
+    PermitStaffNote:
+      type: object
+      properties:
+        id:
+          type: string
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, author, body, createdAt]
+    PermitApplication:
+      type: object
+      properties:
+        id:
+          type: string
+        applicantName:
+          type: string
+        companyName:
+          type: string
+        email:
+          type: string
+          format: email
+        projectName:
+          type: string
+        projectAddress:
+          type: string
+        permitType:
+          type: string
+        projectType:
+          type: string
+        housingUnits:
+          type: integer
+        affordableHousing:
+          type: boolean
+        underservedCommunity:
+          type: boolean
+        estimatedCost:
+          type: number
+        description:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+        aiStatus:
+          type: string
+          enum:
+            - Ready for Human Review
+            - Missing Information
+            - Potential Issues Detected
+            - Additional Agency Review Required
+        priority:
+          type: string
+          enum: [Normal, High, Urgent]
+        assignedDepartment:
+          type: string
+        reviewStatus:
+          type: string
+          enum:
+            - New
+            - In County Intake
+            - Ready for Review
+            - More Information Requested
+            - Planning Review
+            - Building Review
+            - Fire Review
+            - Environmental Review
+            - Senior Review
+            - Approved
+            - Revisions Required
+        completenessScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/PermitDocument"
+        flags:
+          type: array
+          items:
+            type: string
+        aiSummary:
+          type: string
+        recommendedRouting:
+          type: array
+          items:
+            type: string
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/PermitTimelineEvent"
+        notes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PermitStaffNote"
+      required:
+        - id
+        - applicantName
+        - companyName
+        - email
+        - projectName
+        - projectAddress
+        - permitType
+        - projectType
+        - housingUnits
+        - affordableHousing
+        - underservedCommunity
+        - estimatedCost
+        - description
+        - submittedAt
+        - aiStatus
+        - priority
+        - assignedDepartment
+        - reviewStatus
+        - completenessScore
+        - documents
+        - flags
+        - aiSummary
+        - recommendedRouting
+        - timeline
+        - notes
 
