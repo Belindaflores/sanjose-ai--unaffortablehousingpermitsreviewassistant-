@@ -1,1 +1,2 @@
 - [Worker enrollment boundary](worker-enrollment.md) — new accounts never self-select staff access; only an authorized operator may grant it after independent verification.
+- [Workspace test dependencies](workspace-test-dependencies.md) — package installer may reject root or workspace-scoped pnpm additions; target the package explicitly when needed.
