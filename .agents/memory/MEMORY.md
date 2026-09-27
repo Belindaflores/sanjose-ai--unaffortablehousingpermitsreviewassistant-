@@ -1,0 +1,1 @@
+- [Worker enrollment boundary](worker-enrollment.md) — new accounts never self-select staff access; only an authorized operator may grant it after independent verification.

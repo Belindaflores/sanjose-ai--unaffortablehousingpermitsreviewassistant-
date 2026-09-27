@@ -48,30 +48,30 @@ function EmptyRecords({ compact = false }: { compact?: boolean }) {
   </div>;
 }
 
-export function RoleChooser({ onSelect }: { onSelect: (role: 'applicant' | 'worker') => void }) {
+export function RoleChooser() {
   return <main className="role-chooser">
     <section className="role-intro" aria-label="Permit Review Assistant introduction">
       <div className="role-brand"><span className="role-mark" aria-hidden="true">SC</span><span>Permit Review<br />Assistant</span></div>
-      <div><h1>Santa Clara <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
+      <div><h1>A clearer path for <span>your project.</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
       <small>Santa Clara County permit experience · Student prototype</small>
     </section>
     <section className="role-main" aria-labelledby="role-title">
-      <p className="ap-kicker">Choose your view</p>
-      <h2 id="role-title">How would you like to continue?</h2>
-      <p>Explore the applicant experience or the County team workspace.</p>
+      <p className="ap-kicker">Secure account access</p>
+      <h2 id="role-title">Sign in to continue</h2>
+      <p>Your account opens the applicant portal. Authorized workers are directed to the staff workspace.</p>
       <div className="role-options">
-        <button type="button" className="role-choice" onClick={() => onSelect('applicant')} data-testid="button-continue-applicant">
+        <Link href="/sign-in" className="role-choice" data-testid="button-continue-applicant">
           <span className="role-choice-icon"><UserRound aria-hidden="true" /></span>
-          <span className="role-choice-copy"><strong>Continue as Permit Applicant</strong><small>See your projects, documents, and status updates.</small></span>
+          <span className="role-choice-copy"><strong>Sign in</strong><small>Access your projects, documents, and status updates.</small></span>
           <ArrowRight aria-hidden="true" />
-        </button>
-        <button type="button" className="role-choice worker" onClick={() => onSelect('worker')} data-testid="button-continue-worker">
+        </Link>
+        <Link href="/sign-up" className="role-choice worker" data-testid="button-continue-worker">
           <span className="role-choice-icon"><Building2 aria-hidden="true" /></span>
-          <span className="role-choice-copy"><strong>Continue as City Worker</strong><small>Explore the staff review workspace.</small></span>
+          <span className="role-choice-copy"><strong>Create an account</strong><small>Start a permit application. Worker access requires authorization.</small></span>
           <ArrowRight aria-hidden="true" />
-        </button>
+        </Link>
       </div>
-      <div className="role-demo-note"><Info aria-hidden="true" /><span>Role selection is for this demo only. It is not secure authentication and does not verify your identity. This is not an official County website.</span></div>
+      <div className="role-demo-note"><Info aria-hidden="true" /><span>This student prototype is not an official County website. Do not submit sensitive or official permit documents.</span></div>
     </section>
   </main>;
 }

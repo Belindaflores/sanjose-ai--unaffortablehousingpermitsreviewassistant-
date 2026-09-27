@@ -4,11 +4,11 @@ import { db, permitApplicationsTable } from "@workspace/db";
 import {
   CreatePermitApplicationBody,
   CreatePermitApplicationResponse,
-  ListPermitApplicationsQueryParams,
   ListPermitApplicationsResponse,
   UpdatePermitApplicationBody,
   UpdatePermitApplicationParams,
   UpdatePermitApplicationResponse,
+  GetCurrentIdentityResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -38,29 +38,35 @@ function toValues(application: PermitInput) {
 }
 
 function toResponse(row: PermitRow) {
-  const { createdAt: _createdAt, updatedAt: _updatedAt, ...application } = row;
+  const { createdAt: _createdAt, updatedAt: _updatedAt, ownerId: _ownerId, ...application } = row;
   return {
     ...application,
     submittedAt: row.submittedAt.toISOString(),
   };
 }
 
+router.get("/me", (req, res) => {
+  res.json(GetCurrentIdentityResponse.parse(req.identity));
+});
+
 router.get("/permit-applications", async (req, res): Promise<void> => {
-  const parsed = ListPermitApplicationsQueryParams.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
   const rows = await db
     .select()
     .from(permitApplicationsTable)
-    .where(parsed.data.applicantEmail ? eq(permitApplicationsTable.email, parsed.data.applicantEmail) : undefined)
+    .where(req.identity!.role === "worker" ? undefined : eq(permitApplicationsTable.ownerId, req.identity!.userId))
     .orderBy(desc(permitApplicationsTable.submittedAt));
 
-  res.json(ListPermitApplicationsResponse.parse(rows.map(toResponse)));
+  res.json(ListPermitApplicationsResponse.parse(rows.map(row => ({
+    ...toResponse(row),
+    notes: req.identity!.role === "worker" ? row.notes : [],
+  }))));
 });
 
 router.post("/permit-applications", async (req, res): Promise<void> => {
+  if (req.identity!.role !== "applicant") {
+    res.status(403).json({ error: "Only applicants can submit applications" });
+    return;
+  }
   const parsed = CreatePermitApplicationBody.safeParse(req.body);
   if (!parsed.success) {
     req.log.warn({ errors: parsed.error.message }, "Invalid permit application");
@@ -70,7 +76,13 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
 
   const [saved] = await db
     .insert(permitApplicationsTable)
-    .values(toValues(parsed.data))
+    .values({
+      ...toValues(parsed.data),
+      ownerId: req.identity!.userId,
+      reviewStatus: "New",
+      notes: [],
+      submittedAt: new Date(),
+    })
     .onConflictDoNothing()
     .returning();
 
@@ -83,6 +95,10 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
 });
 
 router.patch("/permit-applications/:id", async (req, res): Promise<void> => {
+  if (req.identity!.role !== "worker") {
+    res.status(403).json({ error: "Only authorized workers can review applications" });
+    return;
+  }
   const params = UpdatePermitApplicationParams.safeParse(req.params);
   const body = UpdatePermitApplicationBody.safeParse(req.body);
   if (!params.success) {
@@ -104,7 +120,13 @@ router.patch("/permit-applications/:id", async (req, res): Promise<void> => {
 
   const [saved] = await db
     .update(permitApplicationsTable)
-    .set(toValues(body.data))
+    .set({
+      ...body.data,
+      notes: body.data.notes?.map(note => ({
+        ...note,
+        createdAt: asIso(note.createdAt),
+      })),
+    })
     .where(eq(permitApplicationsTable.id, params.data.id))
     .returning();
 

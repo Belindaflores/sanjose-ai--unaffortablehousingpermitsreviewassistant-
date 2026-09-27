@@ -21,8 +21,9 @@ import type {
 
 import type {
   HealthStatus,
-  ListPermitApplicationsParams,
-  PermitApplication
+  PermitApplication,
+  PermitReviewUpdate,
+  PortalIdentity
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -130,28 +131,20 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
-export const getListPermitApplicationsUrl = (params?: ListPermitApplicationsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getGetCurrentIdentityUrl = () => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/permit-applications?${stringifiedParams}` : `/api/permit-applications`
+  return `/api/me`
 }
 
 /**
- * Returns saved permit applications newest first. Applicant demo views can filter by email; this is not authentication.
- * @summary List saved permit applications
+ * @summary Return the signed-in account's server-verified portal role
  */
-export const listPermitApplications = async (params?: ListPermitApplicationsParams, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication[]> => {
+export const getCurrentIdentity = async ( options?: Parameters<typeof customFetch>[1]): Promise<PortalIdentity> => {
 
-  return customFetch<PermitApplication[]>(getListPermitApplicationsUrl(params),
+  return customFetch<PortalIdentity>(getGetCurrentIdentityUrl(),
   {
     ...options,
     method: 'GET'
@@ -164,23 +157,101 @@ export const listPermitApplications = async (params?: ListPermitApplicationsPara
 
 
 
-export const getListPermitApplicationsQueryKey = (params?: ListPermitApplicationsParams,) => {
+export const getGetCurrentIdentityQueryKey = () => {
     return [
-    `/api/permit-applications`, ...(params ? [params] : [])
+    `/api/me`
     ] as const;
     }
 
 
-export const getListPermitApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof listPermitApplications>>, TError = ErrorType<unknown>>(params?: ListPermitApplicationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPermitApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetCurrentIdentityQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentIdentity>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentIdentity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListPermitApplicationsQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetCurrentIdentityQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPermitApplications>>> = ({ signal }) => listPermitApplications(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCurrentIdentity>>> = ({ signal }) => getCurrentIdentity({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentIdentity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCurrentIdentityQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentIdentity>>>
+export type GetCurrentIdentityQueryError = ErrorType<void>
+
+
+/**
+ * @summary Return the signed-in account's server-verified portal role
+ */
+
+export function useGetCurrentIdentity<TData = Awaited<ReturnType<typeof getCurrentIdentity>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentIdentity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCurrentIdentityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListPermitApplicationsUrl = () => {
+
+
+
+
+  return `/api/permit-applications`
+}
+
+/**
+ * Authenticated applicants see only their own records. Authorized workers see the entire queue. Unowned legacy records are staff-only.
+ * @summary List saved permit applications
+ */
+export const listPermitApplications = async ( options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication[]> => {
+
+  return customFetch<PermitApplication[]>(getListPermitApplicationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPermitApplicationsQueryKey = () => {
+    return [
+    `/api/permit-applications`
+    ] as const;
+    }
+
+
+export const getListPermitApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof listPermitApplications>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPermitApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPermitApplicationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPermitApplications>>> = ({ signal }) => listPermitApplications({ signal, ...requestOptions });
 
 
 
@@ -198,11 +269,11 @@ export type ListPermitApplicationsQueryError = ErrorType<unknown>
  */
 
 export function useListPermitApplications<TData = Awaited<ReturnType<typeof listPermitApplications>>, TError = ErrorType<unknown>>(
- params?: ListPermitApplicationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPermitApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPermitApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListPermitApplicationsQueryOptions(params,options)
+  const queryOptions = getListPermitApplicationsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -224,7 +295,7 @@ export const getCreatePermitApplicationUrl = () => {
 }
 
 /**
- * Persists applicant input and the rule-based pre-screening output.
+ * Applicants only. The server assigns ownership from the verified session and initializes review status and staff notes.
  * @summary Save a screened permit application
  */
 export const createPermitApplication = async (permitApplication: PermitApplication, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication> => {
@@ -313,11 +384,11 @@ export const getUpdatePermitApplicationUrl = (id: string,) => {
 }
 
 /**
- * Persists County staff review actions and notes for an application.
+ * Authorized workers only. Persists review status, department, timeline, and staff notes; applicant and owner fields cannot be changed.
  * @summary Update a saved permit application
  */
 export const updatePermitApplication = async (id: string,
-    permitApplication: PermitApplication, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication> => {
+    permitReviewUpdate: PermitReviewUpdate, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -338,7 +409,7 @@ return customFetch<PermitApplication>(getUpdatePermitApplicationUrl(id),
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(permitApplication)
+    body: JSON.stringify(permitReviewUpdate)
   }
 );}
 
@@ -376,9 +447,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdatePermitApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof updatePermitApplication>>>
-    export type UpdatePermitApplicationMutationBody = BodyType<PermitApplication>
+    export type UpdatePermitApplicationMutationBody = BodyType<PermitReviewUpdate>
     export type UpdatePermitApplicationMutationError = ErrorType<void>
-    export type UpdatePermitApplicationMutationVariables = {id: string;data: BodyType<PermitApplication>}
+    export type UpdatePermitApplicationMutationVariables = {id: string;data: BodyType<PermitReviewUpdate>}
 
     /**
  * @summary Update a saved permit application

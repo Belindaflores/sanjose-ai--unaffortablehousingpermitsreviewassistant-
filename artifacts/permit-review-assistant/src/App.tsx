@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { QueryClient, QueryClientProvider, useQueryClient, useQuery } from '@tanstack/react-query';
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
+import { shadcn } from '@clerk/themes';
 import { Link, Route, Switch, useLocation, useRoute, Router as WouterRouter } from 'wouter';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { getListPermitApplicationsQueryKey, useCreatePermitApplication, useListPermitApplications, useUpdatePermitApplication } from '@workspace/api-client-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import NotFound from '@/pages/not-found';
-import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, ApplicantHelpPage, ApplicantRecordsPage, RoleChooser, WorkerLoginPage } from './ApplicantPortal';
+import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, ApplicantHelpPage, ApplicantRecordsPage, RoleChooser } from './ApplicantPortal';
 import { WorkerAnalytics } from './WorkerAnalytics';
 import {
   Activity, AlertCircle, BarChart3, Bell, Building2, Check, CheckCircle2, ChevronRight,
@@ -16,11 +19,11 @@ import {
 } from 'lucide-react';
 
 const queryClient = new QueryClient();
-const STORE_KEY = 'scc-permit-review-applications-v1';
-const APPLICANT_STORE_KEY = 'scc-permit-demo-applicant-v1';
-const ROLE_KEY = 'scc-permit-demo-role-v2';
 type PortalRole = 'applicant' | 'worker';
-const DEMO_APPLICANT = { name: 'Demo Applicant', email: 'demo.applicant@example.com', company: 'Personal project' };
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY');
 
 type AIStatus = 'Ready for Human Review' | 'Missing Information' | 'Potential Issues Detected' | 'Additional Agency Review Required';
 type ReviewStatus = 'New' | 'In County Intake' | 'Ready for Review' | 'More Information Requested' | 'Planning Review' | 'Building Review' | 'Fire Review' | 'Environmental Review' | 'Senior Review' | 'Approved' | 'Denied' | 'Revisions Required';
@@ -120,31 +123,6 @@ const seedApplications = (): PermitApplication[] => [
   },
 ];
 
-function seedApplicantApplications(): PermitApplication[] {
-  const examples = seedApplications();
-  return [
-    { ...examples[1], id: 'DEMO-APP-001', projectName: 'My Willow Street Addition', applicantName: DEMO_APPLICANT.name, companyName: DEMO_APPLICANT.company, email: DEMO_APPLICANT.email, notes: [] },
-    { ...examples[3], id: 'DEMO-APP-002', projectName: 'My Monterey Road ADU', applicantName: DEMO_APPLICANT.name, companyName: DEMO_APPLICANT.company, email: DEMO_APPLICANT.email, notes: [] },
-  ];
-}
-const SEEDED_DEMO_IDS = new Set([...seedApplications(), ...seedApplicantApplications()].map(application => application.id));
-function readApplicantApplications(): PermitApplication[] {
-  try {
-    const saved = localStorage.getItem(APPLICANT_STORE_KEY);
-    return saved ? JSON.parse(saved) as PermitApplication[] : seedApplicantApplications();
-  } catch { return seedApplicantApplications(); }
-}
-function readRole(): PortalRole | null {
-  try {
-    const saved = sessionStorage.getItem(ROLE_KEY);
-    return saved === 'applicant' || saved === 'worker' ? saved : null;
-  } catch { return null; }
-}
-
-function readApplications(): PermitApplication[] {
-  try { const saved = localStorage.getItem(STORE_KEY); return saved ? JSON.parse(saved) as PermitApplication[] : seedApplications(); } catch { return seedApplications(); }
-}
-function saveApplications(applications: PermitApplication[]) { localStorage.setItem(STORE_KEY, JSON.stringify(applications)); }
 function statusClass(status: string) {
   if (status === 'Denied') return 'status-issue';
   if (status.includes('Missing') || status.includes('Information')) return 'status-missing';
@@ -172,6 +150,7 @@ function computeScreening(form: Record<string, string | boolean | number>, docum
 }
 
 function AppShell({ children, role, onSwitch }: { children: React.ReactNode; role: PortalRole; onSwitch: () => void }) {
+  const { user } = useUser();
   const [location] = useLocation(); const [menu, setMenu] = useState(false);
   const links = [{ href: '/', label: 'Overview', icon: LayoutDashboard }, { href: '/applications', label: 'Applications', icon: ClipboardCheck }, { href: '/records', label: 'Application Records', icon: FileText }, ...(role === 'worker' ? [{ href: '/analytics', label: 'Analytics', icon: BarChart3 }] : []), { href: '/help', label: 'Help & guidance', icon: HelpCircle }];
   const current = location === '/' ? '/' : location.startsWith('/applications/') || location === '/new-application' ? '/applications' : location;
@@ -179,10 +158,10 @@ function AppShell({ children, role, onSwitch }: { children: React.ReactNode; rol
     <aside className={`side-nav ${menu ? 'open' : ''}`}>
       <div className="brand"><div className="brand-mark">SC</div><div className="brand-name">Permit Review Assistant</div><div className="brand-subtitle">Santa Clara County · prototype</div><div className="side-role" data-testid="label-current-role">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</div></div>
       <nav className="nav-area" aria-label="Main navigation"><div className="nav-label">Workspace</div>{links.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setMenu(false)} className={`nav-link ${current === href ? 'active' : ''}`} data-testid={`link-${label.toLowerCase().replaceAll(' ', '-')}`}><Icon /><span>{label}</span></Link>)}</nav>
-      <div className="side-footer"><div className="staff-chip"><div className="staff-avatar">{role === 'worker' ? 'JL' : 'DA'}</div><div><strong>{role === 'worker' ? 'Jordan Lee' : 'Demo Applicant'}</strong><span className="staff-role">{role === 'worker' ? 'Permit technician · Demo account' : 'Permit applicant · Demo account'}</span></div></div></div>
+      <div className="side-footer"><div className="staff-chip"><div className="staff-avatar"><UserRound size={18} /></div><div><strong>{user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Account'}</strong><span className="staff-role">{role === 'worker' ? 'Authorized worker' : 'Permit applicant'}</span></div></div></div>
     </aside>
     <div className="main-column">
-      <header className="topbar"><button className="mobile-menu" aria-label={menu ? 'Close navigation' : 'Open navigation'} aria-expanded={menu} data-testid="button-open-navigation" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button><div className="crumb"><Building2 size={15} /><span>County permit workspace</span><ChevronRight size={13} /><strong>{location === '/' ? 'Overview' : location.includes('new-application') ? 'New application' : location.includes('records') ? 'Application Records' : location.includes('analytics') ? role === 'worker' ? 'Analytics' : 'Page not found' : location.includes('help') ? 'Help & guidance' : 'Applications'}</strong></div><div className="portal-controls"><span className="portal-label">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</span><button className="switch-role" onClick={onSwitch} data-testid="button-switch-role">Switch Role</button><div className="prototype-badge">Student Prototype — Not an Official County System</div></div></header>
+      <header className="topbar"><button className="mobile-menu" aria-label={menu ? 'Close navigation' : 'Open navigation'} aria-expanded={menu} data-testid="button-open-navigation" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button><div className="crumb"><Building2 size={15} /><span>County permit workspace</span><ChevronRight size={13} /><strong>{location === '/' ? 'Overview' : location.includes('new-application') ? 'New application' : location.includes('records') ? 'Application Records' : location.includes('analytics') ? role === 'worker' ? 'Analytics' : 'Page not found' : location.includes('help') ? 'Help & guidance' : 'Applications'}</strong></div><div className="portal-controls"><span className="portal-label">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</span><button className="switch-role" onClick={onSwitch} data-testid="button-sign-out">Sign out</button><div className="prototype-badge">Student Prototype — Not an Official County System</div></div></header>
       {children}
     </div>
   </div>;
@@ -230,25 +209,18 @@ function ApplicationsPage({ applications }: { applications: PermitApplication[] 
   return <><main className="page"><PageHeading eyebrow="Staff queue" title="Applications" description="Search, filter, and open submissions for a human review of completeness, routing, and next steps." actions={<Link href="/new-application" className="button teal" data-testid="link-new-application-queue"><Plus /> New application</Link>} /><div className="card"><div className="filters"><div className="search-wrap"><Search /><input className="input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by project, applicant, or ID" aria-label="Search applications" data-testid="input-search-applications" /></div><select className="select" value={filter} onChange={e => setFilter(e.target.value)} aria-label="Filter applications" data-testid="select-application-filter">{filters.map(item => <option key={item}>{item}</option>)}</select><span style={{ color: '#677982', fontSize: 11 }}>{filtered.length} of {applications.length} applications</span></div>{filtered.length ? <div className="table-wrap"><table><thead><tr><th>Application</th><th>Applicant</th><th>Submitted</th><th>Completeness</th><th>AI pre-screening</th></tr></thead><tbody>{filtered.map(a => <ApplicationRow key={a.id} application={a} />)}</tbody></table></div> : <div className="empty"><Search size={29} /><h2>No applications match these filters</h2><p>Try a different search term or clear the filter.</p><button className="button outline" onClick={() => { setQuery(''); setFilter('All applications'); }} data-testid="button-clear-filters">Clear filters</button></div>}</div></main><FooterDisclaimer /></>;
 }
 
-function RecordsPage({ applications }: { applications: PermitApplication[] }) {
+function RecordsPage() {
   const { data: records, isLoading, isError, refetch, isFetching } = useListPermitApplications();
   const [query, setQuery] = useState('');
-  const savedIds = new Set((records ?? []).map(application => application.id));
-  const demoRecords = applications.filter(application => SEEDED_DEMO_IDS.has(application.id) && !savedIds.has(application.id));
-  const allRecords = [
-    ...(records ?? []).map(application => ({ application, source: 'saved' as const })),
-    ...demoRecords.map(application => ({ application, source: 'demo' as const })),
-  ].sort((left, right) => right.application.submittedAt.localeCompare(left.application.submittedAt));
-  const filtered = allRecords.filter(({ application: a }) => `${a.id} ${a.projectName} ${a.projectAddress} ${a.applicantName} ${a.companyName}`.toLowerCase().includes(query.trim().toLowerCase()));
+  const filtered = records?.filter(a => `${a.id} ${a.projectName} ${a.projectAddress} ${a.applicantName} ${a.companyName}`.toLowerCase().includes(query.trim().toLowerCase())) ?? [];
   const exactDate = (value: string) => new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
-  return <><main className="page"><PageHeading eyebrow="Staff records" title="Application Records" description="Browse saved database submissions and browser-local demo examples. Demo examples are not official permit records." /><div className="card filters record-search"><div className="search-wrap"><Search /><input className="input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search records by applicant, project, address, or ID" aria-label="Search application records" data-testid="input-search-records" /></div><span className="section-note" data-testid="text-record-count">{filtered.length} of {allRecords.length} records · {demoRecords.length} demo</span></div>
-    {isLoading && !demoRecords.length && <div className="card" role="status" aria-label="Loading application records"><div className="card-body"><div className="record-skeleton" /><div className="record-skeleton" /><div className="record-skeleton" /></div></div>}
-    {isLoading && demoRecords.length > 0 && <p className="section-note" role="status">Loading saved records; demo examples are available below.</p>}
-    {isError && <div className="card empty" role="alert" data-testid="error-records"><AlertCircle size={29} /><h2>Saved records are unavailable</h2><p>We could not load database records. Browser-local demo examples are still available below.</p><button className="button outline" onClick={() => refetch()} disabled={isFetching} data-testid="button-retry-records"><RefreshCcw /> Retry</button></div>}
-    {!isLoading && !isError && !allRecords.length && <div className="card empty" data-testid="empty-records"><FileText size={29} /><h2>No applications yet</h2><p>Submit an application for AI pre-screening to create the first database record.</p><Link href="/new-application" className="button teal" data-testid="link-create-first-record"><Plus /> New application</Link></div>}
-    {!isLoading && allRecords.length > 0 && !filtered.length && <div className="card empty"><Search size={29} /><h2>No matching records</h2><p>Try another applicant name, project, address, or application ID.</p><button className="button outline" onClick={() => setQuery('')} data-testid="button-clear-record-search">Clear search</button></div>}
-    {filtered.length > 0 && <div className="record-list">{filtered.map(({ application: a, source }) => <Link key={a.id} href={`/applications/${encodeURIComponent(a.id)}`} className="card record-card" data-testid={`link-record-${a.id}`}>
-          <div className="record-top"><div><span className="detail-id">{a.id}</span><span className={`record-source ${source}`}>{source === 'demo' ? 'Demo example' : 'Saved record'}</span><h2>{a.projectName}</h2><span className="section-note">{a.projectAddress}</span></div><ChevronRight size={18} aria-hidden="true" /></div>
+  return <><main className="page"><PageHeading eyebrow="Saved submissions" title="Application Records" description="Applications saved in the database, including their advisory AI pre-screening results." /><div className="card filters record-search"><div className="search-wrap"><Search /><input className="input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search records by applicant, project, address, or ID" aria-label="Search application records" data-testid="input-search-records" /></div><span className="section-note" data-testid="text-record-count">{filtered.length} of {records?.length ?? 0} records</span></div>
+    {isLoading ? <div className="card" role="status" aria-label="Loading application records"><div className="card-body"><div className="record-skeleton" /><div className="record-skeleton" /><div className="record-skeleton" /></div></div>
+      : isError ? <div className="card empty" role="alert" data-testid="error-records"><AlertCircle size={29} /><h2>Application records are unavailable</h2><p>We could not load saved records. Your demo queue is still available.</p><button className="button outline" onClick={() => refetch()} disabled={isFetching} data-testid="button-retry-records"><RefreshCcw /> Retry</button></div>
+      : !records?.length ? <div className="card empty" data-testid="empty-records"><FileText size={29} /><h2>No saved applications yet</h2><p>Submit an application for AI pre-screening to create the first database record.</p><Link href="/new-application" className="button teal" data-testid="link-create-first-record"><Plus /> New application</Link></div>
+      : !filtered.length ? <div className="card empty"><Search size={29} /><h2>No matching records</h2><p>Try another applicant name, project, address, or application ID.</p><button className="button outline" onClick={() => setQuery('')} data-testid="button-clear-record-search">Clear search</button></div>
+      : <div className="record-list">{filtered.map(a => <Link key={a.id} href={`/applications/${encodeURIComponent(a.id)}`} className="card record-card" data-testid={`link-record-${a.id}`}>
+          <div className="record-top"><div><span className="detail-id">{a.id}</span><h2>{a.projectName}</h2><span className="section-note">{a.projectAddress}</span></div><ChevronRight size={18} aria-hidden="true" /></div>
           <div className="record-facts"><div><span className="info-label">Applicant</span><strong>{a.applicantName}</strong></div><div><span className="info-label">Project type</span><strong>{a.projectType}</strong></div><div><span className="info-label">Housing units</span><strong>{a.housingUnits}</strong></div><div><span className="info-label">Affordable housing</span><strong>{a.affordableHousing ? 'Yes' : 'No'}</strong></div><div><span className="info-label">Priority</span><strong className={`priority ${a.priority.toLowerCase()}`}>{a.priority}</strong></div><div><span className="info-label">Submitted</span><strong>{exactDate(a.submittedAt)}</strong></div></div>
           <div className="record-summary"><StatusBadge status={a.aiStatus} /><p>{a.aiSummary}</p></div>
         </Link>)}</div>}
@@ -259,8 +231,9 @@ type FormState = { applicantName: string; companyName: string; email: string; pr
 const defaultForm: FormState = { applicantName: '', companyName: '', email: '', projectName: '', projectAddress: '', permitType: 'Building permit', projectType: 'Single-family residential', housingUnits: '1', estimatedCost: '', description: '', affordableHousing: false, underservedCommunity: false };
 
 function NewApplication({ onAdd, role }: { onAdd: (app: PermitApplication) => void; role: PortalRole }) {
+  const { user } = useUser();
   const createApplication = useCreatePermitApplication();
-  const initialForm = () => role === 'applicant' ? { ...defaultForm, applicantName: DEMO_APPLICANT.name, email: DEMO_APPLICANT.email, companyName: DEMO_APPLICANT.company } : { ...defaultForm };
+  const initialForm = () => ({ ...defaultForm, applicantName: user?.fullName || '', email: user?.primaryEmailAddress?.emailAddress || '' });
   const [form, setForm] = useState<FormState>(initialForm); const [docs, setDocs] = useState<Document[]>(baseDocuments()); const [errors, setErrors] = useState<string[]>([]); const [persistenceError, setPersistenceError] = useState(''); const [result, setResult] = useState<{ app: PermitApplication; screening: ReturnType<typeof computeScreening> } | null>(null); const [submitting, setSubmitting] = useState(false);
   const update = (key: keyof FormState, value: string | boolean) => setForm(prev => ({ ...prev, [key]: value }));
   const toggleDoc = (index: number) => setDocs(prev => prev.map((d, i) => i === index ? { ...d, received: !d.received, fileName: !d.received ? `${d.label.toLowerCase().replaceAll(' ', '-')}.pdf` : undefined, receivedAt: !d.received ? dateAt(0) : undefined } : d));
@@ -288,7 +261,7 @@ function NewApplication({ onAdd, role }: { onAdd: (app: PermitApplication) => vo
   };
    if (result) return <main className="page"><PageHeading eyebrow="Submission received" title="Pre-screening complete" description={`Application ${result.app.id} is now in the County review queue. The result below is an advisory intake aid, not a permit decision.`} actions={<><Link href={`/applications/${result.app.id}`} className="button teal" data-testid="link-open-submitted-application">Open application <ChevronRight /></Link><button className="button outline" onClick={() => { setResult(null); setForm(initialForm()); setDocs(baseDocuments()); }} data-testid="button-submit-another">Submit another</button></>} /><div className={`result-banner ${result.screening.aiStatus === 'Missing Information' ? 'warning' : result.screening.aiStatus.includes('Issue') ? 'issue' : ''}`}><div className="eyebrow">Rule-based AI pre-screening result</div><h2>{result.screening.aiStatus}</h2><p className="section-note">{result.screening.summary}</p><div className="score" style={{ marginTop: 16 }}><div className="score-num">{result.screening.score}%</div><div style={{ flex: 1 }}><div style={{ color: '#45606c', fontSize: 11, marginBottom: 7 }}>Completeness score</div><div className="progress"><span style={{ width: `${result.screening.score}%` }} /></div></div></div></div><div className="grid-2" style={{ marginTop: 20 }}><div className="card"><div className="card-header"><div><h2>Checklist</h2><p className="section-note">Required documents detected in this submission.</p></div></div><div className="card-body"><ul className="check-list">{result.app.documents.filter(d => d.required).map(d => <li key={d.label} className={d.received ? '' : 'missing'}>{d.received ? <CheckCircle2 /> : <XCircle />} {d.label}{d.received ? '' : ' — missing'}</li>)}</ul></div></div>{role === 'worker' ? <div className="card"><div className="card-header"><div><h2>Flags and routing</h2><p className="section-note">Suggestions for authorized staff review.</p></div></div><div className="card-body">{result.screening.flags.length ? <div className="flag-list">{result.screening.flags.map(f => <div className="flag" key={f}><AlertCircle size={15} />{f}</div>)}</div> : <div className="section-note">No screening flags identified.</div>}<div style={{ marginTop: 18, fontSize: 11, color: '#60747e' }}><strong>Suggested routing:</strong> {result.screening.routing.join(' · ')}</div></div></div> : <div className="card"><div className="card-header"><div><h2>What happens next</h2></div></div><div className="card-body"><p className="section-note">Your submission is saved. You can follow its progress in Application Records. A reviewer will assess your application before any decision is made.</p><Link href="/records" className="button outline" data-testid="link-view-own-records">View my records <ChevronRight /></Link></div></div>}</div><div className="notice" style={{ marginTop: 20 }}><ShieldCheck size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> This pre-screening is advisory only. A County employee must review the record and make all final decisions.</div></main>;
    return <main className="page"><PageHeading eyebrow="Applicant intake" title="Submit a permit application" description="Provide the project information and core documents needed for a first County intake review." actions={<Link href="/applications" className="button outline" data-testid="link-cancel-submission">{role === 'applicant' ? 'My applications' : 'View queue'}</Link>} />{errors.length > 0 && <div className="notice" style={{ borderColor: '#ddb1ac', background: '#fff3f1', color: '#7e403a', marginBottom: 18 }}><AlertCircle size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> Please correct the highlighted required information. {errors[0]}</div>}{persistenceError && <div className="notice" role="alert" data-testid="error-persistence" style={{ borderColor: '#ddb1ac', background: '#fff3f1', color: '#7e403a', marginBottom: 18 }}><AlertCircle size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> {persistenceError}</div>}<form onSubmit={submit} className="card">
-    <section className="form-section"><div className="form-section-title"><span className="step-number">1</span><div><h2>Applicant and project</h2><p className="section-note">{role === 'applicant' ? 'This demo submits under the Demo Applicant profile. Tell the County what is being proposed.' : 'Tell the County who is submitting and what is being proposed.'}</p></div></div><div className="form-grid"><Field label="Applicant name" required value={form.applicantName} readOnly={role === 'applicant'} onChange={v => update('applicantName', v)} error={errors.some(e => e.includes('applicantName'))} testId="input-applicant-name" /><Field label="Company or organization" required value={form.companyName} readOnly={role === 'applicant'} onChange={v => update('companyName', v)} error={errors.some(e => e.includes('companyName'))} testId="input-company-name" /><Field label="Email address" required type="email" value={form.email} readOnly={role === 'applicant'} onChange={v => update('email', v)} error={errors.some(e => e.includes('email'))} testId="input-applicant-email" /><Field label="Project name" required value={form.projectName} onChange={v => update('projectName', v)} error={errors.some(e => e.includes('projectName'))} testId="input-project-name" /><Field label="Project address" required full value={form.projectAddress} onChange={v => update('projectAddress', v)} error={errors.some(e => e.includes('projectAddress'))} testId="input-project-address" /><div className="field"><label htmlFor="permit-type">Permit type <span className="required">*</span></label><select id="permit-type" className="select" value={form.permitType} onChange={e => update('permitType', e.target.value)} data-testid="select-permit-type"><option>Building permit</option><option>Tenant improvement</option><option>Planning application</option><option>Encroachment permit</option></select></div><div className="field"><label htmlFor="project-type">Project type <span className="required">*</span></label><select id="project-type" className="select" value={form.projectType} onChange={e => update('projectType', e.target.value)} data-testid="select-project-type"><option>Single-family residential</option><option>Accessory dwelling unit</option><option>Small multifamily housing</option><option>Multifamily housing</option><option>Commercial</option><option>Senior residential care</option></select></div><Field label="Housing units" type="number" value={form.housingUnits} onChange={v => update('housingUnits', v)} testId="input-housing-units" /><Field label="Estimated construction cost" type="number" value={form.estimatedCost} onChange={v => update('estimatedCost', v)} error={errors.some(e => e.includes('estimatedCost'))} testId="input-estimated-cost" prefix="$" /><div className="field full"><label htmlFor="project-description">Project description <span className="required">*</span></label><textarea id="project-description" className="textarea" value={form.description} onChange={e => update('description', e.target.value)} placeholder="Briefly describe the scope, occupancy, and proposed work." data-testid="textarea-project-description" />{errors.some(e => e.includes('description')) && <span className="error-text">Project description is required.</span>}</div><div className="field full"><label>Priority context</label><div className="grid-3"><label className="checkbox-row"><input type="checkbox" checked={form.affordableHousing} onChange={e => update('affordableHousing', e.target.checked)} data-testid="checkbox-affordable-housing" /> Affordable housing project</label><label className="checkbox-row"><input type="checkbox" checked={form.underservedCommunity} onChange={e => update('underservedCommunity', e.target.checked)} data-testid="checkbox-underserved-community" /> Located in an underserved community</label></div></div></div></section>
+    <section className="form-section"><div className="form-section-title"><span className="step-number">1</span><div><h2>Applicant and project</h2><p className="section-note">Tell the County who is submitting and what is being proposed. Your signed-in account owns this submission.</p></div></div><div className="form-grid"><Field label="Applicant name" required value={form.applicantName} onChange={v => update('applicantName', v)} error={errors.some(e => e.includes('applicantName'))} testId="input-applicant-name" /><Field label="Company or organization" required value={form.companyName} onChange={v => update('companyName', v)} error={errors.some(e => e.includes('companyName'))} testId="input-company-name" /><Field label="Email address" required type="email" value={form.email} onChange={v => update('email', v)} error={errors.some(e => e.includes('email'))} testId="input-applicant-email" /><Field label="Project name" required value={form.projectName} onChange={v => update('projectName', v)} error={errors.some(e => e.includes('projectName'))} testId="input-project-name" /><Field label="Project address" required full value={form.projectAddress} onChange={v => update('projectAddress', v)} error={errors.some(e => e.includes('projectAddress'))} testId="input-project-address" /><div className="field"><label htmlFor="permit-type">Permit type <span className="required">*</span></label><select id="permit-type" className="select" value={form.permitType} onChange={e => update('permitType', e.target.value)} data-testid="select-permit-type"><option>Building permit</option><option>Tenant improvement</option><option>Planning application</option><option>Encroachment permit</option></select></div><div className="field"><label htmlFor="project-type">Project type <span className="required">*</span></label><select id="project-type" className="select" value={form.projectType} onChange={e => update('projectType', e.target.value)} data-testid="select-project-type"><option>Single-family residential</option><option>Accessory dwelling unit</option><option>Small multifamily housing</option><option>Multifamily housing</option><option>Commercial</option><option>Senior residential care</option></select></div><Field label="Housing units" type="number" value={form.housingUnits} onChange={v => update('housingUnits', v)} testId="input-housing-units" /><Field label="Estimated construction cost" type="number" value={form.estimatedCost} onChange={v => update('estimatedCost', v)} error={errors.some(e => e.includes('estimatedCost'))} testId="input-estimated-cost" prefix="$" /><div className="field full"><label htmlFor="project-description">Project description <span className="required">*</span></label><textarea id="project-description" className="textarea" value={form.description} onChange={e => update('description', e.target.value)} placeholder="Briefly describe the scope, occupancy, and proposed work." data-testid="textarea-project-description" />{errors.some(e => e.includes('description')) && <span className="error-text">Project description is required.</span>}</div><div className="field full"><label>Priority context</label><div className="grid-3"><label className="checkbox-row"><input type="checkbox" checked={form.affordableHousing} onChange={e => update('affordableHousing', e.target.checked)} data-testid="checkbox-affordable-housing" /> Affordable housing project</label><label className="checkbox-row"><input type="checkbox" checked={form.underservedCommunity} onChange={e => update('underservedCommunity', e.target.checked)} data-testid="checkbox-underserved-community" /> Located in an underserved community</label></div></div></div></section>
      <section className="form-section"><div className="form-section-title"><span className="step-number">2</span><div><h2>Documents</h2><p className="section-note">{role === 'applicant' ? 'Choose files for your demo submission. File names are recorded; file contents are not stored in this prototype.' : 'Use the controls to represent documents included with this demo submission. Uploads are simulated locally.'}</p></div></div><div className="doc-list">{docs.map((doc, i) => <div className="doc-row" key={doc.label}><div><div className="doc-label">{doc.label} {doc.required && <span className="required">*</span>}</div><span className="doc-category">{doc.category} · {doc.received ? doc.fileName : 'Not received'}</span></div>{role === 'applicant' ? <label className={`button ${doc.received ? 'secondary' : 'outline'} doc-upload`}><Paperclip /> {doc.received ? 'Change file' : 'Choose file'}<input type="file" accept=".pdf,.png,.jpg,.jpeg" aria-label={`Choose file for ${doc.label}`} onChange={e => selectDoc(i, e.target.files?.[0])} data-testid={`input-document-${doc.label.toLowerCase().replaceAll(' ', '-')}`} /></label> : <button type="button" className={`button ${doc.received ? 'secondary' : 'outline'}`} onClick={() => toggleDoc(i)} data-testid={`button-upload-${doc.label.toLowerCase().replaceAll(' ', '-')}`}>{doc.received ? <><Check /> Received</> : <><Paperclip /> Add document</>}</button>}</div>)}</div></section>
      <section className="form-section" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}><span className="section-note" style={{ marginRight: 'auto', alignSelf: 'center' }}><span className="required">*</span> Required for submission</span><button type="button" className="button outline" disabled={submitting} onClick={() => { setForm(initialForm()); setDocs(baseDocuments()); setErrors([]); setPersistenceError(''); }} data-testid="button-clear-form">Clear form</button><button type="submit" className="button teal" disabled={submitting} data-testid="button-submit-application">{submitting ? 'Saving application…' : <><Send /> Submit for AI pre-screening</>}</button></section>
   </form><FooterDisclaimer /></main>;
@@ -297,6 +270,7 @@ function NewApplication({ onAdd, role }: { onAdd: (app: PermitApplication) => vo
 function Field({ label, required, value, onChange, error, full, type = 'text', testId, prefix, readOnly = false }: { label: string; required?: boolean; value: string; onChange: (value: string) => void; error?: boolean; full?: boolean; type?: string; testId: string; prefix?: string; readOnly?: boolean }) { return <div className={`field ${full ? 'full' : ''}`}><label htmlFor={testId}>{label} {required && <span className="required">*</span>}</label><div style={{ position: 'relative' }}>{prefix && <span style={{ position: 'absolute', left: 11, top: 11, color: '#6b7d85', fontSize: 12 }}>{prefix}</span>}<input id={testId} className="input" style={prefix ? { paddingLeft: 23 } : undefined} type={type} value={value} readOnly={readOnly} onChange={e => onChange(e.target.value)} data-testid={testId} /> </div>{error && <span className="error-text">This field is required.</span>}</div>; }
 
 function DetailPage({ applications, updateApp }: { applications: PermitApplication[]; updateApp: (app: PermitApplication) => void }) {
+  const { user } = useUser();
   const [, params] = useRoute('/applications/:id');
   const { data: records, isLoading, isError, refetch } = useListPermitApplications();
   const updateRecord = useUpdatePermitApplication();
@@ -305,14 +279,14 @@ function DetailPage({ applications, updateApp }: { applications: PermitApplicati
   const [note, setNote] = useState(''); const [toast, setToast] = useState(''); const [saveError, setSaveError] = useState('');
   if (isLoading) return <main className="page"><div className="card card-body" role="status">Loading application details…</div></main>;
   if (!app) return <main className="page"><div className="empty"><XCircle size={34} /><h2>Application not found</h2>{isError && <p role="alert">Saved records could not be loaded. Please retry to look up this application.</p>}{isError && <button className="button outline" onClick={() => refetch()} data-testid="button-retry-detail">Retry records</button>}<Link href="/applications" className="button outline">Return to queue</Link></div></main>;
-  const recordUnavailable = isError && !dbApp && ![...seedApplications(), ...seedApplicantApplications()].some(seed => seed.id === app.id);
+  const recordUnavailable = isError || !dbApp;
   const persistChange = async (next: PermitApplication, message: string, afterSuccess?: () => void) => {
     if (updateRecord.isPending || recordUnavailable) return;
     setSaveError('');
     try {
-      const saved = dbApp ? await updateRecord.mutateAsync({ id: next.id, data: next }) : next;
+      const saved = await updateRecord.mutateAsync({ id: next.id, data: { reviewStatus: next.reviewStatus, assignedDepartment: next.assignedDepartment, timeline: next.timeline, notes: next.notes } });
       updateApp(saved);
-      if (dbApp) await queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() });
       afterSuccess?.();
       setToast(message);
       window.setTimeout(() => setToast(''), 2600);
@@ -320,15 +294,8 @@ function DetailPage({ applications, updateApp }: { applications: PermitApplicati
       setSaveError('The change could not be saved to Application Records. Please try again.');
     }
   };
-  const action = (label: string, status: ReviewStatus, timelineStatus?: string) => {
-    const finalDecision = status === 'Approved' || status === 'Denied';
-    const timeline = timelineFor(status, app.flags.some(f => f.includes('Fire'))).map(event =>
-      finalDecision && event.label === 'Final County decision' ? { ...event, date: new Date().toISOString() } : event
-    );
-    const next: PermitApplication = { ...app, reviewStatus: status, assignedDepartment: timelineStatus || app.assignedDepartment, timeline, aiStatus: status === 'Approved' ? 'Ready for Human Review' : app.aiStatus };
-    void persistChange(next, `${label} recorded on the application`);
-  };
-  const addNote = () => { if (!note.trim()) return; void persistChange({ ...app, notes: [{ id: `n-${Date.now()}`, author: 'Jordan Lee', body: note.trim(), createdAt: new Date().toISOString() }, ...app.notes] }, 'Note added', () => setNote('')); };
+  const action = (label: string, status: ReviewStatus, timelineStatus?: string) => { const next: PermitApplication = { ...app, reviewStatus: status, assignedDepartment: timelineStatus || app.assignedDepartment, timeline: timelineFor(status, app.flags.some(f => f.includes('Fire'))), aiStatus: status === 'Approved' ? 'Ready for Human Review' : app.aiStatus }; void persistChange(next, `${label} recorded on the application`); };
+  const addNote = () => { if (!note.trim()) return; void persistChange({ ...app, notes: [{ id: `n-${Date.now()}`, author: user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Staff member', body: note.trim(), createdAt: new Date().toISOString() }, ...app.notes] }, 'Note added', () => setNote('')); };
   return <><main className="page"><div className="detail-header" style={{ marginBottom: 27 }}><div><Link href="/applications" className="section-note" data-testid="link-back-to-queue">Applications / review queue</Link><p className="eyebrow" style={{ marginTop: 18 }}>Application detail</p><h1 style={{ marginBottom: 6 }}>{app.projectName}</h1><div className="detail-id">{app.id} · submitted {shortDate(app.submittedAt)}</div></div><div className="actions"><StatusBadge status={app.reviewStatus} /><button className="button outline" onClick={() => action('Escalation', 'Senior Review', 'Senior Reviewer')} data-testid="button-escalate-application"><Siren /> Escalate</button></div></div>
     {(saveError || recordUnavailable) && <div className="notice" role="alert" data-testid="error-update-record" style={{ borderColor: '#ddb1ac', background: '#fff3f1', color: '#7e403a', marginBottom: 18 }}><AlertCircle size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> {recordUnavailable ? 'Saved records are unavailable. Review actions are paused until this record can be verified in the database.' : saveError}{recordUnavailable && <button className="button outline" onClick={() => refetch()} data-testid="button-retry-record-detail" style={{ marginLeft: 12 }}>Retry</button>}</div>}
     <div className="card" style={{ marginBottom: 20 }}><div className="card-header"><div><h2>Human review actions</h2><p className="section-note">These actions update saved records for database-backed applications and the demo queue for seeded examples. Approval requires an explicit staff action.</p></div><ShieldCheck size={20} color="#1b7c7b" /></div><fieldset disabled={updateRecord.isPending || recordUnavailable} className="card-body actions action-fieldset"><button className="button teal" onClick={() => action('Ready for review', 'Ready for Review')} data-testid="button-mark-ready"><CheckCircle2 /> Mark Ready for Review</button><button className="button secondary" onClick={() => action('Information request', 'More Information Requested')} data-testid="button-request-information"><MessageSquare /> Request More Information</button><button className="button secondary" onClick={() => action('Planning routing', 'Planning Review', 'Planning')} data-testid="button-send-planning"><Building2 /> Send to Planning</button><button className="button secondary" onClick={() => action('Building routing', 'Building Review', 'Building')} data-testid="button-send-building"><ClipboardCheck /> Send to Building</button><button className="button secondary" onClick={() => action('Fire routing', 'Fire Review', 'Fire Prevention')} data-testid="button-send-fire"><Siren /> Send to Fire</button><button className="button secondary" onClick={() => action('Environmental routing', 'Environmental Review', 'Environmental Health')} data-testid="button-send-environmental"><Activity /> Send to Environmental</button><button className="button danger" onClick={() => action('Revisions request', 'Revisions Required')} data-testid="button-mark-revisions"><XCircle /> Mark Revisions Required</button><button className="button danger" onClick={() => action('Denial', 'Denied')} data-testid="button-mark-denied"><XCircle /> Mark Denied</button><button className="button primary" onClick={() => action('Approval', 'Approved')} data-testid="button-mark-approved"><ShieldCheck /> Mark Approved</button></fieldset></div>
@@ -358,73 +325,66 @@ function WorkerGuidance() {
 function HelpPage({ onReset }: { onReset: () => void }) { const [reset, setReset] = useState(false); return <><main className="page"><PageHeading eyebrow="Guidance" title="Help & guardrails" description="A short guide for demonstrating how intake, screening, and human review work together." /><div className="grid-2"><div className="stack"><div className="card"><div className="card-header"><div><h2>How to use the prototype</h2><p className="section-note">A suggested flow for applicants and County staff.</p></div><HelpCircle size={18} color="#2b8282" /></div><div className="card-body"><div className="timeline"><div className="timeline-item completed"><div className="timeline-dot" /><div className="timeline-date">Step 01</div><div><div className="timeline-label">Submit an application</div><div className="timeline-detail">Use the intake form to provide project context and toggle document categories as received.</div></div></div><div className="timeline-item completed"><div className="timeline-dot" /><div className="timeline-date">Step 02</div><div><div className="timeline-label">Review pre-screening</div><div className="timeline-detail">The local rule set calculates completeness, flags, and suggested routing. Nothing is approved automatically.</div></div></div><div className="timeline-item current"><div className="timeline-dot" /><div className="timeline-date">Step 03</div><div><div className="timeline-label">County staff triage</div><div className="timeline-detail">Open a record, inspect documents, add notes, route it to a department, or request more information.</div></div></div><div className="timeline-item upcoming"><div className="timeline-dot" /><div className="timeline-date">Step 04</div><div><div className="timeline-label">Human decision</div><div className="timeline-detail">An authorized County employee explicitly records approval or revisions required.</div></div></div></div></div></div><div className="card"><div className="card-header"><div><h2>Demo data</h2><p className="section-note">Reset the local demo queue for a clean classroom demonstration.</p></div><RefreshCcw size={17} color="#2b8282" /></div><div className="card-body"><p className="section-note">This action restores the nine seeded examples in the local queue. It does not delete database records in Application Records; saved submissions remain available after reset.</p>{reset ? <div className="actions"><button className="button danger" onClick={() => { onReset(); setReset(false); }} data-testid="button-confirm-reset">Yes, reset demo data</button><button className="button outline" onClick={() => setReset(false)} data-testid="button-cancel-reset">Cancel</button></div> : <button className="button outline" onClick={() => setReset(true)} data-testid="button-reset-demo-data"><RefreshCcw /> Reset demo data</button>}</div></div></div><div className="stack"><div className="card"><div className="card-header"><div><h2>What the AI does</h2><p className="section-note">Local, explainable intake support only.</p></div><Sparkles size={17} color="#b4752e" /></div><div className="card-body"><ul className="check-list"><li><Check /> Checks whether core document categories are present.</li><li><Check /> Highlights missing plans and possible agency coordination.</li><li><Check /> Recognizes housing priority context from submitted fields.</li><li><Check /> Suggests an initial department routing.</li></ul></div></div><div className="notice"><ShieldCheck size={16} style={{ verticalAlign: 'middle', marginRight: 7 }} /><strong>Important limitation</strong><br />This student prototype does not access official County records, interpret building codes, verify documents, or replace authorized County judgment. Saved prototype applications are not official permit records.</div></div></div></main><FooterDisclaimer /></>; }
 
 function RouterView() {
-  const [applications, setApplications] = useState<PermitApplication[]>(readApplications);
-  const [applicantApplications, setApplicantApplications] = useState<PermitApplication[]>(readApplicantApplications);
-  const [role, setRole] = useState<PortalRole | null>(readRole);
-  const [showWorkerLogin, setShowWorkerLogin] = useState(false);
-  const [, setLocation] = useLocation();
+  const { signOut } = useClerk();
+  const { user } = useUser();
   const [, detailParams] = useRoute('/applications/:id');
-  const applicantFilter = role === 'applicant' ? { applicantEmail: DEMO_APPLICANT.email } : undefined;
-  const { data: savedRecords } = useListPermitApplications(applicantFilter, {
-    query: {
-      queryKey: getListPermitApplicationsQueryKey(applicantFilter),
-      enabled: role !== null,
-      refetchOnMount: 'always',
-      refetchOnWindowFocus: 'always',
-      refetchInterval: role === 'applicant' ? 15000 : false,
+  const { data: identity, isPending, isError, refetch } = useQuery({
+    queryKey: ['identity', user?.id],
+    queryFn: async (): Promise<{ userId: string; role: PortalRole }> => {
+      const response = await fetch('/api/me', { credentials: 'same-origin' });
+      if (!response.ok) throw new Error('Cannot verify account permissions');
+      return response.json();
     },
+    enabled: !!user,
+    staleTime: 0,
   });
-  const visibleApplicantApplications = useMemo(() => {
-    const byId = new Map(applicantApplications.filter(application => application.email === DEMO_APPLICANT.email).map(application => [application.id, application]));
-    for (const record of savedRecords ?? []) {
-      if (role === 'applicant' && record.email === DEMO_APPLICANT.email) byId.set(record.id, record);
-    }
-    return [...byId.values()].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-  }, [applicantApplications, savedRecords, role]);
-  const workerApplications = useMemo(() => {
-    const byId = new Map([...applications, ...applicantApplications].map(application => [application.id, application]));
-    for (const record of savedRecords ?? []) byId.set(record.id, record);
-    return [...byId.values()].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-  }, [applications, applicantApplications, savedRecords]);
-  useEffect(() => saveApplications(applications), [applications]);
-  useEffect(() => localStorage.setItem(APPLICANT_STORE_KEY, JSON.stringify(applicantApplications)), [applicantApplications]);
-  useEffect(() => {
-    const syncDemoRecords = (event: StorageEvent) => {
-      if (event.key === APPLICANT_STORE_KEY) setApplicantApplications(readApplicantApplications());
-      if (event.key === STORE_KEY) setApplications(readApplications());
-    };
-    window.addEventListener('storage', syncDemoRecords);
-    return () => window.removeEventListener('storage', syncDemoRecords);
-  }, []);
-  const add = (application: PermitApplication) => {
-    setApplications(prev => [application, ...prev.filter(item => item.id !== application.id)]);
-    if (role === 'applicant') setApplicantApplications(prev => [application, ...prev.filter(item => item.id !== application.id)]);
-  };
-  const update = (application: PermitApplication) => {
-    setApplications(prev => prev.some(item => item.id === application.id) ? prev.map(item => item.id === application.id ? application : item) : [application, ...prev]);
-    setApplicantApplications(prev => prev.map(item => item.id === application.id ? application : item));
-  };
-  const reset = () => setApplications(seedApplications());
-  const chooseRole = (selected: PortalRole) => {
-    if (selected === 'worker') { setLocation('/'); setShowWorkerLogin(true); return; }
-    sessionStorage.setItem(ROLE_KEY, selected); queryClient.clear(); setLocation('/'); setRole(selected);
-  };
-  const enterWorker = () => {
-    sessionStorage.setItem(ROLE_KEY, 'worker'); queryClient.clear(); setLocation('/'); setRole('worker'); setShowWorkerLogin(false);
-  };
-  const switchRole = () => { sessionStorage.removeItem(ROLE_KEY); queryClient.clear(); setLocation('/'); setRole(null); setShowWorkerLogin(false); };
-  if (!role) return showWorkerLogin ? <WorkerLoginPage onContinue={enterWorker} onBack={() => setShowWorkerLogin(false)} /> : <RoleChooser onSelect={chooseRole} />;
-  return <AppShell role={role} onSwitch={switchRole}><Switch>
-    <Route path="/">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard applications={workerApplications} />}</Route>
-    <Route path="/new-application"><NewApplication role={role} onAdd={add} /></Route>
-    <Route path="/applications">{role === 'applicant' ? <><ApplicantApplicationsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <ApplicationsPage applications={workerApplications} />}</Route>
-    <Route path="/records">{role === 'applicant' ? <><ApplicantRecordsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <RecordsPage applications={workerApplications} />}</Route>
-    <Route path="/applications/:id">{role === 'applicant' ? <><ApplicantDetailPage application={visibleApplicantApplications.find(a => a.id === detailParams?.id)} /><FooterDisclaimer /></> : <DetailPage applications={workerApplications} updateApp={update} />}</Route>
-    <Route path="/analytics">{role === 'worker' ? <><WorkerAnalytics applications={workerApplications} /><AnalyticsPage applications={workerApplications} /></> : <NotFound />}</Route>
-    <Route path="/help">{role === 'applicant' ? <><ApplicantHelpPage /><FooterDisclaimer /></> : <><WorkerGuidance /><HelpPage onReset={reset} /></>}</Route>
+  const role = identity?.role;
+  const { data: records, isLoading: recordsLoading, isError: recordsError, refetch: refetchRecords } = useListPermitApplications({ query: { enabled: !!role, staleTime: 0, queryKey: getListPermitApplicationsQueryKey() } });
+  if (!role) return <main className="role-chooser"><section className="role-main">{isPending ? 'Verifying your account…' : <><h1>Account unavailable</h1><p>{isError ? 'We could not verify your account. Your records have not been loaded.' : 'Sign in to continue.'}</p><button className="button outline" onClick={() => refetch()}>Retry</button></>}</section></main>;
+  const applications = records ?? [];
+  const add = (_application: PermitApplication) => { void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); };
+  const update = (_application: PermitApplication) => { void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); };
+  const signOutNow = () => { queryClient.clear(); void signOut({ redirectUrl: basePath || '/' }); };
+  return <AppShell role={role} onSwitch={signOutNow}><Switch>
+    <Route path="/">{recordsLoading ? <main className="page">Loading records…</main> : recordsError ? <main className="page" role="alert">Records are unavailable. <button onClick={() => refetchRecords()}>Retry</button></main> : role === 'applicant' ? <><ApplicantDashboard applications={applications} /><FooterDisclaimer /></> : <Dashboard applications={applications} />}</Route>
+    <Route path="/new-application">{role === 'applicant' ? <NewApplication role={role} onAdd={add} /> : <main className="page"><PageHeading eyebrow="Staff workspace" title="Applicant submission only" description="Applications must be submitted from a signed-in applicant account. Workers can review submissions in the queue." actions={<Link href="/applications" className="button teal">Open review queue</Link>} /></main>}</Route>
+    <Route path="/applications">{recordsLoading ? <main className="page">Loading records…</main> : recordsError ? <main className="page" role="alert">Records are unavailable. <button onClick={() => refetchRecords()}>Retry</button></main> : role === 'applicant' ? <><ApplicantApplicationsPage applications={applications} /><FooterDisclaimer /></> : <ApplicationsPage applications={applications} />}</Route>
+    <Route path="/records">{role === 'applicant' ? recordsLoading ? <main className="page">Loading records…</main> : recordsError ? <main className="page" role="alert">Records are unavailable. <button onClick={() => refetchRecords()}>Retry</button></main> : <><ApplicantRecordsPage applications={applications} /><FooterDisclaimer /></> : <RecordsPage />}</Route>
+    <Route path="/applications/:id">{role === 'applicant' ? recordsLoading ? <main className="page">Loading record…</main> : recordsError ? <main className="page" role="alert">Records are unavailable. <button onClick={() => refetchRecords()}>Retry</button></main> : <><ApplicantDetailPage application={applications.find(a => a.id === detailParams?.id)} /><FooterDisclaimer /></> : <DetailPage applications={applications} updateApp={update} />}</Route>
+    <Route path="/analytics">{role === 'worker' ? <><WorkerAnalytics applications={applications} /><AnalyticsPage applications={applications} /></> : <NotFound />}</Route>
+    <Route path="/help">{role === 'applicant' ? <><ApplicantHelpPage /><FooterDisclaimer /></> : <><WorkerGuidance /><FooterDisclaimer /></>}</Route>
     <Route component={NotFound} />
   </Switch></AppShell>;
 }
 
-function App() { return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><ErrorBoundary resetKey={location.pathname}><RouterView /></ErrorBoundary></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>; }
+function stripBase(path: string) { return basePath && path.startsWith(basePath) ? path.slice(basePath.length) || '/' : path; }
+function ClearAccountCache() {
+  const { addListener } = useClerk();
+  const client = useQueryClient();
+  const previous = useRef<string | null | undefined>(undefined);
+  useEffect(() => addListener(({ user }) => {
+    const id = user?.id ?? null;
+    if (previous.current !== undefined && previous.current !== id) client.clear();
+    previous.current = id;
+  }), [addListener, client]);
+  return null;
+}
+function AuthRoutes() {
+  const [, setLocation] = useLocation();
+  const appearance = {
+    theme: shadcn,
+    cssLayerName: 'clerk',
+    options: { logoPlacement: 'inside' as const, logoLinkUrl: basePath || '/', logoImageUrl: `${window.location.origin}${basePath}/logo.svg` },
+    variables: { colorPrimary: '#006b77', colorForeground: '#193c4b', colorMutedForeground: '#536975', colorDanger: '#a83232', colorBackground: '#ffffff', colorInput: '#f7fafb', colorInputForeground: '#193c4b', colorNeutral: '#cedde3', fontFamily: 'Nunito Sans, sans-serif', borderRadius: '10px' },
+    elements: { cardBox: { width: '440px', maxWidth: '100%', background: '#ffffff' }, headerTitle: { color: '#193c4b' }, headerSubtitle: { color: '#536975' }, footerActionText: { color: '#536975' }, footerActionLink: { color: '#006b77' }, formFieldLabel: { color: '#193c4b' }, socialButtonsBlockButtonText: { color: '#193c4b' }, dividerText: { color: '#536975' } },
+  };
+  return <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={appearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} localization={{ signIn: { start: { title: 'Welcome back', subtitle: 'Access your permit records' } }, signUp: { start: { title: 'Create an account', subtitle: 'Keep your submissions in one place' } } }} routerPush={(to) => setLocation(stripBase(to))} routerReplace={(to) => setLocation(stripBase(to), { replace: true })}>
+    <QueryClientProvider client={queryClient}><ClearAccountCache /><TooltipProvider><ErrorBoundary resetKey={location.pathname}><Switch>
+      <Route path="/sign-in/*?"><div className="role-chooser"><div className="role-main"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div></div></Route>
+      <Route path="/sign-up/*?"><div className="role-chooser"><div className="role-main"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div></div></Route>
+      <Route><Show when="signed-in"><RouterView /></Show><Show when="signed-out"><RoleChooser /></Show></Route>
+    </Switch></ErrorBoundary><Toaster /></TooltipProvider></QueryClientProvider>
+  </ClerkProvider>;
+}
+function App() { return <WouterRouter base={basePath}><AuthRoutes /></WouterRouter>; }
 export default App;
