@@ -71,7 +71,7 @@ export function RoleChooser() {
           <ArrowRight aria-hidden="true" />
         </Link>
       </div>
-      <div className="role-demo-note"><Info aria-hidden="true" /><span>This student prototype is not an official County website. Do not submit sensitive or official permit documents.</span></div>
+      <div className="role-demo-note"><Info aria-hidden="true" /><span>Use an email account to sign in, or create one first. The previous demo User ID and password do not work with account sign-in. Worker access requires separate authorization. This is not an official County website; do not submit sensitive or official permit documents.</span></div>
     </section>
   </main>;
 }
