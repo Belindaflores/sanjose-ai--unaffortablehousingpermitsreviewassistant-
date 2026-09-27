@@ -1,0 +1,120 @@
+Update my existing Santa Clara County AI Permit Review Assistant prototype so that it uses real public Santa Clara County data in addition to the application's existing user-generated records.
+
+Do NOT rebuild the app or change the overall design.
+
+The purpose of this update is to replace the hard-coded example permit/application records with database-backed records based on real public data.
+
+### Public Data Source
+
+Use public information from the County of Santa Clara Open Data portal, preferably permit, planning, development, zoning, or active plan-check application records from the County Department of Planning and Development.
+
+The County has an Active Plan Check Application Tracker that includes fields such as:
+
+- Service Request Number
+- Business Name
+- Site Location
+- City
+- Received Date
+- Due Date
+- Revision Requested Date
+
+If the live County API or dataset can be accessed reliably, retrieve public records from it.
+
+If direct API access is unavailable or unreliable, create a local import process using a CSV or JSON export from the official County dataset.
+
+Do NOT scrape private, restricted, or authentication-protected information.
+
+### Database Requirement
+
+Store at least 20 real public County records in the application's database.
+
+The records must come from the Santa Clara County public data source rather than being hard-coded directly into the React components.
+
+The app should query these records from the database when the dashboard or records page loads.
+
+Each imported record should include a field such as:
+
+dataSource: "County of Santa Clara Open Data"
+
+Also store the original public record identifier whenever one exists.
+
+### Separate Real and Prototype Records
+
+The app currently allows users to submit new permit applications.
+
+Keep this functionality.
+
+User-created prototype applications should be marked:
+
+dataSource: "Prototype Submission"
+
+or
+
+dataSource: "Synthetic"
+
+Real County records should be marked:
+
+dataSource: "County of Santa Clara Open Data"
+
+Add a visible badge or label so a viewer can easily distinguish real public records from prototype/synthetic records.
+
+### Applications / Records Page
+
+Update the existing Application Records or Applications page so that it displays both:
+
+1. Real Santa Clara County public records
+2. New prototype submissions created through the app
+
+Include a filter for:
+
+- All
+- County Public Data
+- Prototype Submissions
+
+Show at least 20 County public records somewhere in the app.
+
+Do not pretend that public County records contain information that is not present in the source dataset.
+
+If a field such as affordable housing status, AI priority, or AI screening result does not exist in the County dataset, either:
+
+- leave the field blank,
+- display "Not available in source data," or
+- clearly label any generated value as an AI-generated prototype value.
+
+### AI Analysis
+
+For public County records, the prototype may run the existing AI/rule-based analysis on the record, but clearly distinguish:
+
+PUBLIC SOURCE DATA
+
+from
+
+PROTOTYPE AI ANALYSIS
+
+The AI-generated information must not be presented as an official County decision or official County data.
+
+### Source Information
+
+Add a small section on the Records or About page that states:
+
+"Public records displayed in this prototype were obtained from the County of Santa Clara Open Data portal. Prototype AI analysis and user-created submissions are not official County records or decisions."
+
+Include the dataset name used.
+
+### Technical Requirements
+
+- Continue using a persistent Replit database.
+- Do not store the 20 records only as a JavaScript array.
+- Seed/import the database with the public records.
+- Query the database to populate the UI.
+- Existing user submissions must continue saving normally.
+- Do not delete my existing database records.
+- Keep the existing AI screening workflow functional.
+
+After implementing this, verify that:
+
+1. At least 20 public records exist in the database.
+2. They appear in the application interface.
+3. The source of each record is visible.
+4. User-created records still save persistently.
+5. Closing and reopening the application does not remove the records.
