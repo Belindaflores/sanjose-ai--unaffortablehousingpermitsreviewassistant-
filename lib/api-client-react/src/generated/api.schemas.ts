@@ -5,36 +5,18 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-export type PortalIdentityRole = typeof PortalIdentityRole[keyof typeof PortalIdentityRole];
-
-
-export const PortalIdentityRole = {
-  applicant: 'applicant',
-  worker: 'worker',
-} as const;
-
-export interface PortalIdentity {
-  userId: string;
-  role: PortalIdentityRole;
+export interface HealthStatus {
+  status: string;
 }
 
-export type PermitReviewUpdateReviewStatus = typeof PermitReviewUpdateReviewStatus[keyof typeof PermitReviewUpdateReviewStatus];
-
-
-export const PermitReviewUpdateReviewStatus = {
-  New: 'New',
-  In_County_Intake: 'In County Intake',
-  Ready_for_Review: 'Ready for Review',
-  More_Information_Requested: 'More Information Requested',
-  Planning_Review: 'Planning Review',
-  Building_Review: 'Building Review',
-  Fire_Review: 'Fire Review',
-  Environmental_Review: 'Environmental Review',
-  Senior_Review: 'Senior Review',
-  Approved: 'Approved',
-  Denied: 'Denied',
-  Revisions_Required: 'Revisions Required',
-} as const;
+export interface PermitDocument {
+  category: string;
+  label: string;
+  required: boolean;
+  received: boolean;
+  fileName?: string;
+  receivedAt?: string;
+}
 
 export type PermitTimelineEventStatus = typeof PermitTimelineEventStatus[keyof typeof PermitTimelineEventStatus];
 
@@ -57,26 +39,6 @@ export interface PermitStaffNote {
   author: string;
   body: string;
   createdAt: string;
-}
-
-export interface PermitReviewUpdate {
-  reviewStatus?: PermitReviewUpdateReviewStatus;
-  assignedDepartment?: string;
-  timeline?: PermitTimelineEvent[];
-  notes?: PermitStaffNote[];
-}
-
-export interface HealthStatus {
-  status: string;
-}
-
-export interface PermitDocument {
-  category: string;
-  label: string;
-  required: boolean;
-  received: boolean;
-  fileName?: string;
-  receivedAt?: string;
 }
 
 export type PermitApplicationAiStatus = typeof PermitApplicationAiStatus[keyof typeof PermitApplicationAiStatus];
@@ -147,4 +109,8 @@ export interface PermitApplication {
   timeline: PermitTimelineEvent[];
   notes: PermitStaffNote[];
 }
+
+export type ListPermitApplicationsParams = {
+applicantEmail?: string;
+};
 

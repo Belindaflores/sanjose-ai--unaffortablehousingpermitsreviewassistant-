@@ -35,8 +35,6 @@ type PermitStaffNote = {
 
 export const permitApplicationsTable = pgTable("permit_applications", {
   id: text("id").primaryKey(),
-  // Existing prototype rows have no verified owner and remain staff-only.
-  ownerId: text("owner_id"),
   applicantName: text("applicant_name").notNull(),
   companyName: text("company_name").notNull(),
   email: text("email").notNull(),

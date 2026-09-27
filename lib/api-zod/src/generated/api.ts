@@ -18,18 +18,13 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * @summary Return the signed-in account's server-verified portal role
- */
-export const GetCurrentIdentityResponse = zod.object({
-  "userId": zod.string(),
-  "role": zod.enum(['applicant', 'worker'])
-})
-
-
-/**
- * Authenticated applicants see only their own records. Authorized workers see the entire queue. Unowned legacy records are staff-only.
+ * Returns saved permit applications newest first. Applicant demo views can filter by email; this is not authentication.
  * @summary List saved permit applications
  */
+export const ListPermitApplicationsQueryParams = zod.object({
+  "applicantEmail": zod.coerce.string().email().optional()
+})
+
 export const listPermitApplicationsResponseCompletenessScoreMin = 0;
 export const listPermitApplicationsResponseCompletenessScoreMax = 100;
 
@@ -83,7 +78,7 @@ export const ListPermitApplicationsResponse = zod.array(ListPermitApplicationsRe
 
 
 /**
- * Applicants only. The server assigns ownership from the verified session and initializes review status and staff notes.
+ * Persists applicant input and the rule-based pre-screening output.
  * @summary Save a screened permit application
  */
 export const createPermitApplicationBodyCompletenessScoreMin = 0;
@@ -188,28 +183,61 @@ export const CreatePermitApplicationResponse = zod.object({
 
 
 /**
- * Authorized workers only. Persists review status, department, timeline, and staff notes; applicant and owner fields cannot be changed.
+ * Persists County staff review actions and notes for an application.
  * @summary Update a saved permit application
  */
 export const UpdatePermitApplicationParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const updatePermitApplicationBodyCompletenessScoreMin = 0;
+export const updatePermitApplicationBodyCompletenessScoreMax = 100;
+
+
+
 export const UpdatePermitApplicationBody = zod.object({
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required']).optional(),
-  "assignedDepartment": zod.string().optional(),
+  "id": zod.string(),
+  "applicantName": zod.string(),
+  "companyName": zod.string(),
+  "email": zod.string().email(),
+  "projectName": zod.string(),
+  "projectAddress": zod.string(),
+  "permitType": zod.string(),
+  "projectType": zod.string(),
+  "housingUnits": zod.number().int(),
+  "affordableHousing": zod.boolean(),
+  "underservedCommunity": zod.boolean(),
+  "estimatedCost": zod.number(),
+  "description": zod.string(),
+  "submittedAt": zod.coerce.date(),
+  "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
+  "priority": zod.enum(['Normal', 'High', 'Urgent']),
+  "assignedDepartment": zod.string(),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required']),
+  "completenessScore": zod.number().int().min(updatePermitApplicationBodyCompletenessScoreMin).max(updatePermitApplicationBodyCompletenessScoreMax),
+  "documents": zod.array(zod.object({
+  "category": zod.string(),
+  "label": zod.string(),
+  "required": zod.boolean(),
+  "received": zod.boolean(),
+  "fileName": zod.string().optional(),
+  "receivedAt": zod.coerce.date().optional()
+})),
+  "flags": zod.array(zod.string()),
+  "aiSummary": zod.string(),
+  "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
   "status": zod.enum(['completed', 'current', 'upcoming']),
   "date": zod.string(),
   "detail": zod.string()
-})).optional(),
+})),
   "notes": zod.array(zod.object({
   "id": zod.string(),
   "author": zod.string(),
   "body": zod.string(),
   "createdAt": zod.coerce.date()
-})).optional()
+}))
 })
 
 export const updatePermitApplicationResponseCompletenessScoreMin = 0;

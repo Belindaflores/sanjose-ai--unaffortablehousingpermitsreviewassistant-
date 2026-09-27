@@ -48,30 +48,30 @@ function EmptyRecords({ compact = false }: { compact?: boolean }) {
   </div>;
 }
 
-export function RoleChooser() {
+export function RoleChooser({ onSelect }: { onSelect: (role: 'applicant' | 'worker') => void }) {
   return <main className="role-chooser">
     <section className="role-intro" aria-label="Permit Review Assistant introduction">
       <div className="role-brand"><span className="role-mark" aria-hidden="true">SC</span><span>Permit Review<br />Assistant</span></div>
-      <div><h1>Santa Clara County <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
+      <div><h1>Santa Clara <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
       <small>Santa Clara County permit experience · Student prototype</small>
     </section>
     <section className="role-main" aria-labelledby="role-title">
-      <p className="ap-kicker">Secure account access</p>
-      <h2 id="role-title">Sign in to continue</h2>
-      <p>Your account opens the applicant portal. Authorized workers are directed to the staff workspace.</p>
+      <p className="ap-kicker">Choose your view</p>
+      <h2 id="role-title">How would you like to continue?</h2>
+      <p>Explore the applicant experience or the County team workspace.</p>
       <div className="role-options">
-        <Link href="/sign-in" className="role-choice" data-testid="button-continue-applicant">
+        <button type="button" className="role-choice" onClick={() => onSelect('applicant')} data-testid="button-continue-applicant">
           <span className="role-choice-icon"><UserRound aria-hidden="true" /></span>
-          <span className="role-choice-copy"><strong>Sign in</strong><small>Access your projects, documents, and status updates.</small></span>
+          <span className="role-choice-copy"><strong>Continue as Permit Applicant</strong><small>See your projects, documents, and status updates.</small></span>
           <ArrowRight aria-hidden="true" />
-        </Link>
-        <Link href="/sign-up" className="role-choice worker" data-testid="button-continue-worker">
+        </button>
+        <button type="button" className="role-choice worker" onClick={() => onSelect('worker')} data-testid="button-continue-worker">
           <span className="role-choice-icon"><Building2 aria-hidden="true" /></span>
-          <span className="role-choice-copy"><strong>Create an account</strong><small>Start a permit application. Worker access requires authorization.</small></span>
+          <span className="role-choice-copy"><strong>Continue as City Worker</strong><small>Explore the staff review workspace.</small></span>
           <ArrowRight aria-hidden="true" />
-        </Link>
+        </button>
       </div>
-      <div className="role-demo-note"><Info aria-hidden="true" /><span>Use an email account to sign in, or create one first. The previous demo User ID and password do not work with account sign-in. Worker access requires separate authorization. This is not an official County website; do not submit sensitive or official permit documents.</span></div>
+      <div className="role-demo-note"><Info aria-hidden="true" /><span>Role selection is for this demo only. It is not secure authentication and does not verify your identity. This is not an official County website.</span></div>
     </section>
   </main>;
 }
@@ -90,7 +90,7 @@ export function WorkerLoginPage({ onContinue, onBack }: { onContinue: () => void
   return <main className="role-chooser worker-login">
     <section className="role-intro" aria-label="Permit Review Assistant introduction">
       <div className="role-brand"><span className="role-mark" aria-hidden="true">SC</span><span>Permit Review<br />Assistant</span></div>
-      <div><h1>Santa Clara County <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
+      <div><h1>Santa Clara <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
       <small>Santa Clara County permit experience · Student prototype</small>
     </section>
     <section className="role-main" aria-labelledby="worker-login-title">

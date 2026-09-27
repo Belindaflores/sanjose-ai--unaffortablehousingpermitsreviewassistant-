@@ -26,28 +26,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
-  /me:
-    get:
-      operationId: getCurrentIdentity
-      tags: [permit-applications]
-      summary: Return the signed-in account's server-verified portal role
-      security: [{ clerkSession: [] }]
-      responses:
-        "200":
-          description: Verified identity
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PortalIdentity"
-        "401":
-          description: Sign in required
   /permit-applications:
     get:
       operationId: listPermitApplications
       tags: [permit-applications]
       summary: List saved permit applications
-      description: Authenticated applicants see only their own records. Authorized workers see the entire queue. Unowned legacy records are staff-only.
-      security: [{ clerkSession: [] }]
+      description: Returns saved permit applications newest first. Applicant demo views can filter by email; this is not authentication.
+      parameters:
+        - name: applicantEmail
+          in: query
+          required: false
+          schema:
+            type: string
+            format: email
       responses:
         "200":
           description: Saved permit applications
@@ -61,8 +52,7 @@ paths:
       operationId: createPermitApplication
       tags: [permit-applications]
       summary: Save a screened permit application
-      description: Applicants only. The server assigns ownership from the verified session and initializes review status and staff notes.
-      security: [{ clerkSession: [] }]
+      description: Persists applicant input and the rule-based pre-screening output.
       requestBody:
         required: true
         content:
@@ -83,8 +73,7 @@ paths:
       operationId: updatePermitApplication
       tags: [permit-applications]
       summary: Update a saved permit application
-      description: Authorized workers only. Persists review status, department, timeline, and staff notes; applicant and owner fields cannot be changed.
-      security: [{ clerkSession: [] }]
+      description: Persists County staff review actions and notes for an application.
       parameters:
         - name: id
           in: path
@@ -96,7 +85,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PermitReviewUpdate"
+              $ref: "#/components/schemas/PermitApplication"
       responses:
         "200":
           description: Updated permit application
@@ -107,34 +96,7 @@ paths:
         "404":
           description: Saved permit application not found
 components:
-  securitySchemes:
-    clerkSession:
-      type: apiKey
-      in: cookie
-      name: __session
   schemas:
-    PortalIdentity:
-      type: object
-      properties:
-        userId: { type: string }
-        role: { type: string, enum: [applicant, worker] }
-      required: [userId, role]
-    PermitReviewUpdate:
-      type: object
-      properties:
-        reviewStatus:
-          type: string
-          enum: [New, In County Intake, Ready for Review, More Information Requested, Planning Review, Building Review, Fire Review, Environmental Review, Senior Review, Approved, Denied, Revisions Required]
-        assignedDepartment:
-          type: string
-        timeline:
-          type: array
-          items:
-            $ref: "#/components/schemas/PermitTimelineEvent"
-        notes:
-          type: array
-          items:
-            $ref: "#/components/schemas/PermitStaffNote"
     HealthStatus:
       type: object
       properties:
