@@ -74,6 +74,7 @@ export const PermitApplicationReviewStatus = {
   Environmental_Review: 'Environmental Review',
   Senior_Review: 'Senior Review',
   Approved: 'Approved',
+  Denied: 'Denied',
   Revisions_Required: 'Revisions Required',
 } as const;
 
@@ -108,4 +109,8 @@ export interface PermitApplication {
   timeline: PermitTimelineEvent[];
   notes: PermitStaffNote[];
 }
+
+export type ListPermitApplicationsParams = {
+applicantEmail?: string;
+};
 

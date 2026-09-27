@@ -31,7 +31,14 @@ paths:
       operationId: listPermitApplications
       tags: [permit-applications]
       summary: List saved permit applications
-      description: Returns saved permit applications newest first.
+      description: Returns saved permit applications newest first. Applicant demo views can filter by email; this is not authentication.
+      parameters:
+        - name: applicantEmail
+          in: query
+          required: false
+          schema:
+            type: string
+            format: email
       responses:
         "200":
           description: Saved permit applications
@@ -198,6 +205,7 @@ components:
             - Environmental Review
             - Senior Review
             - Approved
+            - Denied
             - Revisions Required
         completenessScore:
           type: integer

@@ -21,6 +21,7 @@ import type {
 
 import type {
   HealthStatus,
+  ListPermitApplicationsParams,
   PermitApplication
 } from './api.schemas';
 
@@ -129,21 +130,28 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
-export const getListPermitApplicationsUrl = () => {
+export const getListPermitApplicationsUrl = (params?: ListPermitApplicationsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/permit-applications`
+  return stringifiedParams.length > 0 ? `/api/permit-applications?${stringifiedParams}` : `/api/permit-applications`
 }
 
 /**
- * Returns saved permit applications newest first.
+ * Returns saved permit applications newest first. Applicant demo views can filter by email; this is not authentication.
  * @summary List saved permit applications
  */
-export const listPermitApplications = async ( options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication[]> => {
+export const listPermitApplications = async (params?: ListPermitApplicationsParams, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication[]> => {
 
-  return customFetch<PermitApplication[]>(getListPermitApplicationsUrl(),
+  return customFetch<PermitApplication[]>(getListPermitApplicationsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -156,23 +164,23 @@ export const listPermitApplications = async ( options?: Parameters<typeof custom
 
 
 
-export const getListPermitApplicationsQueryKey = () => {
+export const getListPermitApplicationsQueryKey = (params?: ListPermitApplicationsParams,) => {
     return [
-    `/api/permit-applications`
+    `/api/permit-applications`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListPermitApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof listPermitApplications>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPermitApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListPermitApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof listPermitApplications>>, TError = ErrorType<unknown>>(params?: ListPermitApplicationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPermitApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListPermitApplicationsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListPermitApplicationsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPermitApplications>>> = ({ signal }) => listPermitApplications({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPermitApplications>>> = ({ signal }) => listPermitApplications(params, { signal, ...requestOptions });
 
 
 
@@ -190,11 +198,11 @@ export type ListPermitApplicationsQueryError = ErrorType<unknown>
  */
 
 export function useListPermitApplications<TData = Awaited<ReturnType<typeof listPermitApplications>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPermitApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListPermitApplicationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPermitApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListPermitApplicationsQueryOptions(options)
+  const queryOptions = getListPermitApplicationsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -4,6 +4,7 @@ import { db, permitApplicationsTable } from "@workspace/db";
 import {
   CreatePermitApplicationBody,
   CreatePermitApplicationResponse,
+  ListPermitApplicationsQueryParams,
   ListPermitApplicationsResponse,
   UpdatePermitApplicationBody,
   UpdatePermitApplicationParams,
@@ -44,10 +45,16 @@ function toResponse(row: PermitRow) {
   };
 }
 
-router.get("/permit-applications", async (_req, res): Promise<void> => {
+router.get("/permit-applications", async (req, res): Promise<void> => {
+  const parsed = ListPermitApplicationsQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
   const rows = await db
     .select()
     .from(permitApplicationsTable)
+    .where(parsed.data.applicantEmail ? eq(permitApplicationsTable.email, parsed.data.applicantEmail) : undefined)
     .orderBy(desc(permitApplicationsTable.submittedAt));
 
   res.json(ListPermitApplicationsResponse.parse(rows.map(toResponse)));

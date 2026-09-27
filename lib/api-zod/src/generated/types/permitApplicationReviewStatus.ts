@@ -20,5 +20,6 @@ export const PermitApplicationReviewStatus = {
   Environmental_Review: 'Environmental Review',
   Senior_Review: 'Senior Review',
   Approved: 'Approved',
+  Denied: 'Denied',
   Revisions_Required: 'Revisions Required',
 } as const;

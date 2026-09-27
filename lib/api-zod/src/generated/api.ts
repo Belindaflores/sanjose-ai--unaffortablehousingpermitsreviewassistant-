@@ -18,9 +18,13 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * Returns saved permit applications newest first.
+ * Returns saved permit applications newest first. Applicant demo views can filter by email; this is not authentication.
  * @summary List saved permit applications
  */
+export const ListPermitApplicationsQueryParams = zod.object({
+  "applicantEmail": zod.coerce.string().email().optional()
+})
+
 export const listPermitApplicationsResponseCompletenessScoreMin = 0;
 export const listPermitApplicationsResponseCompletenessScoreMax = 100;
 
@@ -44,7 +48,7 @@ export const ListPermitApplicationsResponseItem = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Revisions Required']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required']),
   "completenessScore": zod.number().int().min(listPermitApplicationsResponseCompletenessScoreMin).max(listPermitApplicationsResponseCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -100,7 +104,7 @@ export const CreatePermitApplicationBody = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Revisions Required']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required']),
   "completenessScore": zod.number().int().min(createPermitApplicationBodyCompletenessScoreMin).max(createPermitApplicationBodyCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -150,7 +154,7 @@ export const CreatePermitApplicationResponse = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Revisions Required']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required']),
   "completenessScore": zod.number().int().min(createPermitApplicationResponseCompletenessScoreMin).max(createPermitApplicationResponseCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -209,7 +213,7 @@ export const UpdatePermitApplicationBody = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Revisions Required']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required']),
   "completenessScore": zod.number().int().min(updatePermitApplicationBodyCompletenessScoreMin).max(updatePermitApplicationBodyCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -259,7 +263,7 @@ export const UpdatePermitApplicationResponse = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Revisions Required']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required']),
   "completenessScore": zod.number().int().min(updatePermitApplicationResponseCompletenessScoreMin).max(updatePermitApplicationResponseCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),

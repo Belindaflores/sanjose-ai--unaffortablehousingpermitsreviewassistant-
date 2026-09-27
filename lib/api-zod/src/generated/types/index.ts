@@ -7,6 +7,7 @@
  */
 
 export * from './healthStatus';
+export * from './listPermitApplicationsParams';
 export * from './permitApplication';
 export * from './permitApplicationAiStatus';
 export * from './permitApplicationPriority';

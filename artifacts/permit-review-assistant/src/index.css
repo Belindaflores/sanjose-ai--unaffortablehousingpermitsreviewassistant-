@@ -470,3 +470,38 @@ tbody tr:hover { background: #edf5fa; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Role-based demo portal additions */
+.side-role { display: inline-block; margin-top: 15px; padding: 6px 9px; border: 1px solid rgba(245,179,53,.72); color: #ffe2a1; font-size: 11px; font-weight: 800; letter-spacing: .015em; }
+.topbar { flex-wrap: wrap; }
+.portal-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+.portal-label { color: #fff; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.switch-role { border: 1px solid #eac377; border-radius: 3px; background: transparent; color: #ffe2a1; padding: 8px 11px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.switch-role:hover { background: #185a7d; color: #fff; }
+.switch-role:focus-visible { outline: 3px solid #f5b335; outline-offset: 3px; }
+.section-intro { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px 16px; margin: 0 0 12px; }
+.section-intro h2, .section-intro p { margin: 0; }
+.record-search { margin-bottom: 17px; border-radius: 4px; }
+.record-search .search-wrap { max-width: 580px; }
+.doc-upload { position: relative; cursor: pointer; overflow: hidden; flex: none; }
+.doc-upload input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.doc-upload:focus-within { outline: 3px solid #f5b335; outline-offset: 3px; }
+.doc-row > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+.staff-guide { display: grid; gap: 15px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 20px; }
+.staff-guide .card { padding: 20px 22px; }
+.staff-guide .check-list { list-style: decimal; padding-left: 18px; }
+.staff-guide .check-list li { display: list-item; line-height: 1.55; }
+@media (max-width: 1000px) {
+  .topbar { gap: 8px 12px; }
+  .portal-controls { gap: 7px; }
+  .prototype-badge { font-size: 9px; }
+}
+@media (max-width: 720px) {
+  .topbar { height: auto; min-height: 63px; }
+  .crumb { flex: 1; min-width: 0; }
+  .portal-controls { width: 100%; justify-content: space-between; padding: 4px 0 0 46px; }
+  .portal-label { white-space: normal; }
+  .side-role { margin-top: 9px; }
+  .staff-guide { grid-template-columns: 1fr; }
+  .doc-row { flex-wrap: wrap; }
+}
