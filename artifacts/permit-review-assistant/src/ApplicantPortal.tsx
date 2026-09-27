@@ -52,7 +52,7 @@ export function RoleChooser() {
   return <main className="role-chooser">
     <section className="role-intro" aria-label="Permit Review Assistant introduction">
       <div className="role-brand"><span className="role-mark" aria-hidden="true">SC</span><span>Permit Review<br />Assistant</span></div>
-      <div><h1>A clearer path for <span>your project.</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
+      <div><h1>Santa Clara County <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
       <small>Santa Clara County permit experience · Student prototype</small>
     </section>
     <section className="role-main" aria-labelledby="role-title">
@@ -90,7 +90,7 @@ export function WorkerLoginPage({ onContinue, onBack }: { onContinue: () => void
   return <main className="role-chooser worker-login">
     <section className="role-intro" aria-label="Permit Review Assistant introduction">
       <div className="role-brand"><span className="role-mark" aria-hidden="true">SC</span><span>Permit Review<br />Assistant</span></div>
-      <div><h1>Santa Clara <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
+      <div><h1>Santa Clara County <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
       <small>Santa Clara County permit experience · Student prototype</small>
     </section>
     <section className="role-main" aria-labelledby="worker-login-title">
