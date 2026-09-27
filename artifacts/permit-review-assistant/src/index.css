@@ -418,6 +418,8 @@ tbody tr:hover { background: #edf5fa; }
 .empty { color: #506b79; }
 .empty svg { color: #0067a5; }
 .record-card:hover { border-color: #0067a5; transform: none; background: #fbfdfe; }
+.record-source { display: inline-flex; margin-left: 9px; padding: 3px 7px; border: 1px solid #b7d0df; background: #edf5f9; color: #285b76; vertical-align: middle; font-size: 10px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+.record-source.demo { border-color: #e4c676; background: #fff8e8; color: #78531c; }
 .record-top > svg { color: #0067a5; }
 .record-summary { background: #edf5f9; border-left-color: #0067a5; }
 .record-summary p { color: #294d60; }
