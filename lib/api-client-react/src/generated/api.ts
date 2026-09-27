@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CountyPublicRecord,
   HealthStatus,
   ListPermitApplicationsParams,
   PermitApplication
@@ -123,13 +124,6 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-
-
 export const getListPermitApplicationsUrl = (params?: ListPermitApplicationsParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -394,3 +388,74 @@ export const useUpdatePermitApplication = <TError = ErrorType<void>,
       return useMutation(getUpdatePermitApplicationMutationOptions(options));
     }
 
+export const getListCountyPublicRecordsUrl = () => {
+
+
+
+
+  return `/api/county-public-records`
+}
+
+/**
+ * Returns records imported from the County of Santa Clara Open Data SCC Plan Check Progress dataset.
+ * @summary List imported County public plan-check records
+ */
+export const listCountyPublicRecords = async ( options?: Parameters<typeof customFetch>[1]): Promise<CountyPublicRecord[]> => {
+
+  return customFetch<CountyPublicRecord[]>(getListCountyPublicRecordsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCountyPublicRecordsQueryKey = () => {
+    return [
+    `/api/county-public-records`
+    ] as const;
+    }
+
+
+export const getListCountyPublicRecordsQueryOptions = <TData = Awaited<ReturnType<typeof listCountyPublicRecords>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCountyPublicRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCountyPublicRecordsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCountyPublicRecords>>> = ({ signal }) => listCountyPublicRecords({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCountyPublicRecords>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCountyPublicRecordsQueryResult = NonNullable<Awaited<ReturnType<typeof listCountyPublicRecords>>>
+export type ListCountyPublicRecordsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List imported County public plan-check records
+ */
+
+export function useListCountyPublicRecords<TData = Awaited<ReturnType<typeof listCountyPublicRecords>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCountyPublicRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCountyPublicRecordsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}

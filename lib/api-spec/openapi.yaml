@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: permit-applications
     description: Persistent permit application records
+  - name: county-public-records
+    description: Public records imported from the County of Santa Clara Open Data portal
 paths:
   /healthz:
     get:
@@ -95,6 +97,21 @@ paths:
                 $ref: "#/components/schemas/PermitApplication"
         "404":
           description: Saved permit application not found
+  /county-public-records:
+    get:
+      operationId: listCountyPublicRecords
+      tags: [county-public-records]
+      summary: List imported County public plan-check records
+      description: Returns records imported from the County of Santa Clara Open Data SCC Plan Check Progress dataset.
+      responses:
+        "200":
+          description: County public records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CountyPublicRecord"
 components:
   schemas:
     HealthStatus:
@@ -152,6 +169,9 @@ components:
       properties:
         id:
           type: string
+        dataSource:
+          type: string
+          enum: [Prototype Submission, Synthetic]
         applicantName:
           type: string
         companyName:
@@ -259,4 +279,71 @@ components:
         - recommendedRouting
         - timeline
         - notes
+    CountyPublicRecord:
+      type: object
+      properties:
+        sourceRecordId:
+          type: string
+        dataSource:
+          type: string
+          enum: [County of Santa Clara Open Data]
+        datasetName:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        businessName:
+          type: ["string", "null"]
+        siteLocation:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        receivedDate:
+          type: ["string", "null"]
+          format: date
+        dueDate:
+          type: ["string", "null"]
+          format: date
+        revisionRequestedDate:
+          type: ["string", "null"]
+          format: date
+        revisionSubmittedDate:
+          type: ["string", "null"]
+          format: date
+        latestRevisionRequestedDate:
+          type: ["string", "null"]
+          format: date
+        latestRevisionSubmittedDate:
+          type: ["string", "null"]
+          format: date
+        planApprovedDate:
+          type: ["string", "null"]
+          format: date
+        preliminaryInspectionDate:
+          type: ["string", "null"]
+          format: date
+        finalInspectionDate:
+          type: ["string", "null"]
+          format: date
+        serviceCompleteDate:
+          type: ["string", "null"]
+          format: date
+      required:
+        - sourceRecordId
+        - dataSource
+        - datasetName
+        - sourceUrl
+        - businessName
+        - siteLocation
+        - city
+        - receivedDate
+        - dueDate
+        - revisionRequestedDate
+        - revisionSubmittedDate
+        - latestRevisionRequestedDate
+        - latestRevisionSubmittedDate
+        - planApprovedDate
+        - preliminaryInspectionDate
+        - finalInspectionDate
+        - serviceCompleteDate
 

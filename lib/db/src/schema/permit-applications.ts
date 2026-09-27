@@ -35,6 +35,7 @@ type PermitStaffNote = {
 
 export const permitApplicationsTable = pgTable("permit_applications", {
   id: text("id").primaryKey(),
+  dataSource: text("data_source").notNull().default("Prototype Submission"),
   applicantName: text("applicant_name").notNull(),
   companyName: text("company_name").notNull(),
   email: text("email").notNull(),

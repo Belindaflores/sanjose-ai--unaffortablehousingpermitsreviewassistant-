@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PermitApplicationAiStatus } from './permitApplicationAiStatus';
+import type { PermitApplicationDataSource } from './permitApplicationDataSource';
 import type { PermitApplicationPriority } from './permitApplicationPriority';
 import type { PermitApplicationReviewStatus } from './permitApplicationReviewStatus';
 import type { PermitDocument } from './permitDocument';
@@ -14,6 +15,7 @@ import type { PermitTimelineEvent } from './permitTimelineEvent';
 
 export interface PermitApplication {
   id: string;
+  dataSource?: PermitApplicationDataSource;
   applicantName: string;
   companyName: string;
   email: string;

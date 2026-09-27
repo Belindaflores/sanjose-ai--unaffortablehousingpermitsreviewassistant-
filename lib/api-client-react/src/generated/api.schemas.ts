@@ -41,6 +41,14 @@ export interface PermitStaffNote {
   createdAt: string;
 }
 
+export type PermitApplicationDataSource = typeof PermitApplicationDataSource[keyof typeof PermitApplicationDataSource];
+
+
+export const PermitApplicationDataSource = {
+  Prototype_Submission: 'Prototype Submission',
+  Synthetic: 'Synthetic',
+} as const;
+
 export type PermitApplicationAiStatus = typeof PermitApplicationAiStatus[keyof typeof PermitApplicationAiStatus];
 
 
@@ -80,6 +88,7 @@ export const PermitApplicationReviewStatus = {
 
 export interface PermitApplication {
   id: string;
+  dataSource?: PermitApplicationDataSource;
   applicantName: string;
   companyName: string;
   email: string;
@@ -108,6 +117,46 @@ export interface PermitApplication {
   recommendedRouting: string[];
   timeline: PermitTimelineEvent[];
   notes: PermitStaffNote[];
+}
+
+export type CountyPublicRecordDataSource = typeof CountyPublicRecordDataSource[keyof typeof CountyPublicRecordDataSource];
+
+
+export const CountyPublicRecordDataSource = {
+  County_of_Santa_Clara_Open_Data: 'County of Santa Clara Open Data',
+} as const;
+
+export interface CountyPublicRecord {
+  sourceRecordId: string;
+  dataSource: CountyPublicRecordDataSource;
+  datasetName: string;
+  sourceUrl: string;
+  /** @nullable */
+  businessName: string | null;
+  /** @nullable */
+  siteLocation: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @nullable */
+  receivedDate: string | null;
+  /** @nullable */
+  dueDate: string | null;
+  /** @nullable */
+  revisionRequestedDate: string | null;
+  /** @nullable */
+  revisionSubmittedDate: string | null;
+  /** @nullable */
+  latestRevisionRequestedDate: string | null;
+  /** @nullable */
+  latestRevisionSubmittedDate: string | null;
+  /** @nullable */
+  planApprovedDate: string | null;
+  /** @nullable */
+  preliminaryInspectionDate: string | null;
+  /** @nullable */
+  finalInspectionDate: string | null;
+  /** @nullable */
+  serviceCompleteDate: string | null;
 }
 
 export type ListPermitApplicationsParams = {

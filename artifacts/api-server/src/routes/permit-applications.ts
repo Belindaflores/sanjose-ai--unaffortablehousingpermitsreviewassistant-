@@ -23,6 +23,7 @@ function asIso(value: string | Date) {
 function toValues(application: PermitInput) {
   return {
     ...application,
+    dataSource: "Prototype Submission",
     submittedAt: new Date(application.submittedAt),
     documents: application.documents.map((document) => ({
       ...document,
@@ -70,7 +71,7 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
 
   const [saved] = await db
     .insert(permitApplicationsTable)
-    .values(toValues(parsed.data))
+    .values({ ...toValues(parsed.data), dataSource: "Prototype Submission" })
     .onConflictDoNothing()
     .returning();
 
@@ -104,7 +105,7 @@ router.patch("/permit-applications/:id", async (req, res): Promise<void> => {
 
   const [saved] = await db
     .update(permitApplicationsTable)
-    .set(toValues(body.data))
+    .set({ ...toValues(body.data), dataSource: "Prototype Submission" })
     .where(eq(permitApplicationsTable.id, params.data.id))
     .returning();
 

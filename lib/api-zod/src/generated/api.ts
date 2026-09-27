@@ -32,6 +32,7 @@ export const listPermitApplicationsResponseCompletenessScoreMax = 100;
 
 export const ListPermitApplicationsResponseItem = zod.object({
   "id": zod.string(),
+  "dataSource": zod.enum(['Prototype Submission', 'Synthetic']).optional(),
   "applicantName": zod.string(),
   "companyName": zod.string(),
   "email": zod.string().email(),
@@ -88,6 +89,7 @@ export const createPermitApplicationBodyCompletenessScoreMax = 100;
 
 export const CreatePermitApplicationBody = zod.object({
   "id": zod.string(),
+  "dataSource": zod.enum(['Prototype Submission', 'Synthetic']).optional(),
   "applicantName": zod.string(),
   "companyName": zod.string(),
   "email": zod.string().email(),
@@ -138,6 +140,7 @@ export const createPermitApplicationResponseCompletenessScoreMax = 100;
 
 export const CreatePermitApplicationResponse = zod.object({
   "id": zod.string(),
+  "dataSource": zod.enum(['Prototype Submission', 'Synthetic']).optional(),
   "applicantName": zod.string(),
   "companyName": zod.string(),
   "email": zod.string().email(),
@@ -197,6 +200,7 @@ export const updatePermitApplicationBodyCompletenessScoreMax = 100;
 
 export const UpdatePermitApplicationBody = zod.object({
   "id": zod.string(),
+  "dataSource": zod.enum(['Prototype Submission', 'Synthetic']).optional(),
   "applicantName": zod.string(),
   "companyName": zod.string(),
   "email": zod.string().email(),
@@ -247,6 +251,7 @@ export const updatePermitApplicationResponseCompletenessScoreMax = 100;
 
 export const UpdatePermitApplicationResponse = zod.object({
   "id": zod.string(),
+  "dataSource": zod.enum(['Prototype Submission', 'Synthetic']).optional(),
   "applicantName": zod.string(),
   "companyName": zod.string(),
   "email": zod.string().email(),
@@ -289,5 +294,31 @@ export const UpdatePermitApplicationResponse = zod.object({
   "createdAt": zod.coerce.date()
 }))
 })
+
+
+/**
+ * Returns records imported from the County of Santa Clara Open Data SCC Plan Check Progress dataset.
+ * @summary List imported County public plan-check records
+ */
+export const ListCountyPublicRecordsResponseItem = zod.object({
+  "sourceRecordId": zod.string(),
+  "dataSource": zod.enum(['County of Santa Clara Open Data']),
+  "datasetName": zod.string(),
+  "sourceUrl": zod.string().url(),
+  "businessName": zod.string().nullable(),
+  "siteLocation": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "receivedDate": zod.coerce.date().nullable(),
+  "dueDate": zod.coerce.date().nullable(),
+  "revisionRequestedDate": zod.coerce.date().nullable(),
+  "revisionSubmittedDate": zod.coerce.date().nullable(),
+  "latestRevisionRequestedDate": zod.coerce.date().nullable(),
+  "latestRevisionSubmittedDate": zod.coerce.date().nullable(),
+  "planApprovedDate": zod.coerce.date().nullable(),
+  "preliminaryInspectionDate": zod.coerce.date().nullable(),
+  "finalInspectionDate": zod.coerce.date().nullable(),
+  "serviceCompleteDate": zod.coerce.date().nullable()
+})
+export const ListCountyPublicRecordsResponse = zod.array(ListCountyPublicRecordsResponseItem)
 
 

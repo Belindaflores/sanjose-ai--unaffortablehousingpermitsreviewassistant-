@@ -6,10 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './countyPublicRecord';
+export * from './countyPublicRecordDataSource';
 export * from './healthStatus';
 export * from './listPermitApplicationsParams';
 export * from './permitApplication';
 export * from './permitApplicationAiStatus';
+export * from './permitApplicationDataSource';
 export * from './permitApplicationPriority';
 export * from './permitApplicationReviewStatus';
 export * from './permitDocument';
