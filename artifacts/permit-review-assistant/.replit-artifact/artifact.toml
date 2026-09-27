@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Santa Clara Permit Review Assistant"
+title = "Santa Clara County Permit Portal"
 description = "A functional student prototype for AI-assisted building permit intake, screening, routing, and human review for Santa Clara County staff."
 version = "1.0.0"
 id = "artifacts/permit-review-assistant"

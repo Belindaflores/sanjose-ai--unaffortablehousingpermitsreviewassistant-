@@ -63,7 +63,7 @@ const timelineFor = (status: ReviewStatus, extraAgency = false): TimelineEvent[]
   const currentIndex = status === 'New' ? 1 : status === 'In County Intake' ? 2 : status === 'Planning Review' ? 3 : status === 'Building Review' ? 4 : ['Approved', 'Denied', 'Revisions Required'].includes(status) ? 6 : 2;
   const result: TimelineEvent[] = stages.map((label, i) => ({
     label, status: i < currentIndex ? 'completed' : i === currentIndex ? 'current' : 'upcoming',
-    date: i <= currentIndex ? dateAt(Math.max(0, 5 - i)) : '', detail: i === 0 ? 'Application received by the Permit Review Assistant.' : i === 1 ? 'Rule-based completeness and routing suggestions generated.' : `${label} review step.`,
+    date: i <= currentIndex ? dateAt(Math.max(0, 5 - i)) : '', detail: i === 0 ? 'Application received by the Santa Clara County Permit Portal.' : i === 1 ? 'Rule-based completeness and routing suggestions generated.' : `${label} review step.`,
   }));
   if (extraAgency) result.push({ label: 'Additional agency review', status: currentIndex >= 5 ? 'current' : 'upcoming', date: '', detail: 'Potential Fire Marshal or Environmental Health review.' });
   result.push({ label: 'Final County decision', status: ['Approved', 'Denied', 'Revisions Required'].includes(status) ? 'completed' : 'upcoming', date: ['Approved', 'Denied', 'Revisions Required'].includes(status) ? dateAt(0) : '', detail: 'Authorized County personnel make the final decision.' });
@@ -177,7 +177,7 @@ function AppShell({ children, role, onSwitch }: { children: React.ReactNode; rol
   const current = location === '/' ? '/' : location.startsWith('/applications/') || location === '/new-application' ? '/applications' : location;
   return <div className="app-shell">
     <aside className={`side-nav ${menu ? 'open' : ''}`}>
-      <div className="brand"><div className="brand-mark">SC</div><div className="brand-name">Permit Review Assistant</div><div className="brand-subtitle">Santa Clara County · prototype</div><div className="side-role" data-testid="label-current-role">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</div></div>
+      <div className="brand"><div className="brand-mark">SC</div><div className="brand-name">Santa Clara County Permit Portal</div><div className="brand-subtitle">Student prototype</div><div className="side-role" data-testid="label-current-role">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</div></div>
       <nav className="nav-area" aria-label="Main navigation"><div className="nav-label">Workspace</div>{links.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setMenu(false)} className={`nav-link ${current === href ? 'active' : ''}`} data-testid={`link-${label.toLowerCase().replaceAll(' ', '-')}`}><Icon /><span>{label}</span></Link>)}</nav>
       <div className="side-footer"><div className="staff-chip"><div className="staff-avatar">{role === 'worker' ? 'JL' : 'DA'}</div><div><strong>{role === 'worker' ? 'Jordan Lee' : 'Demo Applicant'}</strong><span className="staff-role">{role === 'worker' ? 'Permit technician · Demo account' : 'Permit applicant · Demo account'}</span></div></div></div>
     </aside>
