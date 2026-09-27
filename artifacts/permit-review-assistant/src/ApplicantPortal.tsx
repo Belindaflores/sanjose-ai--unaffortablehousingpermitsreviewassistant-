@@ -1,5 +1,9 @@
 import type { PermitApplication } from './App';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Link } from 'wouter';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import {
   ArrowRight, ArrowUpRight, Building2, CheckCircle2, ChevronRight, ClipboardList,
   FilePlus2, FolderOpen, HelpCircle, Info, MapPin, ShieldCheck, UserRound
@@ -68,6 +72,48 @@ export function RoleChooser({ onSelect }: { onSelect: (role: 'applicant' | 'work
         </button>
       </div>
       <div className="role-demo-note"><Info aria-hidden="true" /><span>Role selection is for this demo only. It is not secure authentication and does not verify your identity. This is not an official County website.</span></div>
+    </section>
+  </main>;
+}
+
+const workerDemoSchema = z.object({
+  userId: z.string().trim().min(1, 'Enter a User ID.'),
+  password: z.string().trim().min(1, 'Enter a Password.'),
+});
+
+export function WorkerLoginPage({ onContinue, onBack }: { onContinue: () => void; onBack: () => void }) {
+  const form = useForm<z.infer<typeof workerDemoSchema>>({
+    resolver: zodResolver(workerDemoSchema),
+    defaultValues: { userId: '', password: '' },
+  });
+
+  return <main className="role-chooser worker-login">
+    <section className="role-intro" aria-label="Permit Review Assistant introduction">
+      <div className="role-brand"><span className="role-mark" aria-hidden="true">SC</span><span>Permit Review<br />Assistant</span></div>
+      <div><h1>Santa Clara <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
+      <small>Santa Clara County permit experience · Student prototype</small>
+    </section>
+    <section className="role-main" aria-labelledby="worker-login-title">
+      <p className="ap-kicker">City Worker Portal</p>
+      <h2 id="worker-login-title">City Worker demo sign-in</h2>
+      <p>Enter a User ID and Password to explore the staff review workspace.</p>
+      <Form {...form}>
+        <form className="worker-login-form" onSubmit={form.handleSubmit(() => { form.reset(); onContinue(); })} noValidate>
+          <FormField control={form.control} name="userId" render={({ field }) => <FormItem>
+            <FormLabel>User ID</FormLabel>
+            <FormControl><input {...field} className="worker-login-input" autoComplete="off" placeholder="Enter a demo User ID" data-testid="input-worker-user-id" /></FormControl>
+            <FormMessage />
+          </FormItem>} />
+          <FormField control={form.control} name="password" render={({ field }) => <FormItem>
+            <FormLabel>Password</FormLabel>
+            <FormControl><input {...field} type="password" className="worker-login-input" autoComplete="off" placeholder="Enter a demo password" data-testid="input-worker-password" /></FormControl>
+            <FormMessage />
+          </FormItem>} />
+          <button type="submit" className="worker-login-submit" data-testid="button-worker-sign-in">Continue to City Worker Portal <ArrowRight aria-hidden="true" /></button>
+        </form>
+      </Form>
+      <button type="button" className="worker-login-back" onClick={onBack} data-testid="button-back-to-role-selection">Back to role selection</button>
+      <div className="role-demo-note"><Info aria-hidden="true" /><span>Demo only. Use made-up values, not a real password. Any non-empty User ID and Password will continue; these fields do not verify identity or protect records. This is not an official County website.</span></div>
     </section>
   </main>;
 }

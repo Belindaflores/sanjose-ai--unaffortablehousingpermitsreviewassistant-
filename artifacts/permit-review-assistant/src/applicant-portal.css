@@ -111,6 +111,16 @@
 .role-choice > svg { width: 19px; height: 19px; flex: none; color: #0067a5; }
 .role-demo-note { display: flex; align-items: flex-start; gap: 9px; margin-top: 23px; padding: 13px 15px; border-left: 3px solid #d49b2d; background: #fff9ed; color: #665226; font-size: 12px; line-height: 1.6; }
 .role-demo-note svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+.worker-login-form { display: grid; gap: 19px; padding: 25px; background: #fff; border: 1px solid #c7d9e3; border-radius: 4px; box-shadow: 0 3px 15px rgba(0,59,92,.05); }
+.worker-login-form label { display: block; margin-bottom: 7px; color: #21485c; font-size: 12px; font-weight: 800; }
+.worker-login-input { display: block; width: 100%; min-height: 46px; padding: 10px 13px; border: 1px solid #9db5c3; border-radius: 3px; background: #fff; color: #153d53; font: inherit; font-size: 14px; }
+.worker-login-input::placeholder { color: #617985; }
+.worker-login-input:focus-visible, .worker-login-submit:focus-visible, .worker-login-back:focus-visible { outline: 3px solid #f5b335; outline-offset: 2px; }
+.worker-login-submit { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 47px; padding: 10px 16px; background: #0067a5; border: 1px solid #0067a5; border-radius: 3px; color: #fff; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.worker-login-submit:hover { background: #004d7b; }
+.worker-login-submit svg { width: 17px; height: 17px; }
+.worker-login-back { align-self: flex-start; margin-top: 19px; padding: 5px 0; background: none; border: 0; color: #0067a5; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.worker-login-back:hover { text-decoration: underline; }
 @media (max-width: 850px) {
   .ap-overview-grid, .ap-guidance-grid, .ap-detail-grid { grid-template-columns: 1fr; }
   .role-chooser { grid-template-columns: 1fr; }
@@ -130,6 +140,7 @@
   .ap-actions, .ap-actions .ap-btn { width: 100%; }
   .role-intro { padding: 30px 24px; }
   .role-main { padding: 38px 22px 55px; }
+  .worker-login-form { padding: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ap-btn, .ap-record, .role-choice { transition: none; }

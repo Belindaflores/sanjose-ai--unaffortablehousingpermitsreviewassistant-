@@ -6,7 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { getListPermitApplicationsQueryKey, useCreatePermitApplication, useListPermitApplications, useUpdatePermitApplication } from '@workspace/api-client-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import NotFound from '@/pages/not-found';
-import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, ApplicantHelpPage, ApplicantRecordsPage, RoleChooser } from './ApplicantPortal';
+import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, ApplicantHelpPage, ApplicantRecordsPage, RoleChooser, WorkerLoginPage } from './ApplicantPortal';
 import { WorkerAnalytics } from './WorkerAnalytics';
 import {
   Activity, AlertCircle, BarChart3, Bell, Building2, Check, CheckCircle2, ChevronRight,
@@ -18,7 +18,7 @@ import {
 const queryClient = new QueryClient();
 const STORE_KEY = 'scc-permit-review-applications-v1';
 const APPLICANT_STORE_KEY = 'scc-permit-demo-applicant-v1';
-const ROLE_KEY = 'scc-permit-demo-role-v1';
+const ROLE_KEY = 'scc-permit-demo-role-v2';
 type PortalRole = 'applicant' | 'worker';
 const DEMO_APPLICANT = { name: 'Demo Applicant', email: 'demo.applicant@example.com', company: 'Personal project' };
 
@@ -361,6 +361,7 @@ function RouterView() {
   const [applications, setApplications] = useState<PermitApplication[]>(readApplications);
   const [applicantApplications, setApplicantApplications] = useState<PermitApplication[]>(readApplicantApplications);
   const [role, setRole] = useState<PortalRole | null>(readRole);
+  const [showWorkerLogin, setShowWorkerLogin] = useState(false);
   const [, setLocation] = useLocation();
   const [, detailParams] = useRoute('/applications/:id');
   const applicantFilter = role === 'applicant' ? { applicantEmail: DEMO_APPLICANT.email } : undefined;
@@ -404,9 +405,15 @@ function RouterView() {
     setApplicantApplications(prev => prev.map(item => item.id === application.id ? application : item));
   };
   const reset = () => setApplications(seedApplications());
-  const chooseRole = (selected: PortalRole) => { sessionStorage.setItem(ROLE_KEY, selected); queryClient.clear(); setLocation('/'); setRole(selected); };
-  const switchRole = () => { sessionStorage.removeItem(ROLE_KEY); queryClient.clear(); setLocation('/'); setRole(null); };
-  if (!role) return <RoleChooser onSelect={chooseRole} />;
+  const chooseRole = (selected: PortalRole) => {
+    if (selected === 'worker') { setLocation('/'); setShowWorkerLogin(true); return; }
+    sessionStorage.setItem(ROLE_KEY, selected); queryClient.clear(); setLocation('/'); setRole(selected);
+  };
+  const enterWorker = () => {
+    sessionStorage.setItem(ROLE_KEY, 'worker'); queryClient.clear(); setLocation('/'); setRole('worker'); setShowWorkerLogin(false);
+  };
+  const switchRole = () => { sessionStorage.removeItem(ROLE_KEY); queryClient.clear(); setLocation('/'); setRole(null); setShowWorkerLogin(false); };
+  if (!role) return showWorkerLogin ? <WorkerLoginPage onContinue={enterWorker} onBack={() => setShowWorkerLogin(false)} /> : <RoleChooser onSelect={chooseRole} />;
   return <AppShell role={role} onSwitch={switchRole}><Switch>
     <Route path="/">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard applications={workerApplications} />}</Route>
     <Route path="/new-application"><NewApplication role={role} onAdd={add} /></Route>
