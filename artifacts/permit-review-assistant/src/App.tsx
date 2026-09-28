@@ -127,11 +127,14 @@ function seedApplicantApplications(): PermitApplication[] {
     { ...examples[3], id: 'DEMO-APP-002', projectName: 'My Monterey Road ADU', applicantName: DEMO_APPLICANT.name, companyName: DEMO_APPLICANT.company, email: DEMO_APPLICANT.email, notes: [] },
   ];
 }
+// These two submitted records were explicitly removed; discard copies left in older browsers.
+const REMOVED_LOCAL_SUBMISSION_IDS = new Set(['SCC-2026-430034', 'SCC-2026-861117']);
+const withoutRemovedLocalSubmissions = (items: PermitApplication[]) => items.filter(item => !REMOVED_LOCAL_SUBMISSION_IDS.has(item.id));
 const SEEDED_DEMO_IDS = new Set([...seedApplications(), ...seedApplicantApplications()].map(application => application.id));
 function readApplicantApplications(): PermitApplication[] {
   try {
     const saved = localStorage.getItem(APPLICANT_STORE_KEY);
-    return saved ? JSON.parse(saved) as PermitApplication[] : seedApplicantApplications();
+    return saved ? withoutRemovedLocalSubmissions(JSON.parse(saved) as PermitApplication[]) : seedApplicantApplications();
   } catch { return seedApplicantApplications(); }
 }
 function readRole(): PortalRole | null {
@@ -142,9 +145,9 @@ function readRole(): PortalRole | null {
 }
 
 function readApplications(): PermitApplication[] {
-  try { const saved = localStorage.getItem(STORE_KEY); return saved ? JSON.parse(saved) as PermitApplication[] : seedApplications(); } catch { return seedApplications(); }
+  try { const saved = localStorage.getItem(STORE_KEY); return saved ? withoutRemovedLocalSubmissions(JSON.parse(saved) as PermitApplication[]) : seedApplications(); } catch { return seedApplications(); }
 }
-function saveApplications(applications: PermitApplication[]) { localStorage.setItem(STORE_KEY, JSON.stringify(applications)); }
+function saveApplications(applications: PermitApplication[]) { localStorage.setItem(STORE_KEY, JSON.stringify(withoutRemovedLocalSubmissions(applications))); }
 function statusClass(status: string) {
   if (status === 'Denied') return 'status-issue';
   if (status.includes('Missing') || status.includes('Information')) return 'status-missing';
@@ -402,19 +405,19 @@ function RouterView() {
     },
   });
   const visibleApplicantApplications = useMemo(() => {
-    const byId = new Map(applicantApplications.filter(application => application.email === DEMO_APPLICANT.email).map(application => [application.id, application]));
+    const byId = new Map(applicantApplications.filter(application => application.email === DEMO_APPLICANT.email && !REMOVED_LOCAL_SUBMISSION_IDS.has(application.id)).map(application => [application.id, application]));
     for (const record of savedRecords ?? []) {
       if (role === 'applicant' && record.email === DEMO_APPLICANT.email) byId.set(record.id, record);
     }
     return [...byId.values()].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   }, [applicantApplications, savedRecords, role]);
   const workerApplications = useMemo(() => {
-    const byId = new Map([...applications, ...applicantApplications].map(application => [application.id, application]));
+    const byId = new Map(withoutRemovedLocalSubmissions([...applications, ...applicantApplications]).map(application => [application.id, application]));
     for (const record of savedRecords ?? []) byId.set(record.id, record);
     return [...byId.values()].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   }, [applications, applicantApplications, savedRecords]);
   useEffect(() => saveApplications(applications), [applications]);
-  useEffect(() => localStorage.setItem(APPLICANT_STORE_KEY, JSON.stringify(applicantApplications)), [applicantApplications]);
+  useEffect(() => localStorage.setItem(APPLICANT_STORE_KEY, JSON.stringify(withoutRemovedLocalSubmissions(applicantApplications))), [applicantApplications]);
   useEffect(() => {
     const syncDemoRecords = (event: StorageEvent) => {
       if (event.key === APPLICANT_STORE_KEY) setApplicantApplications(readApplicantApplications());
