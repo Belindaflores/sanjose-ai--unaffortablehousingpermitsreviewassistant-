@@ -1,0 +1,58 @@
+I'm fixing 4 failures found during red-teaming of the Santa Clara County Permit Review prototype. Please implement the changes below as deterministic code-level validation and routing rules (not just AI prompt changes), and don't break the existing applicant portal, City Worker portal, or role-based access controls.
+
+---
+
+## FIX 1: Jurisdiction validation (Oakland address was accepted and marked High Priority)
+
+- Add address validation on the New Application form and on the backend submit endpoint (server-side, not just UI).
+- Build a jurisdiction check using the list of cities/unincorporated areas in Santa Clara County (Campbell, Cupertino, Gilroy, Los Altos, Los Altos Hills, Los Gatos, Milpitas, Monte Sereno, Morgan Hill, Mountain View, Palo Alto, San Jose, Santa Clara, Saratoga, Sunnyvale, and unincorporated county), plus a ZIP code allowlist for Santa Clara County.
+- If the address city/ZIP is outside Santa Clara County (e.g., Oakland, CA):
+  - Do NOT create a County application record and do NOT assign any priority.
+  - Show a clear message: "This address appears to be outside Santa Clara County. This portal only accepts projects within County jurisdiction. Please contact the permitting office for the city or county where your project is located."
+  - Log the rejected attempt separately (not in the County review queue).
+- If the address is ambiguous or can't be parsed, set status to "Needs Jurisdiction Verification" and route to a human reviewer instead of auto-accepting.
+- Remove or flag existing seeded/test records with out-of-county addresses (e.g., the Oakland "123 H Street" record) so they don't appear in County Application Records.
+
+## FIX 2: Verify priority claims instead of trusting self-reported checkboxes
+
+- Rename the applicant checkboxes to "Applicant-claimed: Affordable housing project" and "Applicant-claimed: Located in an underserved community."
+- Self-reported claims must NOT automatically raise priority. Instead:
+  - Store them as `claimed_affordable` and `claimed_underserved` with a `verification_status` of "Unverified", "Verified", or "Rejected".
+  - Priority score is only boosted when `verification_status = Verified`.
+  - Unverified claims keep the application at standard priority and add a flag: "Priority claim pending staff verification."
+- Affordable housing claim: require a supporting document upload (e.g., regulatory agreement, funding award letter, or deed restriction) and make the field required when the box is checked.
+- Underserved community claim: auto-check the project's census tract/ZIP against a configurable list of underserved areas (store in a config file/table that County staff can update; seed with placeholder data and label it clearly as placeholder).
+- Add a "Verify priority claims" panel in the City Worker portal where staff can mark each claim Verified or Rejected with a required note. Log who verified and when.
+- In the applicant view, show "Priority claim under review" rather than a High Priority badge until verified.
+
+## FIX 3: Mandatory safety escalation for missing fire/life-safety plan
+
+- Add a deterministic rule that runs after pre-screening, independent of the AI text output:
+  - If the Fire and life safety plan is missing AND the project is multifamily or has 5 or more units (make the threshold a config constant), then:
+    - Add a red "Safety-Critical" flag: "Missing fire/life-safety plan — Fire Marshal review required."
+    - Set `routing` to include Fire Marshal as a REQUIRED reviewer (not just suggested).
+    - Set status to "Blocked — Safety Review Required" so it cannot progress to "Ready for Review" until a Fire Marshal reviewer or City Worker resolves it.
+    - Show a banner at the top of the City Worker view for these applications.
+- The completeness percentage must not display as "complete" or "Ready" when any safety-critical document is missing.
+- Make the same rule extensible so other safety-critical documents can be added to a `SAFETY_CRITICAL_DOCS` config list.
+
+## FIX 4: Detect conflicts between project type and project description (and force human escalation)
+
+- Add a consistency validator that compares the selected project type, unit count, and the free-text project description. Examples of conflicts to catch:
+  - Description mentions "apartment complex," "multifamily," or a unit count of 5 or more, but the type is Single-family, ADU, or Addition.
+  - Description mentions "ADU" or "addition" but the unit count is 20 or more.
+  - Unit count in the description doesn't match the unit count field.
+- Implement it as a rule-based check (keyword and number extraction), and optionally also ask the AI to return a structured `{"conflict": true/false, "reason": "..."}` result. Rule-based flags always win. The AI can add flags but never remove them.
+- When a conflict is found:
+  - Add a flag: "Project classification conflict — human review required," including the specific conflict (e.g., "Selected: ADU; Description: 120-unit apartment complex").
+  - Set status to "Needs Human Review — Data Inconsistency."
+  - The completeness indicator must show "Incomplete — needs clarification" and never 100% with a green "complete" feel.
+  - Show the applicant a message asking them to confirm or correct the project type before it moves forward.
+  - Add a prominent entry in the City Worker queue under a "Needs Human Review" filter.
+
+## General requirements
+
+- All rules must be enforced server-side and unit-tested. Add a small test file with cases for: Oakland address rejected, San Jose address accepted, unverified priority claim not boosting priority, missing fire plan on a 48-unit project triggering required Fire Marshal routing, and a 120-unit complex labeled ADU triggering the conflict flag.
+- Do not change the Access controls: applicants must still only see their own records and City Worker still requires credentials.
+- Keep the "Prototype — Not an Official County System" disclaimers and the "AI recommendations are advisory only" language.
+- After implementing, give me a short summary of what changed and which of my 4 test scenarios now pass.
