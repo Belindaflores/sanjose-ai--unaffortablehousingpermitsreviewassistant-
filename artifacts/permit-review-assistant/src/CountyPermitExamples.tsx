@@ -1,10 +1,11 @@
 import { getListCountyPublicRecordsQueryKey, useListCountyPublicRecords, type CountyPublicRecord } from '@workspace/api-client-react';
 import { ExternalLink, Info, MapPin } from 'lucide-react';
+import { getSharedOfficialApplicant, PUBLIC_HOUSING_SHOWCASE_IDS } from '@workspace/api-zod';
 import './county-permit-examples.css';
 
 // These are existing imported public records, not fabricated applications or
 // records owned by the signed-in applicant. Never merge them into private data.
-const EXAMPLE_IDS = ['2023-081161-MF', '2024-111170-RS'] as const;
+const EXAMPLE_IDS = PUBLIC_HOUSING_SHOWCASE_IDS;
 
 function sourceDate(value: string | null) {
   if (!value) return 'Not reported in source';
@@ -27,12 +28,14 @@ function CountyRecord({ record }: { record: CountyPublicRecord }) {
       <span className="ap-status review">{housing.status} · Source snapshot</span>
     </div>
     <p className="county-example-location"><MapPin size={15} aria-hidden="true" />{record.siteLocation || 'Address not reported in source'}</p>
+    <p className="ap-record-meta" data-testid={`official-applicant-${record.sourceRecordId}`}><strong>Official applicant:</strong> {housing.officialApplicant}</p>
     <p className="ap-record-meta"><strong>{housing.dwellingUnits} housing {housing.dwellingUnits === 1 ? 'unit' : 'units'}</strong> · {housing.projectType} · {housing.workDescription}</p>
     <p className="ap-record-meta">Permit issued {sourceDate(housing.issuedDate)}</p>
     <details className="county-example-details">
       <summary>View source dates and record details</summary>
       <dl>
         <div><dt>Official permit number</dt><dd>{housing.permitNumber}</dd></div>
+         <div><dt>City APPLICANT field</dt><dd>{housing.officialApplicant}</dd></div>
         <div><dt>Housing type</dt><dd>{housing.projectType}</dd></div>
         <div><dt>Dwelling units reported by City</dt><dd>{housing.dwellingUnits}</dd></div>
         <div><dt>Work description</dt><dd>{housing.workDescription}</dd></div>
@@ -51,16 +54,19 @@ function CountyRecord({ record }: { record: CountyPublicRecord }) {
 
 export function CountyPermitExamples() {
   const records = useListCountyPublicRecords({ query: { queryKey: getListCountyPublicRecordsQueryKey(), staleTime: 60_000 } });
-  const examples = EXAMPLE_IDS.map(id => records.data?.find(record => record.sourceRecordId === id && record.housingDetails)).filter((record): record is CountyPublicRecord => !!record);
+  const selected = EXAMPLE_IDS.map(id => records.data?.find(record => record.sourceRecordId === id && record.housingDetails)).filter((record): record is CountyPublicRecord => !!record);
+  const sharedApplicant = getSharedOfficialApplicant(selected);
+  const examples = sharedApplicant ? selected : [];
   return <section className="county-examples" aria-label="Database-backed public housing permit examples" data-testid="county-permit-examples">
     <div className="ap-section-heading"><div>
       <h2>Public housing permit examples</h2>
-      <p>Two authentic housing-construction permits stored from the City of San José’s Active Building Permits dataset.</p>
+      <p>Two authentic housing permits naming the same official applicant in the City of San José’s Active Building Permits dataset.</p>
     </div><span className="ap-status review">Public source · Read-only</span></div>
     <p className="county-example-notice"><Info size={16} aria-hidden="true" /><span>These public examples are for showcasing the portal. They are not submissions by your account and do not expose another applicant’s private records.</span></p>
+    {sharedApplicant && <p className="ap-record-meta" data-testid="shared-official-applicant"><strong>Same official applicant on both permits:</strong> {sharedApplicant}</p>}
     {records.isLoading ? <p role="status">Loading housing permits from the database…</p>
       : records.isError ? <div role="alert">Housing examples could not be loaded. <button className="ap-text-link" onClick={() => records.refetch()}>Retry</button></div>
-      : <>{examples.length !== EXAMPLE_IDS.length && <p role="alert">One or more housing showcase records are missing from the imported City dataset. No pool permits or fictional replacements have been added.</p>}
+       : <>{!sharedApplicant && <p role="alert">The showcase requires both verified housing permits with the same official applicant. A record or matching applicant information is missing; no mixed-applicant, pool, or fictional substitutes are shown.</p>}
         <div className="ap-record-list">{examples.map(record => <CountyRecord key={record.sourceRecordId} record={record} />)}</div></>}
   </section>;
 }

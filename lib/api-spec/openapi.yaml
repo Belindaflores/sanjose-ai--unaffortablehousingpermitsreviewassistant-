@@ -531,6 +531,10 @@ components:
       type: object
       properties:
         permitNumber: { type: string }
+        officialApplicant:
+          type: string
+          minLength: 1
+          description: Applicant explicitly named in the official public permit source; not a portal account or property-owner inference.
         projectType: { type: string }
         workDescription: { type: string }
         dwellingUnits: { type: integer, minimum: 1 }

@@ -949,6 +949,7 @@ export const UpdatePermitApplicationResponse = zod.object({
 
 
 
+
 export const ListCountyPublicRecordsResponseItem = zod.object({
   "sourceRecordId": zod.string(),
   "dataSource": zod.enum(['County of Santa Clara Open Data', 'City of San Jose Open Data']),
@@ -956,6 +957,7 @@ export const ListCountyPublicRecordsResponseItem = zod.object({
   "sourceUrl": zod.string().url(),
   "housingDetails": zod.union([zod.object({
   "permitNumber": zod.string(),
+  "officialApplicant": zod.string().min(1).optional().describe('Applicant explicitly named in the official public permit source; not a portal account or property-owner inference.'),
   "projectType": zod.string(),
   "workDescription": zod.string(),
   "dwellingUnits": zod.number().int().min(1),

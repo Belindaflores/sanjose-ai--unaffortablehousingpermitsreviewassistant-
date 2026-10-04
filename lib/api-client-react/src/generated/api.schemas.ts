@@ -244,6 +244,11 @@ export interface PermitRuleConfig {
 
 export interface PublicHousingPermitDetails {
   permitNumber: string;
+  /**
+     * Applicant explicitly named in the official public permit source; not a portal account or property-owner inference.
+     * @minLength 1
+     */
+  officialApplicant?: string;
   projectType: string;
   workDescription: string;
   /** @minimum 1 */

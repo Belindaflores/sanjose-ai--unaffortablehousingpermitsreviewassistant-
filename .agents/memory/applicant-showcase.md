@@ -16,3 +16,9 @@ The user chose to make **public housing examples only** available in the publish
 **Why:** Preview and production records/accounts are separate; showing examples must not imply that private submissions are synchronized or owned by the current account.
 
 **How to apply:** Distribute only curated public-source housing snapshots, keep them clearly read-only, and do not overwrite existing production records or permissions. Label source status as a snapshot, not current City status.
+
+Both public showcase permits must name the **same official applicant**, explicitly verified from the source's APPLICANT field. Matching property owners, contractors, project names, or portal emails is not a substitute.
+
+**Why:** The user reiterated the same-applicant requirement and explicitly chose public permits from one official applicant, rather than account-owned submissions.
+
+**How to apply:** Show the shared official applicant name and reject incomplete or mismatched pairs. This requirement does not authorize linking the public applicant to a signed-in account or relaxing private submission ownership.

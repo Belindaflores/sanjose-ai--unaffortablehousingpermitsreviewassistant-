@@ -13,6 +13,7 @@ export const countyPublicRecordsTable = pgTable("county_public_records", {
   sourceUrl: text("source_url").notNull(),
   housingDetails: jsonb("housing_details").$type<{
     permitNumber: string;
+    officialApplicant?: string;
     projectType: string;
     workDescription: string;
     dwellingUnits: number;
