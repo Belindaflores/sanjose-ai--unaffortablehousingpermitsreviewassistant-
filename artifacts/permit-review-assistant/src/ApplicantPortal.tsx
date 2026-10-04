@@ -8,6 +8,7 @@ import './applicant-portal.css';
 import { ClassificationCorrection } from './ReviewSafeguards';
 import type { PermitApplication as ApiApplication } from '@workspace/api-client-react';
 import { CountyPermitExamples } from './CountyPermitExamples';
+import { FireSafetyNotice, FirePlanUpload } from './FireSafety';
 
 type ApplicationsProps = { applications: PermitApplication[] };
 
@@ -134,8 +135,9 @@ export function ApplicantDetailPage({ application, onSaved }: { application?: Pe
   return <main className="page applicant-page">
     <div className="ap-hero"><div className="ap-hero-copy"><Link href="/records" className="ap-text-link" data-testid="link-back-records-detail">Your records <ChevronRight aria-hidden="true" /></Link><p className="ap-kicker" style={{ marginTop: 24 }}>Project details</p><h1 className="ap-heading" data-testid="text-project-name">{a.projectName}</h1><p className="ap-lede"><MapPin size={15} aria-hidden="true" style={{ display: 'inline', verticalAlign: '-2px', marginRight: 5 }} />{a.projectAddress}</p></div><div><span className="ap-id" data-testid="text-application-id">{a.id}</span><div style={{ marginTop: 10 }}><Status value={a.reviewStatus} id={a.id} /></div></div></div>
     {a.verification_status === 'Unverified' && (a.claimed_affordable || a.claimed_underserved) && <p className="priority-pending" data-testid="priority-under-review">Priority claim under review</p>}
-    {a.ruleChecks?.safetyCriticalFlags.length ? <div className="safety-critical" role="alert"><h2>Safety-Critical</h2>{a.ruleChecks.safetyCriticalFlags.map(f => <p key={f}>{f}</p>)}</div> : null}
     <p className={a.requiredReviewers?.length ? 'rule-alert' : ''}>{a.ruleChecks?.completenessLabel}</p>
+    <FireSafetyNotice application={a} />
+    <FirePlanUpload application={a} onSaved={onSaved} />
     <ClassificationCorrection key={a.id} application={a} onSaved={onSaved} />
     <div className="ap-detail-grid">
       <div className="ap-page-stack">

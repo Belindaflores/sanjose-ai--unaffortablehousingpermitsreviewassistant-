@@ -96,6 +96,7 @@ export const PermitApplicationReviewStatus = {
   Revisions_Required: 'Revisions Required',
   Needs_Jurisdiction_Verification: 'Needs Jurisdiction Verification',
   'Blocked_—_Safety_Review_Required': 'Blocked — Safety Review Required',
+  'On_Hold_-_Safety_Review_Required': 'On Hold - Safety Review Required',
   'Needs_Human_Review_—_Data_Inconsistency': 'Needs Human Review — Data Inconsistency',
 } as const;
 
@@ -127,11 +128,19 @@ export interface AuditDecision {
   document?: string;
 }
 
+export type SafetyDecisionRole = typeof SafetyDecisionRole[keyof typeof SafetyDecisionRole];
+
+
+export const SafetyDecisionRole = {
+  fire_marshal: 'fire_marshal',
+} as const;
+
 export interface SafetyDecision {
   note: string;
   by: string;
   at: string;
   document: string;
+  role?: SafetyDecisionRole;
 }
 
 export interface ReviewDecisions {
@@ -198,6 +207,11 @@ export interface PermitApplication {
   recommendedRouting: string[];
   timeline: PermitTimelineEvent[];
   notes: PermitStaffNote[];
+}
+
+export interface FirePlanUploadInput {
+  /** @minLength 1 */
+  objectPath: string;
 }
 
 export type PortalUserRole = typeof PortalUserRole[keyof typeof PortalUserRole];

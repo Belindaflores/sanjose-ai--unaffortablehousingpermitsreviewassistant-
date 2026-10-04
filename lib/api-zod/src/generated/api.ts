@@ -92,6 +92,117 @@ export const DownloadPermitDocumentParams = zod.object({
 export const DownloadPermitDocumentResponse = zod.unknown()
 
 
+/**
+ * @summary Attach a verified fire/life-safety upload to an owned or staff-accessible application
+ */
+export const UploadPermitFirePlanParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const UploadPermitFirePlanBody = zod.object({
+  "objectPath": zod.string().min(1)
+})
+
+export const uploadPermitFirePlanResponseHousingUnitsMin = 0;
+
+export const uploadPermitFirePlanResponseCompletenessScoreMin = 0;
+export const uploadPermitFirePlanResponseCompletenessScoreMax = 100;
+
+
+
+export const UploadPermitFirePlanResponse = zod.object({
+  "id": zod.string(),
+  "ownerUserId": zod.string().nullish(),
+  "claimed_affordable": zod.boolean().optional(),
+  "claimed_underserved": zod.boolean().optional(),
+  "censusTract": zod.string().optional(),
+  "verification_status": zod.enum(['Unverified', 'Verified', 'Rejected']).optional(),
+  "priorityClaims": zod.object({
+  "affordable": zod.object({
+  "status": zod.enum(['Unverified', 'Verified', 'Rejected']),
+  "note": zod.string().optional(),
+  "by": zod.string().optional(),
+  "at": zod.string().optional()
+}),
+  "underserved": zod.object({
+  "status": zod.enum(['Unverified', 'Verified', 'Rejected']),
+  "note": zod.string().optional(),
+  "by": zod.string().optional(),
+  "at": zod.string().optional()
+})
+}).optional(),
+  "reviewDecisions": zod.object({
+  "jurisdiction": zod.object({
+  "note": zod.string(),
+  "by": zod.string(),
+  "at": zod.string(),
+  "document": zod.string().optional()
+}).optional(),
+  "safety": zod.array(zod.object({
+  "note": zod.string(),
+  "by": zod.string(),
+  "at": zod.string(),
+  "document": zod.string(),
+  "role": zod.enum(['fire_marshal']).optional()
+})).optional()
+}).optional(),
+  "ruleChecks": zod.object({
+  "jurisdictionStatus": zod.enum(['In County', 'Needs Verification', 'Outside County']),
+  "classificationConflicts": zod.array(zod.string()),
+  "safetyCriticalFlags": zod.array(zod.string()),
+  "underservedMatch": zod.string(),
+  "completenessLabel": zod.string()
+}).optional(),
+  "requiredReviewers": zod.array(zod.string()).optional(),
+  "dataSource": zod.enum(['Prototype Submission', 'Synthetic']).optional(),
+  "applicantName": zod.string(),
+  "companyName": zod.string(),
+  "email": zod.string().email(),
+  "projectName": zod.string(),
+  "projectAddress": zod.string(),
+  "permitType": zod.string(),
+  "projectType": zod.string(),
+  "housingUnits": zod.number().int().min(uploadPermitFirePlanResponseHousingUnitsMin),
+  "affordableHousing": zod.boolean(),
+  "underservedCommunity": zod.boolean(),
+  "estimatedCost": zod.number(),
+  "description": zod.string(),
+  "submittedAt": zod.coerce.date(),
+  "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
+  "priority": zod.enum(['Normal', 'High', 'Urgent']),
+  "assignedDepartment": zod.string(),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'On Hold - Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "completenessScore": zod.number().int().min(uploadPermitFirePlanResponseCompletenessScoreMin).max(uploadPermitFirePlanResponseCompletenessScoreMax),
+  "documents": zod.array(zod.object({
+  "category": zod.string(),
+  "label": zod.string(),
+  "required": zod.boolean(),
+  "received": zod.boolean(),
+  "fileName": zod.string().optional(),
+  "objectPath": zod.string().optional(),
+  "receivedAt": zod.coerce.date().optional()
+})),
+  "flags": zod.array(zod.string()),
+  "aiSummary": zod.string(),
+  "recommendedRouting": zod.array(zod.string()),
+  "timeline": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['completed', 'current', 'upcoming']),
+  "date": zod.string(),
+  "detail": zod.string()
+})),
+  "notes": zod.array(zod.object({
+  "id": zod.string(),
+  "author": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
 export const ReviewPermitChecksParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -147,7 +258,8 @@ export const ReviewPermitChecksResponse = zod.object({
   "note": zod.string(),
   "by": zod.string(),
   "at": zod.string(),
-  "document": zod.string()
+  "document": zod.string(),
+  "role": zod.enum(['fire_marshal']).optional()
 })).optional()
 }).optional(),
   "ruleChecks": zod.object({
@@ -175,7 +287,7 @@ export const ReviewPermitChecksResponse = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'On Hold - Safety Review Required', 'Needs Human Review — Data Inconsistency']),
   "completenessScore": zod.number().int().min(reviewPermitChecksResponseCompletenessScoreMin).max(reviewPermitChecksResponseCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -259,7 +371,8 @@ export const CorrectPermitClassificationResponse = zod.object({
   "note": zod.string(),
   "by": zod.string(),
   "at": zod.string(),
-  "document": zod.string()
+  "document": zod.string(),
+  "role": zod.enum(['fire_marshal']).optional()
 })).optional()
 }).optional(),
   "ruleChecks": zod.object({
@@ -287,7 +400,7 @@ export const CorrectPermitClassificationResponse = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'On Hold - Safety Review Required', 'Needs Human Review — Data Inconsistency']),
   "completenessScore": zod.number().int().min(correctPermitClassificationResponseCompletenessScoreMin).max(correctPermitClassificationResponseCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -372,7 +485,8 @@ export const ListPermitApplicationsResponseItem = zod.object({
   "note": zod.string(),
   "by": zod.string(),
   "at": zod.string(),
-  "document": zod.string()
+  "document": zod.string(),
+  "role": zod.enum(['fire_marshal']).optional()
 })).optional()
 }).optional(),
   "ruleChecks": zod.object({
@@ -400,7 +514,7 @@ export const ListPermitApplicationsResponseItem = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'On Hold - Safety Review Required', 'Needs Human Review — Data Inconsistency']),
   "completenessScore": zod.number().int().min(listPermitApplicationsResponseCompletenessScoreMin).max(listPermitApplicationsResponseCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -473,7 +587,8 @@ export const CreatePermitApplicationBody = zod.object({
   "note": zod.string(),
   "by": zod.string(),
   "at": zod.string(),
-  "document": zod.string()
+  "document": zod.string(),
+  "role": zod.enum(['fire_marshal']).optional()
 })).optional()
 }).optional(),
   "ruleChecks": zod.object({
@@ -501,7 +616,7 @@ export const CreatePermitApplicationBody = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'On Hold - Safety Review Required', 'Needs Human Review — Data Inconsistency']),
   "completenessScore": zod.number().int().min(createPermitApplicationBodyCompletenessScoreMin).max(createPermitApplicationBodyCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -568,7 +683,8 @@ export const CreatePermitApplicationResponse = zod.object({
   "note": zod.string(),
   "by": zod.string(),
   "at": zod.string(),
-  "document": zod.string()
+  "document": zod.string(),
+  "role": zod.enum(['fire_marshal']).optional()
 })).optional()
 }).optional(),
   "ruleChecks": zod.object({
@@ -596,7 +712,7 @@ export const CreatePermitApplicationResponse = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'On Hold - Safety Review Required', 'Needs Human Review — Data Inconsistency']),
   "completenessScore": zod.number().int().min(createPermitApplicationResponseCompletenessScoreMin).max(createPermitApplicationResponseCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -672,7 +788,8 @@ export const UpdatePermitApplicationBody = zod.object({
   "note": zod.string(),
   "by": zod.string(),
   "at": zod.string(),
-  "document": zod.string()
+  "document": zod.string(),
+  "role": zod.enum(['fire_marshal']).optional()
 })).optional()
 }).optional(),
   "ruleChecks": zod.object({
@@ -700,7 +817,7 @@ export const UpdatePermitApplicationBody = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'On Hold - Safety Review Required', 'Needs Human Review — Data Inconsistency']),
   "completenessScore": zod.number().int().min(updatePermitApplicationBodyCompletenessScoreMin).max(updatePermitApplicationBodyCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),
@@ -767,7 +884,8 @@ export const UpdatePermitApplicationResponse = zod.object({
   "note": zod.string(),
   "by": zod.string(),
   "at": zod.string(),
-  "document": zod.string()
+  "document": zod.string(),
+  "role": zod.enum(['fire_marshal']).optional()
 })).optional()
 }).optional(),
   "ruleChecks": zod.object({
@@ -795,7 +913,7 @@ export const UpdatePermitApplicationResponse = zod.object({
   "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
   "priority": zod.enum(['Normal', 'High', 'Urgent']),
   "assignedDepartment": zod.string(),
-  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'On Hold - Safety Review Required', 'Needs Human Review — Data Inconsistency']),
   "completenessScore": zod.number().int().min(updatePermitApplicationResponseCompletenessScoreMin).max(updatePermitApplicationResponseCompletenessScoreMax),
   "documents": zod.array(zod.object({
   "category": zod.string(),

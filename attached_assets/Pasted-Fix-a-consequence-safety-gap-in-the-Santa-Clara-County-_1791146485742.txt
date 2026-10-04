@@ -1,0 +1,31 @@
+Fix a consequence/safety gap in the Santa Clara County Permit Review app.
+
+PROBLEM: When a large project (for example, 48 units) is submitted without a fire/life-safety plan, the AI analysis detects that some information is missing but does not treat the missing fire/life-safety plan as a safety-critical issue. It does not create a specific Fire Marshal escalation, and the application can still progress normally.
+
+REQUIRED CHANGES:
+
+1. Add a required-document rule for fire/life-safety.
+   For any residential project with 20 or more units, a fire/life-safety plan is a REQUIRED safety-critical document. Define this as a rule in backend code, not only in the AI prompt, so it runs the same way every time.
+
+2. Detect the missing plan deterministically.
+   When an application meets the threshold (20+ units) and has no uploaded document classified as a fire/life-safety plan, the system must automatically create a "Safety-Critical: Missing Fire/Life-Safety Plan" flag. Do not rely on the AI to notice this on its own.
+
+3. Create a mandatory Fire Marshal escalation.
+   When that flag is raised, automatically:
+   - add "Fire Marshal Review - REQUIRED" to the suggested routing, at the top of the list,
+   - set the application status to "On Hold - Safety Review Required",
+   - create a visible escalation item in the City Worker review queue.
+
+4. Block normal progression.
+   The application must NOT be shown as "100% complete" and must NOT move to the next review stage until the missing plan is uploaded or a City Worker with Fire Marshal permissions clears or overrides the flag. Record who cleared it, when, and the reason.
+
+5. Make it visible.
+   On the City Worker review screen and the application list, show a prominent red label: "SAFETY-CRITICAL: Fire/Life-Safety Plan Missing". Also tell the applicant, in plain language, which document is missing and why it is required.
+
+6. Keep the AI analysis consistent.
+   Update the AI analysis prompt so the missing fire/life-safety plan appears as the first, highest-severity item in its output. The backend rule above is the source of truth. The AI summary should reflect it, not replace it.
+
+7. Enforce on the server.
+   Do the threshold check, flag creation, status change, and progression block in backend code so they can't be bypassed by editing the form or the request.
+
+Keep all existing features working. After the changes, tell me exactly which files and functions you changed and how to test it.

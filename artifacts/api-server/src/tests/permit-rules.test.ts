@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { screenApplication, checkJurisdiction, descriptionUnitCounts, FIRE_UNIT_THRESHOLD, type ScreeningInput } from "@workspace/api-zod";
 import { canViewApplication, isStaff } from "../middlewares/portal-auth";
-const completeDocs = ["Architectural plans", "Structural plans", "Site plan and survey", "Energy compliance", "Fire and life safety plan"].map(label => ({ label, required: true, received: true }));
+const completeDocs = ["Architectural plans", "Structural plans", "Site plan and survey", "Energy compliance", "Fire and life safety plan"].map(label => ({ label, required: true, received: true, objectPath: `/objects/verified-test-${label}` }));
 const base: ScreeningInput = { projectAddress: "123 Main Street, San Jose, CA 95112", projectType: "Single-family residential", housingUnits: 1, description: "New single-family home with 1 unit.", affordableHousing: false, underservedCommunity: false, documents: completeDocs };
 test("Oakland is rejected by jurisdiction check and is never eligible for priority", () => {
   assert.equal(checkJurisdiction("123 H Street, Oakland, CA 94612").status, "Outside County");
@@ -29,16 +29,19 @@ test("verified claims boost priority, rejected claims do not, and partial verifi
 });
 test("missing fire plan on 48-unit multifamily requires Fire Marshal and blocks progress", () => {
   const result = screenApplication({ ...base, projectType: "Multifamily housing", housingUnits: 48, description: "48-unit apartment complex", reviewStatus: "Ready for Review", documents: completeDocs.filter(d => !d.label.includes("Fire")) });
-  assert.equal(result.reviewStatus, "Blocked — Safety Review Required");
+  assert.equal(result.reviewStatus, "On Hold - Safety Review Required");
   assert.ok(result.requiredReviewers.includes("Fire Marshal"));
   assert.ok(result.recommendedRouting.includes("Fire Marshal"));
-  assert.ok(result.flags.includes("Safety-Critical: Missing fire/life-safety plan — Fire Marshal review required."));
+  assert.equal(result.flags[0], "Safety-Critical: Missing Fire/Life-Safety Plan");
+  assert.equal(result.recommendedRouting[0], "Fire Marshal Review - REQUIRED");
+  assert.ok(result.aiSummary.startsWith("Safety-Critical: Missing Fire/Life-Safety Plan"));
   assert.ok(result.completenessScore < 100);
   assert.notEqual(result.aiStatus, "Ready for Human Review");
 });
-test("fire threshold includes exactly five units and descriptive unit counts", () => {
-  assert.equal(FIRE_UNIT_THRESHOLD, 5);
-  for (const units of [5, 48]) assert.ok(screenApplication({ ...base, housingUnits: units, description: `${units} units`, documents: [] }).requiredReviewers.includes("Fire Marshal"));
+test("fire threshold includes exactly 20 units and descriptive unit counts", () => {
+  assert.equal(FIRE_UNIT_THRESHOLD, 20);
+  for (const units of [20, 48]) assert.ok(screenApplication({ ...base, housingUnits: units, description: `${units} units`, documents: [] }).requiredReviewers.includes("Fire Marshal"));
+  assert.equal(screenApplication({ ...base, housingUnits: 19, description: "19 units", documents: [] }).ruleChecks.safetyCriticalFlags.length, 0);
   assert.ok(screenApplication({ ...base, description: "48 units", documents: [] }).requiredReviewers.includes("Fire Marshal"));
 });
 test("120-unit apartment complex selected as ADU requires human classification review, even with all documents", () => {
@@ -51,9 +54,9 @@ test("120-unit apartment complex selected as ADU requires human classification r
 });
 test("fire blocks take precedence while retaining classification conflicts", () => {
   const result = screenApplication({ ...base, projectType: "ADU", housingUnits: 120, description: "120-unit apartment complex", documents: [] });
-  assert.equal(result.reviewStatus, "Blocked — Safety Review Required");
+  assert.equal(result.reviewStatus, "On Hold - Safety Review Required");
   assert.ok(result.ruleChecks.classificationConflicts.length);
-  assert.equal(result.ruleChecks.completenessLabel, "Incomplete — needs clarification");
+  assert.equal(result.ruleChecks.completenessLabel, "Incomplete — safety review required");
 });
 test("descriptive numeric and word counts are checked against field, including hyphenated words", () => {
   assert.deepEqual(descriptionUnitCounts("forty-eight units and 120-unit apartment complex"), [120, 48]);
@@ -76,7 +79,7 @@ test("placeholder underserved-area match is informational only", () => {
   assert.match(result.ruleChecks.underservedMatch, /matches configured list/);
 });
 test("documented staff safety resolution unblocks review but never makes missing plan complete", () => {
-  const result = screenApplication({ ...base, projectType: "Multifamily housing", housingUnits: 48, description: "48 units", documents: completeDocs.filter(d => !d.label.includes("Fire")), reviewDecisions: { safety: [{ document: "Fire and life safety plan", by: "staff-test", at: "2026-10-03T00:00:00Z", note: "Reviewed alternative safety documents." }] } });
+  const result = screenApplication({ ...base, projectType: "Multifamily housing", housingUnits: 48, description: "48 units", documents: completeDocs.filter(d => !d.label.includes("Fire")), reviewDecisions: { safety: [{ document: "Fire and life safety plan", role: "fire_marshal", by: "staff-test", at: "2026-10-03T00:00:00Z", note: "Reviewed alternative safety documents." }] } });
   assert.ok(!result.requiredReviewers.includes("Fire Marshal"));
   assert.ok(result.completenessScore < 100);
   assert.notEqual(result.aiStatus, "Ready for Human Review");
@@ -88,4 +91,32 @@ test("ownership and privileged-role policy does not trust applicant role selecti
   assert.equal(canViewApplication({ id: "owner-a", role: "applicant" }, "owner-b"), false);
   assert.equal(canViewApplication({ id: "owner-a", role: "applicant" }, null), false);
   assert.equal(canViewApplication({ id: "owner-a", role: "applicant" }, "owner-a"), true);
+});
+test("received checkbox without uploaded fire plan does not clear hold", () => {
+  const input = { ...base, projectType: "Multifamily housing", housingUnits: 48, description: "48 units", documents: completeDocs.map(d => ({ ...d, objectPath: d.label.includes("Fire") ? undefined : d.objectPath })) };
+  const result = screenApplication(input);
+  assert.equal(result.reviewStatus, "On Hold - Safety Review Required");
+  assert.ok(result.completenessScore < 100);
+  assert.equal(result.documents.find(d => d.label.includes("Fire"))?.received, false);
+});
+test("omitting fire document from checklist inserts mandatory missing item", () => {
+  const result = screenApplication({ ...base, projectType: "Multifamily housing", housingUnits: 48, description: "48 units", documents: [] });
+  assert.ok(result.documents.some(d => d.label === "Fire and life safety plan" && d.required && !d.received));
+  assert.equal(result.completenessScore, 0);
+});
+test("legacy ordinary-staff and unaudited safety decisions cannot clear hold", () => {
+  for (const audit of [
+    { document: "Fire and life safety plan", by: "staff-test", at: "2026-10-03T00:00:00Z", note: "Old ordinary staff waiver" },
+    { document: "Fire and life safety plan", role: "fire_marshal" as const, by: "staff-test", at: "invalid", note: "" },
+  ]) {
+    const result = screenApplication({ ...base, projectType: "Multifamily housing", housingUnits: 48, description: "48 units", documents: [], reviewDecisions: { safety: [audit] } });
+    assert.equal(result.reviewStatus, "On Hold - Safety Review Required");
+  }
+});
+test("verified plan upload releases safety hold without granting approval", () => {
+  const result = screenApplication({ ...base, projectType: "Multifamily housing", housingUnits: 48, description: "48 units", reviewStatus: "On Hold - Safety Review Required" });
+  assert.equal(result.ruleChecks.safetyCriticalFlags.length, 0);
+  assert.equal(result.reviewStatus, "New");
+  assert.equal(result.completenessScore, 100);
+  assert.notEqual(result.reviewStatus, "Approved");
 });

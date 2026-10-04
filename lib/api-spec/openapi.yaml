@@ -94,6 +94,30 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Private document available only to its owner or staff }
+  /permit-applications/{id}/fire-plan:
+    post:
+      operationId: uploadPermitFirePlan
+      summary: Attach a verified fire/life-safety upload to an owned or staff-accessible application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FirePlanUploadInput" }
+      responses:
+        "200":
+          description: Updated server-screened application
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PermitApplication" }
+        "403":
+          description: Access denied
+        "422":
+          description: Upload could not be verified
   /permit-applications/{id}/review-checks:
     post:
       operationId: reviewPermitChecks
@@ -378,6 +402,7 @@ components:
             - Revisions Required
             - Needs Jurisdiction Verification
             - Blocked — Safety Review Required
+            - On Hold - Safety Review Required
             - Needs Human Review — Data Inconsistency
         completenessScore:
           type: integer
@@ -460,6 +485,11 @@ components:
         safety:
           type: array
           items: { $ref: "#/components/schemas/SafetyDecision" }
+    FirePlanUploadInput:
+      type: object
+      properties:
+        objectPath: { type: string, minLength: 1 }
+      required: [objectPath]
     SafetyDecision:
       type: object
       properties:
@@ -467,6 +497,7 @@ components:
         by: { type: string }
         at: { type: string }
         document: { type: string }
+        role: { type: string, enum: [fire_marshal] }
       required: [note, by, at, document]
     RuleChecks:
       type: object

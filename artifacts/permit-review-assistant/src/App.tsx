@@ -7,6 +7,7 @@ import { getListCountyPublicRecordsQueryKey, getListPermitApplicationsQueryKey, 
 import { checkJurisdiction, screenApplication, EVIDENCE_LABEL, OUTSIDE_COUNTY_MESSAGE, type PriorityClaims, type RuleChecks, type ReviewDecisions } from '@workspace/api-zod';
 import { PortalAuth, SignOutButton, usePortalProfile } from './PortalAuth';
 import { StaffChecksPanel, ClassificationCorrection, UnderservedConfigPanel } from './ReviewSafeguards';
+import { FireSafetyNotice, FirePlanUpload, FIRE_SAFETY_LABEL } from './FireSafety';
 import './safeguards.css';
 import { ErrorBoundary } from '@/components/error-boundary';
 import NotFound from '@/pages/not-found';
@@ -27,7 +28,7 @@ type PortalRole = 'applicant' | 'worker';
 const DEMO_APPLICANT = { name: 'Demo Applicant', email: 'demo.applicant@example.com', company: 'Personal project' };
 
 type AIStatus = 'Ready for Human Review' | 'Missing Information' | 'Potential Issues Detected' | 'Additional Agency Review Required';
-type ReviewStatus = 'New' | 'In County Intake' | 'Ready for Review' | 'More Information Requested' | 'Planning Review' | 'Building Review' | 'Fire Review' | 'Environmental Review' | 'Senior Review' | 'Approved' | 'Denied' | 'Revisions Required' | 'Needs Jurisdiction Verification' | 'Blocked — Safety Review Required' | 'Needs Human Review — Data Inconsistency';
+type ReviewStatus = 'New' | 'In County Intake' | 'Ready for Review' | 'More Information Requested' | 'Planning Review' | 'Building Review' | 'Fire Review' | 'Environmental Review' | 'Senior Review' | 'Approved' | 'Denied' | 'Revisions Required' | 'Needs Jurisdiction Verification' | 'Blocked — Safety Review Required' | 'On Hold - Safety Review Required' | 'Needs Human Review — Data Inconsistency';
 type Priority = 'Normal' | 'High' | 'Urgent';
 type TimelineStatus = 'completed' | 'current' | 'upcoming';
 type Document = { category: string; label: string; required: boolean; received: boolean; fileName?: string; receivedAt?: string; objectPath?: string };
@@ -152,11 +153,11 @@ function readRole(): PortalRole | null {
 }
 
 function readApplications(): PermitApplication[] {
-  try { const saved = localStorage.getItem(STORE_KEY); return saved ? withoutRemovedLocalSubmissions(JSON.parse(saved) as PermitApplication[]) : seedApplications(); } catch { return seedApplications(); }
+  try { const saved = localStorage.getItem(STORE_KEY); return withoutRemovedLocalSubmissions(saved ? JSON.parse(saved) as PermitApplication[] : seedApplications()); } catch { return withoutRemovedLocalSubmissions(seedApplications()); }
 }
 function saveApplications(applications: PermitApplication[]) { localStorage.setItem(STORE_KEY, JSON.stringify(withoutRemovedLocalSubmissions(applications))); }
 function statusClass(status: string) {
-  if (status.includes('Blocked') || status.includes('Inconsistency') || status.includes('Verification')) return 'status-issue';
+  if (status.includes('On Hold') || status.includes('Blocked') || status.includes('Inconsistency') || status.includes('Verification')) return 'status-issue';
   if (status === 'Denied') return 'status-issue';
   if (status.includes('Missing') || status.includes('Information')) return 'status-missing';
   if (status.includes('Issue') || status.includes('Revisions')) return 'status-issue';
@@ -219,7 +220,7 @@ function Dashboard({ applications }: { applications: PermitApplication[] }) {
 function ApplicationRow({ application: a, compact = false }: { application: PermitApplication; compact?: boolean }) {
   const [, setLocation] = useLocation();
   return <tr className={a.requiredReviewers?.length ? 'rule-incomplete' : ''} onClick={() => setLocation(`/applications/${a.id}`)} data-testid={`row-application-${a.id}`}>
-    <td><span className="table-title">{a.projectName}</span><span className="table-sub">{a.id} · {a.projectType} · {a.dataSource ?? 'Prototype Submission'}</span>{a.requiredReviewers?.length ? <StatusBadge status={a.reviewStatus} /> : null}{a.ruleChecks?.classificationConflicts.length ? <span className="table-sub" style={{ color: '#84241d', fontWeight: 700 }}>Needs Human Review</span> : null}{a.ruleChecks?.safetyCriticalFlags.length ? <span className="table-sub" style={{ color: '#84241d', fontWeight: 700 }}>Safety-Critical · Fire Marshal required</span> : null}</td>
+    <td><span className="table-title">{a.projectName}</span><span className="table-sub">{a.id} · {a.projectType} · {a.dataSource ?? 'Prototype Submission'}</span>{a.requiredReviewers?.length ? <StatusBadge status={a.reviewStatus} /> : null}{a.ruleChecks?.classificationConflicts.length ? <span className="table-sub" style={{ color: '#84241d', fontWeight: 700 }}>Needs Human Review</span> : null}{a.ruleChecks?.safetyCriticalFlags.length ? <span className="table-sub" style={{ color: '#84241d', fontWeight: 700 }}>{FIRE_SAFETY_LABEL}<br />Fire Marshal Review - REQUIRED</span> : null}</td>
     {!compact && <td><span className="table-title">{a.applicantName}</span><span className="table-sub">{a.companyName}</span></td>}
     <td>{compact ? <span className={`priority ${a.priority.toLowerCase()}`}>{a.verification_status === 'Unverified' && (a.affordableHousing || a.underservedCommunity) ? 'Priority claim under review' : `${a.priority} priority`}</span> : shortDate(a.submittedAt)}</td>
     {compact && <td><StatusBadge status={a.aiStatus} /></td>}
@@ -306,7 +307,7 @@ function NewApplication({ onAdd, role }: { onAdd: (app: PermitApplication) => vo
     });
   }, [form.affordableHousing]);
   const jurisdiction = checkJurisdiction(form.projectAddress);
-  const fireRequired = /multifamily/i.test(form.projectType) || Number(form.housingUnits) >= 5;
+  const fireRequired = /multifamily/i.test(form.projectType) || Number(form.housingUnits) >= 20;
   const selectDoc = async (index: number, file?: File) => {
     if (!file) return;
     if (file.size === 0 || file.size > 10 * 1024 * 1024 || !['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)) { setPersistenceError('Choose a PDF, PNG, or JPEG file between 1 byte and 10 MB.'); return; }
@@ -403,7 +404,8 @@ function DetailPage({ applications, updateApp }: { applications: PermitApplicati
   };
   const addNote = () => { if (!note.trim()) return; void persistChange({ ...app, notes: [{ id: `n-${Date.now()}`, author: profile.id, body: note.trim(), createdAt: new Date().toISOString() }, ...app.notes] }, 'Note added', () => setNote('')); };
   return <><main className="page"><div className="detail-header" style={{ marginBottom: 27 }}><div><Link href="/applications" className="section-note" data-testid="link-back-to-queue">Applications / review queue</Link><p className="eyebrow" style={{ marginTop: 18 }}>Application detail</p><h1 style={{ marginBottom: 6 }}>{app.projectName}</h1><div className="detail-id">{app.id} · submitted {shortDate(app.submittedAt)}</div></div><div className="actions"><StatusBadge status={app.reviewStatus} /><button className="button outline" onClick={() => action('Escalation', 'Senior Review', 'Senior Reviewer')} data-testid="button-escalate-application"><Siren /> Escalate</button></div></div>
-    {!!app.ruleChecks?.safetyCriticalFlags.length && <div className="safety-critical" role="alert" data-testid="safety-critical-banner"><h2>Safety-Critical</h2>{app.ruleChecks.safetyCriticalFlags.map(flag => <p key={flag}>{flag}</p>)}<strong>Blocked — Safety Review Required. Fire Marshal is a REQUIRED reviewer.</strong></div>}
+    <FireSafetyNotice application={app} />
+    {dbApp && <FirePlanUpload application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} />}
     <div className={`notice ${app.requiredReviewers?.length ? 'rule-alert rule-incomplete' : ''}`} style={{ margin: '18px 0' }}><strong>{app.ruleChecks?.completenessLabel}</strong>{app.requiredReviewers?.length ? <p>Required reviewers: {app.requiredReviewers.join(' · ')}</p> : null}</div>
     {dbApp && <><StaffChecksPanel application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} /><ClassificationCorrection key={app.id} application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} /></>}
     {(saveError || recordUnavailable) && <div className="notice" role="alert" data-testid="error-update-record" style={{ borderColor: '#ddb1ac', background: '#fff3f1', color: '#7e403a', marginBottom: 18 }}><AlertCircle size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> {recordUnavailable ? 'Saved records are unavailable. Review actions are paused until this record can be verified in the database.' : saveError}{recordUnavailable && <button className="button outline" onClick={() => refetch()} data-testid="button-retry-record-detail" style={{ marginLeft: 12 }}>Retry</button>}</div>}
@@ -491,7 +493,7 @@ function RouterView() {
     }
     void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() });
   };
-  const reset = () => setApplications(seedApplications());
+  const reset = () => setApplications(withoutRemovedLocalSubmissions(seedApplications()));
   const chooseRole = (selected: PortalRole) => {
     if (selected === 'worker' && !hasStaffAccess) { setShowWorkerLogin(true); return; }
     sessionStorage.setItem(ROLE_KEY, selected); queryClient.removeQueries({ queryKey: getListPermitApplicationsQueryKey() }); setLocation('/'); setRole(selected);
