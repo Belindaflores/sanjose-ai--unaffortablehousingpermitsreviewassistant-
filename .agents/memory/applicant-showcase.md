@@ -1,24 +1,18 @@
 ---
-name: Authentic applicant showcase
-description: The audience showcase must use authentic housing-construction permits, never pools, without weakening private applicant ownership.
+name: Applicant content scope
+description: Applicant pages must show only the signed-in applicant's own content; the public housing showcase is retired from those pages.
 ---
 
-Use authentic official city or County building-permit records for the applicant showcase, not fictional applications. Keep these public examples clearly distinguished from submissions owned by the signed-in applicant.
+Applicant home (dashboard), Applications, and Records must show only the signed-in applicant's own content. Do not reintroduce the public housing showcase on these pages without an explicit new request.
 
-The showcase must be **housing construction only**, such as apartment construction or ADUs. Never substitute pools or spas—even those located at apartments, mobile-home parks, or residential communities.
+**Why:** On 2026-10-04 the user explicitly reversed the earlier showcase request and asked to remove it from all three applicant pages, preserving fire/life-safety, priority-verification, classification, and everything else.
 
-**Why:** The user requested at least two authentic database-backed housing applications to showcase to their audience and explicitly corrected the choice of pool permits. They separately required that applicants only see their own private submissions.
+**How to apply:** Remove only the applicant-side presentation. Keep the public source records, City-side behavior, ownership checks, and existing application features intact.
 
-**How to apply:** Verify the source's housing classification and actual units, not just its business name. SCC Plan Check Progress is environmental-health data and does not establish housing-construction permits; use a genuine municipal building-permit source and disclose that provenance instead. Never invent applicant ownership, uploaded documents, or official review decisions.
+## Historical public-source constraints
 
-The user chose to make **public housing examples only** available in the published app, not to copy private preview submissions or accounts.
+The earlier showcase used authentic official housing-construction records, never pools or spas. Its pair had to explicitly name the same official applicant in the source APPLICANT field, not an inferred property owner or contractor. These were read-only source snapshots, never privately owned portal submissions, and never grounds to fabricate uploaded plans, screening results, or official decisions.
 
-**Why:** Preview and production records/accounts are separate; showing examples must not imply that private submissions are synchronized or owned by the current account.
+**Why:** The user previously corrected both non-housing examples and mixed-applicant examples. Removing their applicant presentation does not authorize modifying the underlying public data.
 
-**How to apply:** Distribute only curated public-source housing snapshots, keep them clearly read-only, and do not overwrite existing production records or permissions. Label source status as a snapshot, not current City status.
-
-Both public showcase permits must name the **same official applicant**, explicitly verified from the source's APPLICANT field. Matching property owners, contractors, project names, or portal emails is not a substitute.
-
-**Why:** The user reiterated the same-applicant requirement and explicitly chose public permits from one official applicant, rather than account-owned submissions.
-
-**How to apply:** Show the shared official applicant name and reject incomplete or mismatched pairs. This requirement does not authorize linking the public applicant to a signed-in account or relaxing private submission ownership.
+**How to apply:** Preserve source integrity if public imports are maintained or reused elsewhere; do not interpret these historical constraints as permission to restore the applicant showcase.

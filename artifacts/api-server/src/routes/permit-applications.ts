@@ -7,6 +7,7 @@ import { requirePortalUser, requireStaff, isStaff, canViewApplication } from "..
 import { readRuleConfig, screenedResponse, toValues } from "../lib/permit-screening";
 import { validateUploadedDocument } from "./storage";
 import { buildPermitTimeline } from "../lib/permit-timeline";
+import { DeletePermitApplicationParams, DeletePermitApplicationBody } from "@workspace/api-zod";
 
 const router = Router();
 router.use("/permit-applications", requirePortalUser);
@@ -18,6 +19,25 @@ router.get("/permit-applications", async (req, res): Promise<void> => {
   const rows = await db.select().from(permitApplicationsTable).where(isStaff(user) ? (parsed.data.applicantEmail ? eq(permitApplicationsTable.email, parsed.data.applicantEmail) : undefined) : eq(permitApplicationsTable.ownerUserId, user.id)).orderBy(desc(permitApplicationsTable.submittedAt));
   const applications = await Promise.all(rows.filter(row => checkJurisdiction(row.projectAddress).status !== "Outside County").map(screenedResponse));
   res.json(ListPermitApplicationsResponse.parse(applications));
+});
+router.delete("/permit-applications/:id", async (req, res): Promise<void> => {
+  const params = DeletePermitApplicationParams.safeParse(req.params);
+  const body = DeletePermitApplicationBody.safeParse(req.body);
+  if (!params.success || !body.success || body.data.confirmationId !== params.data.id) {
+    res.status(400).json({ error: "Type the exact application ID to confirm deletion." }); return;
+  }
+  const user = res.locals.portalUser;
+  const removed = await db.transaction(async tx => {
+    const [row] = await tx.select().from(permitApplicationsTable)
+      .where(eq(permitApplicationsTable.id, params.data.id)).for("update");
+    // Return the same response for absent and inaccessible records.
+    if (!row || !canViewApplication(user, row.ownerUserId)) return false;
+    await tx.delete(permitApplicationsTable).where(eq(permitApplicationsTable.id, row.id));
+    return true;
+  });
+  if (!removed) { res.status(404).json({ error: "Application not found or unavailable to your account." }); return; }
+  req.log.info({ applicationId: params.data.id, actorId: user.id, actorRole: user.role }, "Permit application permanently deleted; uploaded files retained");
+  res.status(204).end();
 });
 router.post("/permit-applications", async (req, res): Promise<void> => {
   const parsed = CreatePermitApplicationBody.safeParse(req.body);

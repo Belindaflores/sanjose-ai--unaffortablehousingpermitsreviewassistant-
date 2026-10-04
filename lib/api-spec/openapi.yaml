@@ -230,6 +230,25 @@ paths:
         "422":
           description: Outside County jurisdiction or missing required supporting evidence. No County record created.
   /permit-applications/{id}:
+    delete:
+      operationId: deletePermitApplication
+      tags: [permit-applications]
+      summary: Permanently delete a saved application as its owner or authorized staff
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 180 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PermitDeletionConfirmation" }
+      responses:
+        "204": { description: Application removed from both portal views; separately stored files retained }
+        "400": { description: Application ID confirmation does not match }
+        "401": { description: Sign-in required }
+        "404": { description: Application not found or not accessible to this account }
     patch:
       operationId: updatePermitApplication
       tags: [permit-applications]
@@ -273,6 +292,11 @@ paths:
                   $ref: "#/components/schemas/CountyPublicRecord"
 components:
   schemas:
+    PermitDeletionConfirmation:
+      type: object
+      properties:
+        confirmationId: { type: string, minLength: 1, maxLength: 180 }
+      required: [confirmationId]
     HealthStatus:
       type: object
       properties:

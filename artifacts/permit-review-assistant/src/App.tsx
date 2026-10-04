@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { DeleteApplication } from './DeleteApplication';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Link, Route, Switch, Redirect, useLocation, useRoute, Router as WouterRouter } from 'wouter';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -243,7 +244,7 @@ function ApplicationsPage({ applications }: { applications: PermitApplication[] 
 type RecordSourceFilter = 'All' | 'County Public Data' | 'Prototype Submissions';
 
 function RecordsPage({ applications }: { applications: PermitApplication[] }) {
-  const { data: records, isLoading, isError, refetch, isFetching } = useListPermitApplications();
+  const { data: records, isLoading, isError, refetch, isFetching } = useListPermitApplications(undefined, { query: { queryKey: getListPermitApplicationsQueryKey(), refetchInterval: 15000 } });
   const countyQuery = useListCountyPublicRecords({
     query: { queryKey: getListCountyPublicRecordsQueryKey(), refetchOnMount: 'always', staleTime: 60_000 },
   });
@@ -371,7 +372,7 @@ function Field({ label, required, value, onChange, error, full, type = 'text', t
 function DetailPage({ applications, updateApp }: { applications: PermitApplication[]; updateApp: (app: PermitApplication) => void }) {
   const profile = usePortalProfile();
   const [, params] = useRoute('/applications/:id');
-  const { data: records, isLoading, isError, refetch } = useListPermitApplications();
+  const { data: records, isLoading, isError, refetch } = useListPermitApplications(undefined, { query: { queryKey: getListPermitApplicationsQueryKey(), refetchInterval: 15000 } });
   const updateRecord = useUpdatePermitApplication();
   const dbApp = records?.find(a => a.id === params?.id);
   const app = dbApp || applications.find(a => a.id === params?.id);
@@ -406,6 +407,7 @@ function DetailPage({ applications, updateApp }: { applications: PermitApplicati
   return <><main className="page"><div className="detail-header" style={{ marginBottom: 27 }}><div><Link href="/applications" className="section-note" data-testid="link-back-to-queue">Applications / review queue</Link><p className="eyebrow" style={{ marginTop: 18 }}>Application detail</p><h1 style={{ marginBottom: 6 }}>{app.projectName}</h1><div className="detail-id">{app.id} · submitted {shortDate(app.submittedAt)}</div></div><div className="actions"><StatusBadge status={app.reviewStatus} /><button className="button outline" onClick={() => action('Escalation', 'Senior Review', 'Senior Reviewer')} data-testid="button-escalate-application"><Siren /> Escalate</button></div></div>
     <FireSafetyNotice application={app} />
     {dbApp && <FirePlanUpload application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} />}
+    {dbApp && <DeleteApplication key={app.id} application={dbApp} />}
     <div className={`notice ${app.requiredReviewers?.length ? 'rule-alert rule-incomplete' : ''}`} style={{ margin: '18px 0' }}><strong>{app.ruleChecks?.completenessLabel}</strong>{app.requiredReviewers?.length ? <p>Required reviewers: {app.requiredReviewers.join(' · ')}</p> : null}</div>
     {dbApp && <><StaffChecksPanel application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} /><ClassificationCorrection key={app.id} application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} /></>}
     {(saveError || recordUnavailable) && <div className="notice" role="alert" data-testid="error-update-record" style={{ borderColor: '#ddb1ac', background: '#fff3f1', color: '#7e403a', marginBottom: 18 }}><AlertCircle size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> {recordUnavailable ? 'Saved records are unavailable. Review actions are paused until this record can be verified in the database.' : saveError}{recordUnavailable && <button className="button outline" onClick={() => refetch()} data-testid="button-retry-record-detail" style={{ marginLeft: 12 }}>Retry</button>}</div>}

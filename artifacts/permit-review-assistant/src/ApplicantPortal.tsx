@@ -1,3 +1,4 @@
+import { DeleteApplication } from './DeleteApplication';
 import type { PermitApplication } from './App';
 import { Link } from 'wouter';
 import {
@@ -7,7 +8,6 @@ import {
 import './applicant-portal.css';
 import { ClassificationCorrection } from './ReviewSafeguards';
 import type { PermitApplication as ApiApplication } from '@workspace/api-client-react';
-import { CountyPermitExamples } from './CountyPermitExamples';
 import { FireSafetyNotice, FirePlanUpload } from './FireSafety';
 
 type ApplicationsProps = { applications: PermitApplication[] };
@@ -85,7 +85,6 @@ export function ApplicantDashboard({ applications }: ApplicationsProps) {
       <div className="ap-hero-copy"><p className="ap-kicker">Applicant home</p><h1 className="ap-heading">Your projects, at a glance.</h1><p className="ap-lede">Check where your submissions stand and find what you need to keep your project moving.</p></div>
       <Link href="/new-application" className="ap-btn" data-testid="link-new-application-dashboard"><FilePlus2 aria-hidden="true" /> Start a new application</Link>
     </header>
-    <CountyPermitExamples />
     <section className="ap-summary" aria-label="Your application summary">
       <div className="ap-summary-item" data-testid="summary-total-applications"><span>Your submissions</span><strong>{applications.length}</strong><small>All your projects</small></div>
       <div className="ap-summary-item" data-testid="summary-needs-attention"><span>May need your attention</span><strong>{awaiting}</strong><small>Information or revisions requested</small></div>
@@ -110,7 +109,6 @@ export function ApplicantApplicationsPage({ applications }: ApplicationsProps) {
   return <main className="page applicant-page">
     <header className="ap-hero"><div className="ap-hero-copy"><p className="ap-kicker">Applications</p><h1 className="ap-heading">Make your next move with confidence.</h1><p className="ap-lede">Start a submission, see what to prepare, or return to a project you have already submitted.</p></div><Link href="/new-application" className="ap-btn" data-testid="link-new-application-applicant"><FilePlus2 aria-hidden="true" /> Start a new application</Link></header>
     <div className="ap-page-stack">
-      <CountyPermitExamples />
       <section className="ap-guidance-grid" aria-label="Submission preparation">
         <div className="ap-content-panel ap-panel"><p className="ap-kicker">Before you begin</p><h2>Have the essentials ready</h2><p>A clear application makes it easier to understand your proposed work. Document needs can vary by project type and the County's review.</p><ul className="ap-list"><li>Project address, description, permit type, and estimated cost</li><li>Architectural and structural plans, plus a site plan or survey</li><li>Owner authorization, fire and life safety plans, and Title 24 energy forms when applicable</li></ul></div>
         <aside className="ap-side-note"><HelpCircle aria-hidden="true" /><h2>Not sure what applies?</h2><p>Requirements can differ by scope. Review the guide before submitting; County staff make all final determinations.</p><Link href="/help" className="ap-text-link" data-testid="link-help-applications">Read the guidance <ArrowRight aria-hidden="true" /></Link></aside>
@@ -124,7 +122,6 @@ export function ApplicantRecordsPage({ applications }: ApplicationsProps) {
   const sorted = [...applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   return <main className="page applicant-page">
     <header className="ap-hero"><div className="ap-hero-copy"><p className="ap-kicker">Your records</p><h1 className="ap-heading">A record of every step.</h1><p className="ap-lede">Find your current and past submissions here. Open a project for its documents and status history.</p></div><Link href="/new-application" className="ap-btn secondary" data-testid="link-new-application-records"><FilePlus2 aria-hidden="true" /> New application</Link></header>
-    <CountyPermitExamples />
     <section aria-labelledby="all-records-title"><div className="ap-section-heading"><h2 id="all-records-title">Your submitted projects ({applications.length})</h2></div>{sorted.length ? <div className="ap-record-list">{sorted.map(a => <RecordLink key={a.id} application={a} />)}</div> : <EmptyRecords />}</section>
   </main>;
 }
@@ -137,6 +134,7 @@ export function ApplicantDetailPage({ application, onSaved }: { application?: Pe
     {a.verification_status === 'Unverified' && (a.claimed_affordable || a.claimed_underserved) && <p className="priority-pending" data-testid="priority-under-review">Priority claim under review</p>}
     <p className={a.requiredReviewers?.length ? 'rule-alert' : ''}>{a.ruleChecks?.completenessLabel}</p>
     <FireSafetyNotice application={a} />
+    <DeleteApplication key={a.id} application={a} />
     <FirePlanUpload application={a} onSaved={onSaved} />
     <ClassificationCorrection key={a.id} application={a} onSaved={onSaved} />
     <div className="ap-detail-grid">

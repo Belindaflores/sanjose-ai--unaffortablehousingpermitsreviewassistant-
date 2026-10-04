@@ -5,6 +5,14 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface PermitDeletionConfirmation {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  confirmationId: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

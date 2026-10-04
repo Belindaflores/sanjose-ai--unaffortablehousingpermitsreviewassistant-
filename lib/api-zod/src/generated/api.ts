@@ -742,6 +742,28 @@ export const CreatePermitApplicationResponse = zod.object({
 
 
 /**
+ * @summary Permanently delete a saved application as its owner or authorized staff
+ */
+export const deletePermitApplicationPathIdMax = 180;
+
+
+
+export const DeletePermitApplicationParams = zod.object({
+  "id": zod.coerce.string().min(1).max(deletePermitApplicationPathIdMax)
+})
+
+export const deletePermitApplicationBodyConfirmationIdMax = 180;
+
+
+
+export const DeletePermitApplicationBody = zod.object({
+  "confirmationId": zod.string().min(1).max(deletePermitApplicationBodyConfirmationIdMax)
+})
+
+export const DeletePermitApplicationResponse = zod.void()
+
+
+/**
  * Persists County staff review actions and notes for an application.
  * @summary Update a saved permit application
  */

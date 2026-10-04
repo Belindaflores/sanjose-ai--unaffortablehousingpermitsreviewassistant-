@@ -26,6 +26,7 @@ import type {
   HealthStatus,
   ListPermitApplicationsParams,
   PermitApplication,
+  PermitDeletionConfirmation,
   PermitRuleConfig,
   PortalUser,
   RequestUploadUrl200,
@@ -1010,6 +1011,95 @@ export const useCreatePermitApplication = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getCreatePermitApplicationMutationOptions(options));
+    }
+
+export const getDeletePermitApplicationUrl = (id: string,) => {
+
+
+
+
+  return `/api/permit-applications/${id}`
+}
+
+/**
+ * @summary Permanently delete a saved application as its owner or authorized staff
+ */
+export const deletePermitApplication = async (id: string,
+    permitDeletionConfirmation: PermitDeletionConfirmation, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getDeletePermitApplicationUrl(id),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(permitDeletionConfirmation)
+  }
+);}
+
+
+
+
+
+export const getDeletePermitApplicationMutationKey = () => ['deletePermitApplication'] as const;
+
+export const getDeletePermitApplicationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePermitApplication>>, TError,DeletePermitApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePermitApplication>>, TError,DeletePermitApplicationMutationVariables, TContext> => {
+
+const mutationKey = getDeletePermitApplicationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePermitApplication>>, DeletePermitApplicationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  deletePermitApplication(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePermitApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof deletePermitApplication>>>
+    export type DeletePermitApplicationMutationBody = BodyType<PermitDeletionConfirmation>
+    export type DeletePermitApplicationMutationError = ErrorType<void>
+    export type DeletePermitApplicationMutationVariables = {id: string;data: BodyType<PermitDeletionConfirmation>}
+
+    /**
+ * @summary Permanently delete a saved application as its owner or authorized staff
+ */
+export const useDeletePermitApplication = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePermitApplication>>, TError,DeletePermitApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deletePermitApplication>>,
+        TError,
+        DeletePermitApplicationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeletePermitApplicationMutationOptions(options));
     }
 
 export const getUpdatePermitApplicationUrl = (id: string,) => {
