@@ -24,7 +24,7 @@ function CountyRecord({ record }: { record: CountyPublicRecord }) {
         <h3>{record.businessName || `Public record ${record.sourceRecordId}`}</h3>
         <p className="ap-record-meta">{record.sourceRecordId} · {record.datasetName}</p>
       </div>
-      <span className="ap-status review">{housing.status} · City status</span>
+      <span className="ap-status review">{housing.status} · Source snapshot</span>
     </div>
     <p className="county-example-location"><MapPin size={15} aria-hidden="true" />{record.siteLocation || 'Address not reported in source'}</p>
     <p className="ap-record-meta"><strong>{housing.dwellingUnits} housing {housing.dwellingUnits === 1 ? 'unit' : 'units'}</strong> · {housing.projectType} · {housing.workDescription}</p>
@@ -41,7 +41,7 @@ function CountyRecord({ record }: { record: CountyPublicRecord }) {
         <div><dt>Permit valuation reported by City</dt><dd>{housing.permitValuation == null ? 'Not reported in source' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(housing.permitValuation)}</dd></div>
         <div><dt>Data provider</dt><dd>{record.dataSource}</dd></div>
       </dl>
-      <p className="ap-record-meta">These public records are not submissions by your portal account. No privately uploaded plans or AI screening results have been invented. Missing final dates do not mean construction is complete.</p>
+       <p className="ap-record-meta">These public records are not submissions by your portal account. They are imported source snapshots, not live City status. No privately uploaded plans or AI screening results have been invented. Missing final dates do not mean construction is complete.</p>
     </details>
     <a className="ap-text-link" href={record.sourceUrl} target="_blank" rel="noopener noreferrer">
       View City housing permit dataset <ExternalLink size={14} aria-hidden="true" />

@@ -10,3 +10,9 @@ The showcase must be **housing construction only**, such as apartment constructi
 **Why:** The user requested at least two authentic database-backed housing applications to showcase to their audience and explicitly corrected the choice of pool permits. They separately required that applicants only see their own private submissions.
 
 **How to apply:** Verify the source's housing classification and actual units, not just its business name. SCC Plan Check Progress is environmental-health data and does not establish housing-construction permits; use a genuine municipal building-permit source and disclose that provenance instead. Never invent applicant ownership, uploaded documents, or official review decisions.
+
+The user chose to make **public housing examples only** available in the published app, not to copy private preview submissions or accounts.
+
+**Why:** Preview and production records/accounts are separate; showing examples must not imply that private submissions are synchronized or owned by the current account.
+
+**How to apply:** Distribute only curated public-source housing snapshots, keep them clearly read-only, and do not overwrite existing production records or permissions. Label source status as a snapshot, not current City status.
