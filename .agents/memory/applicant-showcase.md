@@ -9,6 +9,12 @@ Applicant home (dashboard), Applications, and Records must show only the signed-
 
 **How to apply:** Remove only the applicant-side presentation. Keep the public source records, City-side behavior, ownership checks, and existing application features intact.
 
+The user subsequently authorized copying the two matching-applicant ADU permits into normal private applications owned by their portal account, without special labels or a separate section.
+
+**Why:** Removing the display did not create account-owned submissions; the user now explicitly wants persistent owned records, not a restored public display.
+
+**How to apply:** Distinguish creating owned submissions from restoring the public display. The requested source applicant name is project metadata; assigning the user's account as owner does not claim that the user is the official applicant or builder named in that source.
+
 ## Historical public-source constraints
 
 The earlier showcase used authentic official housing-construction records, never pools or spas. Its pair had to explicitly name the same official applicant in the source APPLICANT field, not an inferred property owner or contractor. These were read-only source snapshots, never privately owned portal submissions, and never grounds to fabricate uploaded plans, screening results, or official decisions.

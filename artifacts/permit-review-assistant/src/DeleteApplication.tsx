@@ -36,7 +36,7 @@ export function DeleteApplication({ application }: { application: PermitApplicat
     {!confirming ? <button type="button" className="button danger" data-testid="button-delete-application"
       onClick={() => { setConfirming(true); setConfirmationId(''); setError(''); }}>Delete application</button>
       : <div role="group" aria-label="Confirm permanent application deletion">
-        <p>This permanently deletes the saved application, its notes, and its history from both the City and Permit Applicant views. Other applications, public examples, your account, and separately stored uploaded files will not be deleted.</p>
+        <p>This permanently deletes the saved application, its notes, and its history from both the City and Permit Applicant views. Other applications, your account, and separately stored uploaded files will not be deleted.</p>
         <p style={{ overflowWrap: 'anywhere' }}><strong>Application:</strong> {application.projectName}<br /><strong>{application.id}</strong></p>
         <label htmlFor="delete-confirmation-id">Type the exact application ID to confirm</label>
         <input id="delete-confirmation-id" className="input" value={confirmationId}
