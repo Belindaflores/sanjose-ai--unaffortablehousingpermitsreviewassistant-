@@ -9,12 +9,26 @@ import type { PermitApplicationAiStatus } from './permitApplicationAiStatus';
 import type { PermitApplicationDataSource } from './permitApplicationDataSource';
 import type { PermitApplicationPriority } from './permitApplicationPriority';
 import type { PermitApplicationReviewStatus } from './permitApplicationReviewStatus';
+import type { PermitApplicationVerificationStatus } from './permitApplicationVerificationStatus';
 import type { PermitDocument } from './permitDocument';
 import type { PermitStaffNote } from './permitStaffNote';
 import type { PermitTimelineEvent } from './permitTimelineEvent';
+import type { PriorityClaims } from './priorityClaims';
+import type { ReviewDecisions } from './reviewDecisions';
+import type { RuleChecks } from './ruleChecks';
 
 export interface PermitApplication {
   id: string;
+  /** @nullable */
+  ownerUserId?: string | null;
+  claimed_affordable?: boolean;
+  claimed_underserved?: boolean;
+  censusTract?: string;
+  verification_status?: PermitApplicationVerificationStatus;
+  priorityClaims?: PriorityClaims;
+  reviewDecisions?: ReviewDecisions;
+  ruleChecks?: RuleChecks;
+  requiredReviewers?: string[];
   dataSource?: PermitApplicationDataSource;
   applicantName: string;
   companyName: string;
@@ -23,6 +37,7 @@ export interface PermitApplication {
   projectAddress: string;
   permitType: string;
   projectType: string;
+  /** @minimum 0 */
   housingUnits: number;
   affordableHousing: boolean;
   underservedCommunity: boolean;

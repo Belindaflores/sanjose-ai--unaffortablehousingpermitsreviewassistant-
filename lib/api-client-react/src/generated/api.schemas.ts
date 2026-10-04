@@ -15,6 +15,7 @@ export interface PermitDocument {
   required: boolean;
   received: boolean;
   fileName?: string;
+  objectPath?: string;
   receivedAt?: string;
 }
 
@@ -40,6 +41,15 @@ export interface PermitStaffNote {
   body: string;
   createdAt: string;
 }
+
+export type PermitApplicationVerificationStatus = typeof PermitApplicationVerificationStatus[keyof typeof PermitApplicationVerificationStatus];
+
+
+export const PermitApplicationVerificationStatus = {
+  Unverified: 'Unverified',
+  Verified: 'Verified',
+  Rejected: 'Rejected',
+} as const;
 
 export type PermitApplicationDataSource = typeof PermitApplicationDataSource[keyof typeof PermitApplicationDataSource];
 
@@ -84,10 +94,80 @@ export const PermitApplicationReviewStatus = {
   Approved: 'Approved',
   Denied: 'Denied',
   Revisions_Required: 'Revisions Required',
+  Needs_Jurisdiction_Verification: 'Needs Jurisdiction Verification',
+  'Blocked_—_Safety_Review_Required': 'Blocked — Safety Review Required',
+  'Needs_Human_Review_—_Data_Inconsistency': 'Needs Human Review — Data Inconsistency',
 } as const;
+
+export type ClaimVerificationStatus = typeof ClaimVerificationStatus[keyof typeof ClaimVerificationStatus];
+
+
+export const ClaimVerificationStatus = {
+  Unverified: 'Unverified',
+  Verified: 'Verified',
+  Rejected: 'Rejected',
+} as const;
+
+export interface ClaimVerification {
+  status: ClaimVerificationStatus;
+  note?: string;
+  by?: string;
+  at?: string;
+}
+
+export interface PriorityClaims {
+  affordable: ClaimVerification;
+  underserved: ClaimVerification;
+}
+
+export interface AuditDecision {
+  note: string;
+  by: string;
+  at: string;
+  document?: string;
+}
+
+export interface SafetyDecision {
+  note: string;
+  by: string;
+  at: string;
+  document: string;
+}
+
+export interface ReviewDecisions {
+  jurisdiction?: AuditDecision;
+  safety?: SafetyDecision[];
+}
+
+export type RuleChecksJurisdictionStatus = typeof RuleChecksJurisdictionStatus[keyof typeof RuleChecksJurisdictionStatus];
+
+
+export const RuleChecksJurisdictionStatus = {
+  In_County: 'In County',
+  Needs_Verification: 'Needs Verification',
+  Outside_County: 'Outside County',
+} as const;
+
+export interface RuleChecks {
+  jurisdictionStatus: RuleChecksJurisdictionStatus;
+  classificationConflicts: string[];
+  safetyCriticalFlags: string[];
+  underservedMatch: string;
+  completenessLabel: string;
+}
 
 export interface PermitApplication {
   id: string;
+  /** @nullable */
+  ownerUserId?: string | null;
+  claimed_affordable?: boolean;
+  claimed_underserved?: boolean;
+  censusTract?: string;
+  verification_status?: PermitApplicationVerificationStatus;
+  priorityClaims?: PriorityClaims;
+  reviewDecisions?: ReviewDecisions;
+  ruleChecks?: RuleChecks;
+  requiredReviewers?: string[];
   dataSource?: PermitApplicationDataSource;
   applicantName: string;
   companyName: string;
@@ -96,6 +176,7 @@ export interface PermitApplication {
   projectAddress: string;
   permitType: string;
   projectType: string;
+  /** @minimum 0 */
   housingUnits: number;
   affordableHousing: boolean;
   underservedCommunity: boolean;
@@ -117,6 +198,34 @@ export interface PermitApplication {
   recommendedRouting: string[];
   timeline: PermitTimelineEvent[];
   notes: PermitStaffNote[];
+}
+
+export type PortalUserRole = typeof PortalUserRole[keyof typeof PortalUserRole];
+
+
+export const PortalUserRole = {
+  applicant: 'applicant',
+  worker: 'worker',
+  fire_marshal: 'fire_marshal',
+} as const;
+
+export interface PortalUser {
+  id: string;
+  email: string;
+  name: string;
+  role: PortalUserRole;
+  staffAccessRequested: boolean;
+}
+
+export interface PermitRuleConfig {
+  /** @items.pattern ^\d{5}$ */
+  zips: string[];
+  censusTracts: string[];
+  placeholder: boolean;
+  /** @minLength 1 */
+  updateNote?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 export type CountyPublicRecordDataSource = typeof CountyPublicRecordDataSource[keyof typeof CountyPublicRecordDataSource];
@@ -158,6 +267,80 @@ export interface CountyPublicRecord {
   /** @nullable */
   serviceCompleteDate: string | null;
 }
+
+export type RequestUploadUrlBodyContentType = typeof RequestUploadUrlBodyContentType[keyof typeof RequestUploadUrlBodyContentType];
+
+
+export const RequestUploadUrlBodyContentType = {
+  'application/pdf': 'application/pdf',
+  'image/png': 'image/png',
+  'image/jpeg': 'image/jpeg',
+} as const;
+
+export type RequestUploadUrlBody = {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  contentType: RequestUploadUrlBodyContentType;
+};
+
+export type RequestUploadUrl200 = {
+  uploadURL: string;
+  objectPath: string;
+};
+
+export type ReviewPermitChecksBodyAction = typeof ReviewPermitChecksBodyAction[keyof typeof ReviewPermitChecksBodyAction];
+
+
+export const ReviewPermitChecksBodyAction = {
+  claim: 'claim',
+  safety: 'safety',
+  jurisdiction: 'jurisdiction',
+} as const;
+
+export type ReviewPermitChecksBodyClaim = typeof ReviewPermitChecksBodyClaim[keyof typeof ReviewPermitChecksBodyClaim];
+
+
+export const ReviewPermitChecksBodyClaim = {
+  affordable: 'affordable',
+  underserved: 'underserved',
+} as const;
+
+export type ReviewPermitChecksBodyDecision = typeof ReviewPermitChecksBodyDecision[keyof typeof ReviewPermitChecksBodyDecision];
+
+
+export const ReviewPermitChecksBodyDecision = {
+  Verified: 'Verified',
+  Rejected: 'Rejected',
+} as const;
+
+export type ReviewPermitChecksBody = {
+  action: ReviewPermitChecksBodyAction;
+  claim?: ReviewPermitChecksBodyClaim;
+  decision?: ReviewPermitChecksBodyDecision;
+  document?: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  note: string;
+};
+
+export type CorrectPermitClassificationBody = {
+  /** @minLength 1 */
+  projectType: string;
+  /** @minimum 0 */
+  housingUnits: number;
+  /** @minLength 1 */
+  description: string;
+};
 
 export type ListPermitApplicationsParams = {
 applicantEmail?: string;

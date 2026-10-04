@@ -50,6 +50,9 @@ export default defineConfig({
     output: {
       workspace: apiZodSrc,
       client: "zod",
+      // Keep the hand-owned root barrel: generated body types share names with
+      // Zod values, and auto-exporting both creates ambiguous re-exports.
+      indexFiles: false,
       target: "generated",
       schemas: { path: "generated/types", type: "typescript" },
       mode: "split",

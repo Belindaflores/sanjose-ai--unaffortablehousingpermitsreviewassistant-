@@ -17,6 +17,7 @@ type PermitDocument = {
   received: boolean;
   fileName?: string;
   receivedAt?: string;
+  objectPath?: string;
 };
 
 type PermitTimelineEvent = {
@@ -35,6 +36,14 @@ type PermitStaffNote = {
 
 export const permitApplicationsTable = pgTable("permit_applications", {
   id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id"),
+  claimed_affordable: boolean("claimed_affordable").notNull().default(false),
+  claimed_underserved: boolean("claimed_underserved").notNull().default(false),
+  verification_status: text("verification_status").notNull().default("Unverified"),
+  priorityClaims: jsonb("priority_claims").$type<{ affordable: { status: "Unverified" | "Verified" | "Rejected"; note?: string; by?: string; at?: string }; underserved: { status: "Unverified" | "Verified" | "Rejected"; note?: string; by?: string; at?: string } }>(),
+  reviewDecisions: jsonb("review_decisions").$type<{ jurisdiction?: { note: string; by: string; at: string }; safety?: { note: string; by: string; at: string; document: string }[] }>(),
+  requiredReviewers: jsonb("required_reviewers").$type<string[]>().notNull().default([]),
+  censusTract: text("census_tract").notNull().default(""),
   dataSource: text("data_source").notNull().default("Prototype Submission"),
   applicantName: text("applicant_name").notNull(),
   companyName: text("company_name").notNull(),

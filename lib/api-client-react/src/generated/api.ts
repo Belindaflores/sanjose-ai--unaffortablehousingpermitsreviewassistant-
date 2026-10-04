@@ -20,10 +20,16 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CorrectPermitClassificationBody,
   CountyPublicRecord,
   HealthStatus,
   ListPermitApplicationsParams,
-  PermitApplication
+  PermitApplication,
+  PermitRuleConfig,
+  PortalUser,
+  RequestUploadUrl200,
+  RequestUploadUrlBody,
+  ReviewPermitChecksBody
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -52,6 +58,617 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetPortalUserUrl = () => {
+
+
+
+
+  return `/api/portal-user`
+}
+
+export const getPortalUser = async ( options?: Parameters<typeof customFetch>[1]): Promise<PortalUser> => {
+
+  return customFetch<PortalUser>(getGetPortalUserUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPortalUserQueryKey = () => {
+    return [
+    `/api/portal-user`
+    ] as const;
+    }
+
+
+export const getGetPortalUserQueryOptions = <TData = Awaited<ReturnType<typeof getPortalUser>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalUser>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPortalUserQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPortalUser>>> = ({ signal }) => getPortalUser({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPortalUser>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPortalUserQueryResult = NonNullable<Awaited<ReturnType<typeof getPortalUser>>>
+export type GetPortalUserQueryError = ErrorType<unknown>
+
+
+
+export function useGetPortalUser<TData = Awaited<ReturnType<typeof getPortalUser>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalUser>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPortalUserQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRequestStaffAccessUrl = () => {
+
+
+
+
+  return `/api/portal-user`
+}
+
+export const requestStaffAccess = async ( options?: Parameters<typeof customFetch>[1]): Promise<PortalUser> => {
+
+  return customFetch<PortalUser>(getRequestStaffAccessUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRequestStaffAccessMutationKey = () => ['requestStaffAccess'] as const;
+
+export const getRequestStaffAccessMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestStaffAccess>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestStaffAccess>>, TError,void, TContext> => {
+
+const mutationKey = getRequestStaffAccessMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestStaffAccess>>, void> = () => {
+
+
+          return  requestStaffAccess(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestStaffAccessMutationResult = NonNullable<Awaited<ReturnType<typeof requestStaffAccess>>>
+
+    export type RequestStaffAccessMutationError = ErrorType<unknown>
+
+
+    export const useRequestStaffAccess = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestStaffAccess>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestStaffAccess>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRequestStaffAccessMutationOptions(options));
+    }
+
+export const getGetPermitRuleConfigUrl = () => {
+
+
+
+
+  return `/api/permit-rule-config`
+}
+
+export const getPermitRuleConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<PermitRuleConfig> => {
+
+  return customFetch<PermitRuleConfig>(getGetPermitRuleConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPermitRuleConfigQueryKey = () => {
+    return [
+    `/api/permit-rule-config`
+    ] as const;
+    }
+
+
+export const getGetPermitRuleConfigQueryOptions = <TData = Awaited<ReturnType<typeof getPermitRuleConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPermitRuleConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPermitRuleConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPermitRuleConfig>>> = ({ signal }) => getPermitRuleConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPermitRuleConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPermitRuleConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getPermitRuleConfig>>>
+export type GetPermitRuleConfigQueryError = ErrorType<unknown>
+
+
+
+export function useGetPermitRuleConfig<TData = Awaited<ReturnType<typeof getPermitRuleConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPermitRuleConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPermitRuleConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdatePermitRuleConfigUrl = () => {
+
+
+
+
+  return `/api/permit-rule-config`
+}
+
+export const updatePermitRuleConfig = async (permitRuleConfig: PermitRuleConfig, options?: Parameters<typeof customFetch>[1]): Promise<PermitRuleConfig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PermitRuleConfig>(getUpdatePermitRuleConfigUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(permitRuleConfig)
+  }
+);}
+
+
+
+
+
+export const getUpdatePermitRuleConfigMutationKey = () => ['updatePermitRuleConfig'] as const;
+
+export const getUpdatePermitRuleConfigMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePermitRuleConfig>>, TError,UpdatePermitRuleConfigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePermitRuleConfig>>, TError,UpdatePermitRuleConfigMutationVariables, TContext> => {
+
+const mutationKey = getUpdatePermitRuleConfigMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePermitRuleConfig>>, UpdatePermitRuleConfigMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updatePermitRuleConfig(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePermitRuleConfigMutationResult = NonNullable<Awaited<ReturnType<typeof updatePermitRuleConfig>>>
+    export type UpdatePermitRuleConfigMutationBody = BodyType<PermitRuleConfig>
+    export type UpdatePermitRuleConfigMutationError = ErrorType<unknown>
+    export type UpdatePermitRuleConfigMutationVariables = {data: BodyType<PermitRuleConfig>}
+
+    export const useUpdatePermitRuleConfig = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePermitRuleConfig>>, TError,UpdatePermitRuleConfigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePermitRuleConfig>>,
+        TError,
+        UpdatePermitRuleConfigMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdatePermitRuleConfigMutationOptions(options));
+    }
+
+export const getRequestUploadUrlUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/request-url`
+}
+
+export const requestUploadUrl = async (requestUploadUrlBody: RequestUploadUrlBody, options?: Parameters<typeof customFetch>[1]): Promise<RequestUploadUrl200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RequestUploadUrl200>(getRequestUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(requestUploadUrlBody)
+  }
+);}
+
+
+
+
+
+export const getRequestUploadUrlMutationKey = () => ['requestUploadUrl'] as const;
+
+export const getRequestUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestUploadUrl>>, RequestUploadUrlMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestUploadUrl>>>
+    export type RequestUploadUrlMutationBody = BodyType<RequestUploadUrlBody>
+    export type RequestUploadUrlMutationError = ErrorType<unknown>
+    export type RequestUploadUrlMutationVariables = {data: BodyType<RequestUploadUrlBody>}
+
+    export const useRequestUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestUploadUrl>>,
+        TError,
+        RequestUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestUploadUrlMutationOptions(options));
+    }
+
+export const getDownloadPermitDocumentUrl = (objectPath: string,) => {
+
+
+
+
+  return `/api/storage/objects/${objectPath}`
+}
+
+export const downloadPermitDocument = async (objectPath: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDownloadPermitDocumentUrl(objectPath),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadPermitDocumentQueryKey = (objectPath: string,) => {
+    return [
+    `/api/storage/objects/${objectPath}`
+    ] as const;
+    }
+
+
+export const getDownloadPermitDocumentQueryOptions = <TData = Awaited<ReturnType<typeof downloadPermitDocument>>, TError = ErrorType<unknown>>(objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadPermitDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadPermitDocumentQueryKey(objectPath);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadPermitDocument>>> = ({ signal }) => downloadPermitDocument(objectPath, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: objectPath !== null && objectPath !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadPermitDocument>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadPermitDocumentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadPermitDocument>>>
+export type DownloadPermitDocumentQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadPermitDocument<TData = Awaited<ReturnType<typeof downloadPermitDocument>>, TError = ErrorType<unknown>>(
+ objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadPermitDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadPermitDocumentQueryOptions(objectPath,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReviewPermitChecksUrl = (id: string,) => {
+
+
+
+
+  return `/api/permit-applications/${id}/review-checks`
+}
+
+export const reviewPermitChecks = async (id: string,
+    reviewPermitChecksBody: ReviewPermitChecksBody, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PermitApplication>(getReviewPermitChecksUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reviewPermitChecksBody)
+  }
+);}
+
+
+
+
+
+export const getReviewPermitChecksMutationKey = () => ['reviewPermitChecks'] as const;
+
+export const getReviewPermitChecksMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewPermitChecks>>, TError,ReviewPermitChecksMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewPermitChecks>>, TError,ReviewPermitChecksMutationVariables, TContext> => {
+
+const mutationKey = getReviewPermitChecksMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewPermitChecks>>, ReviewPermitChecksMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewPermitChecks(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewPermitChecksMutationResult = NonNullable<Awaited<ReturnType<typeof reviewPermitChecks>>>
+    export type ReviewPermitChecksMutationBody = BodyType<ReviewPermitChecksBody>
+    export type ReviewPermitChecksMutationError = ErrorType<unknown>
+    export type ReviewPermitChecksMutationVariables = {id: string;data: BodyType<ReviewPermitChecksBody>}
+
+    export const useReviewPermitChecks = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewPermitChecks>>, TError,ReviewPermitChecksMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewPermitChecks>>,
+        TError,
+        ReviewPermitChecksMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewPermitChecksMutationOptions(options));
+    }
+
+export const getCorrectPermitClassificationUrl = (id: string,) => {
+
+
+
+
+  return `/api/permit-applications/${id}/classification`
+}
+
+export const correctPermitClassification = async (id: string,
+    correctPermitClassificationBody: CorrectPermitClassificationBody, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PermitApplication>(getCorrectPermitClassificationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(correctPermitClassificationBody)
+  }
+);}
+
+
+
+
+
+export const getCorrectPermitClassificationMutationKey = () => ['correctPermitClassification'] as const;
+
+export const getCorrectPermitClassificationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof correctPermitClassification>>, TError,CorrectPermitClassificationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof correctPermitClassification>>, TError,CorrectPermitClassificationMutationVariables, TContext> => {
+
+const mutationKey = getCorrectPermitClassificationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof correctPermitClassification>>, CorrectPermitClassificationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  correctPermitClassification(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CorrectPermitClassificationMutationResult = NonNullable<Awaited<ReturnType<typeof correctPermitClassification>>>
+    export type CorrectPermitClassificationMutationBody = BodyType<CorrectPermitClassificationBody>
+    export type CorrectPermitClassificationMutationError = ErrorType<unknown>
+    export type CorrectPermitClassificationMutationVariables = {id: string;data: BodyType<CorrectPermitClassificationBody>}
+
+    export const useCorrectPermitClassification = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof correctPermitClassification>>, TError,CorrectPermitClassificationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof correctPermitClassification>>,
+        TError,
+        CorrectPermitClassificationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCorrectPermitClassificationMutationOptions(options));
+    }
 
 export const getHealthCheckUrl = () => {
 
@@ -124,6 +741,13 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+
 export const getListPermitApplicationsUrl = (params?: ListPermitApplicationsParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -140,7 +764,7 @@ export const getListPermitApplicationsUrl = (params?: ListPermitApplicationsPara
 }
 
 /**
- * Returns saved permit applications newest first. Applicant demo views can filter by email; this is not authentication.
+ * Authenticated applicants receive only records owned by their user ID. Staff can review all in-county submissions.
  * @summary List saved permit applications
  */
 export const listPermitApplications = async (params?: ListPermitApplicationsParams, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication[]> => {
@@ -218,7 +842,7 @@ export const getCreatePermitApplicationUrl = () => {
 }
 
 /**
- * Persists applicant input and the rule-based pre-screening output.
+ * Validates jurisdiction, claims, safety and consistency server-side. Client screening output is not trusted.
  * @summary Save a screened permit application
  */
 export const createPermitApplication = async (permitApplication: PermitApplication, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication> => {
@@ -459,3 +1083,10 @@ export function useListCountyPublicRecords<TData = Awaited<ReturnType<typeof lis
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+

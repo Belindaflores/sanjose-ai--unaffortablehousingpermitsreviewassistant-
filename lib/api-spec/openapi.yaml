@@ -15,6 +15,139 @@ tags:
   - name: county-public-records
     description: Public records imported from the County of Santa Clara Open Data portal
 paths:
+  /portal-user:
+    get:
+      operationId: getPortalUser
+      responses:
+        "200":
+          description: Authenticated portal profile. Roles are assigned by an administrator.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalUser"
+    post:
+      operationId: requestStaffAccess
+      responses:
+        "200":
+          description: Staff access requested, never automatically granted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalUser"
+  /permit-rule-config:
+    get:
+      operationId: getPermitRuleConfig
+      responses:
+        "200":
+          description: Underserved area matching configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermitRuleConfig"
+    put:
+      operationId: updatePermitRuleConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermitRuleConfig"
+      responses:
+        "200":
+          description: Staff-updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermitRuleConfig"
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1, maxLength: 200 }
+                size: { type: integer, minimum: 1, maximum: 10485760 }
+                contentType: { type: string, enum: [application/pdf, image/png, image/jpeg] }
+              required: [name, size, contentType]
+      responses:
+        "200":
+          description: Private direct-to-storage upload URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadURL: { type: string }
+                  objectPath: { type: string }
+                required: [uploadURL, objectPath]
+  /storage/objects/{objectPath}:
+    get:
+      operationId: downloadPermitDocument
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Private document available only to its owner or staff }
+  /permit-applications/{id}/review-checks:
+    post:
+      operationId: reviewPermitChecks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action: { type: string, enum: [claim, safety, jurisdiction] }
+                claim: { type: string, enum: [affordable, underserved] }
+                decision: { type: string, enum: [Verified, Rejected] }
+                document: { type: string }
+                note: { type: string, minLength: 1, maxLength: 2000 }
+              required: [action, note]
+      responses:
+        "200":
+          description: Staff decision recorded with authenticated identity and timestamp
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermitApplication"
+  /permit-applications/{id}/classification:
+    patch:
+      operationId: correctPermitClassification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                projectType: { type: string, minLength: 1 }
+                housingUnits: { type: integer, minimum: 0 }
+                description: { type: string, minLength: 1 }
+              required: [projectType, housingUnits, description]
+      responses:
+        "200":
+          description: Re-screened classification correction by owner or staff
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermitApplication"
   /healthz:
     get:
       operationId: healthCheck
@@ -33,7 +166,7 @@ paths:
       operationId: listPermitApplications
       tags: [permit-applications]
       summary: List saved permit applications
-      description: Returns saved permit applications newest first. Applicant demo views can filter by email; this is not authentication.
+      description: Authenticated applicants receive only records owned by their user ID. Staff can review all in-county submissions.
       parameters:
         - name: applicantEmail
           in: query
@@ -54,7 +187,7 @@ paths:
       operationId: createPermitApplication
       tags: [permit-applications]
       summary: Save a screened permit application
-      description: Persists applicant input and the rule-based pre-screening output.
+      description: Validates jurisdiction, claims, safety and consistency server-side. Client screening output is not trusted.
       requestBody:
         required: true
         content:
@@ -70,6 +203,8 @@ paths:
                 $ref: "#/components/schemas/PermitApplication"
         "409":
           description: An application with this ID already exists
+        "422":
+          description: Outside County jurisdiction or missing required supporting evidence. No County record created.
   /permit-applications/{id}:
     patch:
       operationId: updatePermitApplication
@@ -134,6 +269,8 @@ components:
           type: boolean
         fileName:
           type: string
+        objectPath:
+          type: string
         receivedAt:
           type: string
           format: date-time
@@ -169,6 +306,17 @@ components:
       properties:
         id:
           type: string
+        ownerUserId: { type: ["string", "null"] }
+        claimed_affordable: { type: boolean }
+        claimed_underserved: { type: boolean }
+        censusTract: { type: string }
+        verification_status: { type: string, enum: [Unverified, Verified, Rejected] }
+        priorityClaims: { $ref: "#/components/schemas/PriorityClaims" }
+        reviewDecisions: { $ref: "#/components/schemas/ReviewDecisions" }
+        ruleChecks: { $ref: "#/components/schemas/RuleChecks" }
+        requiredReviewers:
+          type: array
+          items: { type: string }
         dataSource:
           type: string
           enum: [Prototype Submission, Synthetic]
@@ -189,6 +337,7 @@ components:
           type: string
         housingUnits:
           type: integer
+          minimum: 0
         affordableHousing:
           type: boolean
         underservedCommunity:
@@ -227,6 +376,9 @@ components:
             - Approved
             - Denied
             - Revisions Required
+            - Needs Jurisdiction Verification
+            - Blocked — Safety Review Required
+            - Needs Human Review — Data Inconsistency
         completenessScore:
           type: integer
           minimum: 0
@@ -279,6 +431,71 @@ components:
         - recommendedRouting
         - timeline
         - notes
+    AuditDecision:
+      type: object
+      properties:
+        note: { type: string }
+        by: { type: string }
+        at: { type: string }
+        document: { type: string }
+      required: [note, by, at]
+    ClaimVerification:
+      type: object
+      properties:
+        status: { type: string, enum: [Unverified, Verified, Rejected] }
+        note: { type: string }
+        by: { type: string }
+        at: { type: string }
+      required: [status]
+    PriorityClaims:
+      type: object
+      properties:
+        affordable: { $ref: "#/components/schemas/ClaimVerification" }
+        underserved: { $ref: "#/components/schemas/ClaimVerification" }
+      required: [affordable, underserved]
+    ReviewDecisions:
+      type: object
+      properties:
+        jurisdiction: { $ref: "#/components/schemas/AuditDecision" }
+        safety:
+          type: array
+          items: { $ref: "#/components/schemas/SafetyDecision" }
+    SafetyDecision:
+      type: object
+      properties:
+        note: { type: string }
+        by: { type: string }
+        at: { type: string }
+        document: { type: string }
+      required: [note, by, at, document]
+    RuleChecks:
+      type: object
+      properties:
+        jurisdictionStatus: { type: string, enum: [In County, Needs Verification, Outside County] }
+        classificationConflicts: { type: array, items: { type: string } }
+        safetyCriticalFlags: { type: array, items: { type: string } }
+        underservedMatch: { type: string }
+        completenessLabel: { type: string }
+      required: [jurisdictionStatus, classificationConflicts, safetyCriticalFlags, underservedMatch, completenessLabel]
+    PortalUser:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        name: { type: string }
+        role: { type: string, enum: [applicant, worker, fire_marshal] }
+        staffAccessRequested: { type: boolean }
+      required: [id, email, name, role, staffAccessRequested]
+    PermitRuleConfig:
+      type: object
+      properties:
+        zips: { type: array, items: { type: string, pattern: "^\\d{5}$" } }
+        censusTracts: { type: array, items: { type: string } }
+        placeholder: { type: boolean }
+        updateNote: { type: string, minLength: 1 }
+        updatedBy: { type: string }
+        updatedAt: { type: string }
+      required: [zips, censusTracts, placeholder]
     CountyPublicRecord:
       type: object
       properties:

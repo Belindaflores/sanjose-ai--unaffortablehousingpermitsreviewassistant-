@@ -22,4 +22,7 @@ export const PermitApplicationReviewStatus = {
   Approved: 'Approved',
   Denied: 'Denied',
   Revisions_Required: 'Revisions Required',
+  Needs_Jurisdiction_Verification: 'Needs Jurisdiction Verification',
+  'Blocked_—_Safety_Review_Required': 'Blocked — Safety Review Required',
+  'Needs_Human_Review_—_Data_Inconsistency': 'Needs Human Review — Data Inconsistency',
 } as const;

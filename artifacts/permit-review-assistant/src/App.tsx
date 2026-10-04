@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Link, Route, Switch, useLocation, useRoute, Router as WouterRouter } from 'wouter';
+import { Link, Route, Switch, Redirect, useLocation, useRoute, Router as WouterRouter } from 'wouter';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
-import { getListCountyPublicRecordsQueryKey, getListPermitApplicationsQueryKey, useCreatePermitApplication, useListCountyPublicRecords, useListPermitApplications, useUpdatePermitApplication } from '@workspace/api-client-react';
+import { getListCountyPublicRecordsQueryKey, getListPermitApplicationsQueryKey, useCreatePermitApplication, useListCountyPublicRecords, useListPermitApplications, useUpdatePermitApplication, useRequestUploadUrl, useRequestStaffAccess } from '@workspace/api-client-react';
+import { checkJurisdiction, screenApplication, EVIDENCE_LABEL, OUTSIDE_COUNTY_MESSAGE, type PriorityClaims, type RuleChecks, type ReviewDecisions } from '@workspace/api-zod';
+import { PortalAuth, SignOutButton, usePortalProfile } from './PortalAuth';
+import { StaffChecksPanel, ClassificationCorrection, UnderservedConfigPanel } from './ReviewSafeguards';
+import './safeguards.css';
 import { ErrorBoundary } from '@/components/error-boundary';
 import NotFound from '@/pages/not-found';
-import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, ApplicantHelpPage, ApplicantRecordsPage, RoleChooser, WorkerLoginPage } from './ApplicantPortal';
+import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, ApplicantHelpPage, ApplicantRecordsPage, RoleChooser } from './ApplicantPortal';
 import { WorkerAnalytics } from './WorkerAnalytics';
 import {
   Activity, AlertCircle, BarChart3, Bell, Building2, Check, CheckCircle2, ChevronRight,
@@ -23,13 +27,16 @@ type PortalRole = 'applicant' | 'worker';
 const DEMO_APPLICANT = { name: 'Demo Applicant', email: 'demo.applicant@example.com', company: 'Personal project' };
 
 type AIStatus = 'Ready for Human Review' | 'Missing Information' | 'Potential Issues Detected' | 'Additional Agency Review Required';
-type ReviewStatus = 'New' | 'In County Intake' | 'Ready for Review' | 'More Information Requested' | 'Planning Review' | 'Building Review' | 'Fire Review' | 'Environmental Review' | 'Senior Review' | 'Approved' | 'Denied' | 'Revisions Required';
+type ReviewStatus = 'New' | 'In County Intake' | 'Ready for Review' | 'More Information Requested' | 'Planning Review' | 'Building Review' | 'Fire Review' | 'Environmental Review' | 'Senior Review' | 'Approved' | 'Denied' | 'Revisions Required' | 'Needs Jurisdiction Verification' | 'Blocked — Safety Review Required' | 'Needs Human Review — Data Inconsistency';
 type Priority = 'Normal' | 'High' | 'Urgent';
 type TimelineStatus = 'completed' | 'current' | 'upcoming';
-type Document = { category: string; label: string; required: boolean; received: boolean; fileName?: string; receivedAt?: string };
+type Document = { category: string; label: string; required: boolean; received: boolean; fileName?: string; receivedAt?: string; objectPath?: string };
 type TimelineEvent = { label: string; status: TimelineStatus; date: string; detail: string };
 type StaffNote = { id: string; author: string; body: string; createdAt: string };
 export type PermitApplication = {
+  ownerUserId?: string | null; claimed_affordable?: boolean; claimed_underserved?: boolean;
+  verification_status?: 'Unverified' | 'Verified' | 'Rejected'; priorityClaims?: PriorityClaims;
+  ruleChecks?: RuleChecks; requiredReviewers?: string[]; reviewDecisions?: ReviewDecisions; censusTract?: string;
   id: string; dataSource?: 'Prototype Submission' | 'Synthetic'; applicantName: string; companyName: string; email: string; projectName: string;
   projectAddress: string; permitType: string; projectType: string; housingUnits: number;
   affordableHousing: boolean; underservedCommunity: boolean; estimatedCost: number; description: string;
@@ -47,7 +54,7 @@ const uid = () => `SCC-${new Date().getFullYear()}-${Math.floor(100000 + Math.ra
 const baseDocuments = (received: string[] = [], missing: string[] = []): Document[] => {
   const all = [
     ['Plans', 'Architectural plans', true], ['Engineering', 'Structural plans', true],
-    ['Site', 'Site plan and survey', true], ['Safety', 'Fire and life safety plan', true],
+    ['Site', 'Site plan and survey', true], ['Safety', 'Fire and life safety plan', false],
     ['Energy', 'Title 24 energy forms', true], ['Ownership', 'Owner authorization', true],
     ['Planning', 'Planning / zoning forms', false],
   ];
@@ -129,7 +136,7 @@ function seedApplicantApplications(): PermitApplication[] {
 }
 // These two submitted records were explicitly removed; discard copies left in older browsers.
 const REMOVED_LOCAL_SUBMISSION_IDS = new Set(['SCC-2026-430034', 'SCC-2026-861117']);
-const withoutRemovedLocalSubmissions = (items: PermitApplication[]) => items.filter(item => !REMOVED_LOCAL_SUBMISSION_IDS.has(item.id));
+const withoutRemovedLocalSubmissions = (items: PermitApplication[]) => items.filter(item => !REMOVED_LOCAL_SUBMISSION_IDS.has(item.id) && checkJurisdiction(item.projectAddress).status !== 'Outside County').map(item => screenApplication(item) as PermitApplication);
 const SEEDED_DEMO_IDS = new Set([...seedApplications(), ...seedApplicantApplications()].map(application => application.id));
 function readApplicantApplications(): PermitApplication[] {
   try {
@@ -149,6 +156,7 @@ function readApplications(): PermitApplication[] {
 }
 function saveApplications(applications: PermitApplication[]) { localStorage.setItem(STORE_KEY, JSON.stringify(withoutRemovedLocalSubmissions(applications))); }
 function statusClass(status: string) {
+  if (status.includes('Blocked') || status.includes('Inconsistency') || status.includes('Verification')) return 'status-issue';
   if (status === 'Denied') return 'status-issue';
   if (status.includes('Missing') || status.includes('Information')) return 'status-missing';
   if (status.includes('Issue') || status.includes('Revisions')) return 'status-issue';
@@ -157,32 +165,20 @@ function statusClass(status: string) {
   return 'status-neutral';
 }
 function computeScreening(form: Record<string, string | boolean | number>, documents: Document[]) {
-  const required = documents.filter(d => d.required); const received = required.filter(d => d.received);
-  const score = Math.round((received.length / required.length) * 100);
-  const flags: string[] = []; const routing: string[] = [];
-  if (!documents.find(d => d.label === 'Architectural plans')?.received) flags.push('Missing architectural plans');
-  if (!documents.find(d => d.label === 'Structural plans')?.received) flags.push('Missing structural plans');
-  if (Number(form.housingUnits) > 20) { flags.push('Large development — 20+ housing units'); routing.push('Planning'); }
-  if (form.affordableHousing || form.underservedCommunity) { flags.push('Housing Priority Review'); }
-  const larger = Number(form.housingUnits) > 20 || form.projectType === 'Commercial' || Number(form.estimatedCost) > 5000000;
-  if (larger && !documents.find(d => d.label === 'Fire and life safety plan')?.received) { flags.push('Potential Fire Marshal review'); routing.push('Fire Marshal'); }
-  if (documents.find(d => d.label === 'Fire and life safety plan')?.received && larger) routing.push('Fire Marshal');
-  if (!routing.includes('Building')) routing.push('Building');
-  const missing = required.length - received.length;
-  const aiStatus: AIStatus = missing > 0 ? 'Missing Information' : flags.some(f => f.includes('Fire Marshal')) ? 'Additional Agency Review Required' : flags.length > 0 ? 'Potential Issues Detected' : 'Ready for Human Review';
-  const priority: Priority = form.affordableHousing || form.underservedCommunity ? 'High' : Number(form.housingUnits) > 20 ? 'High' : 'Normal';
-  return { score, flags: [...new Set(flags)], routing: [...new Set(routing)], aiStatus, priority, summary: missing > 0 ? `The submission is ${score}% complete. ${missing} required document${missing > 1 ? 's are' : ' is'} missing and should be requested before technical review.` : `The submission appears complete for human review. ${flags.length ? 'Additional routing considerations were identified for authorized County staff.' : 'No screening flags were identified by the rule-based pre-screen.'}` };
+  const screened = screenApplication({ projectAddress: String(form.projectAddress), projectType: String(form.projectType), housingUnits: Number(form.housingUnits), description: String(form.description), affordableHousing: Boolean(form.affordableHousing), underservedCommunity: Boolean(form.underservedCommunity), documents });
+  return { score: screened.completenessScore, flags: screened.flags, routing: screened.recommendedRouting, aiStatus: screened.aiStatus, priority: screened.priority, summary: screened.aiSummary };
 }
 
 function AppShell({ children, role, onSwitch }: { children: React.ReactNode; role: PortalRole; onSwitch: () => void }) {
+  const profile = usePortalProfile();
   const [location] = useLocation(); const [menu, setMenu] = useState(false);
-  const links = [{ href: '/', label: 'Overview', icon: LayoutDashboard }, { href: '/applications', label: 'Applications', icon: ClipboardCheck }, { href: '/records', label: 'Application Records', icon: FileText }, ...(role === 'worker' ? [{ href: '/analytics', label: 'Analytics', icon: BarChart3 }] : []), { href: '/help', label: 'Help & guidance', icon: HelpCircle }];
-  const current = location === '/' ? '/' : location.startsWith('/applications/') || location === '/new-application' ? '/applications' : location;
+  const links = [{ href: '/user-portal', label: 'Overview', icon: LayoutDashboard }, { href: '/applications', label: 'Applications', icon: ClipboardCheck }, { href: '/records', label: 'Application Records', icon: FileText }, ...(role === 'worker' ? [{ href: '/analytics', label: 'Analytics', icon: BarChart3 }] : []), { href: '/help', label: 'Help & guidance', icon: HelpCircle }];
+  const current = location === '/' ? '/user-portal' : location.startsWith('/applications/') || location === '/new-application' ? '/applications' : location;
   return <div className="app-shell">
     <aside className={`side-nav ${menu ? 'open' : ''}`}>
       <div className="brand"><div className="brand-mark">SC</div><div className="brand-name">Santa Clara County Permit Portal</div><div className="brand-subtitle">Student prototype</div><div className="side-role" data-testid="label-current-role">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</div></div>
       <nav className="nav-area" aria-label="Main navigation"><div className="nav-label">Workspace</div>{links.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setMenu(false)} className={`nav-link ${current === href ? 'active' : ''}`} data-testid={`link-${label.toLowerCase().replaceAll(' ', '-')}`}><Icon /><span>{label}</span></Link>)}</nav>
-      <div className="side-footer"><div className="staff-chip"><div className="staff-avatar">{role === 'worker' ? 'JL' : 'DA'}</div><div><strong>{role === 'worker' ? 'Jordan Lee' : 'Demo Applicant'}</strong><span className="staff-role">{role === 'worker' ? 'Permit technician · Demo account' : 'Permit applicant · Demo account'}</span></div></div></div>
+      <div className="side-footer"><div className="staff-chip"><div className="staff-avatar">{profile.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</div><div><strong>{profile.name}</strong><span className="staff-role">{role === 'worker' ? profile.role === 'fire_marshal' ? 'Fire Marshal · Authorized staff' : 'City Worker · Authorized staff' : 'Authenticated permit applicant'}</span></div></div></div>
     </aside>
     <div className="main-column">
       <header className="topbar"><button className="mobile-menu" aria-label={menu ? 'Close navigation' : 'Open navigation'} aria-expanded={menu} data-testid="button-open-navigation" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button><div className="crumb"><Building2 size={15} /><span>County permit workspace</span><ChevronRight size={13} /><strong>{location === '/' ? 'Overview' : location.includes('new-application') ? 'New application' : location.includes('records') ? 'Application Records' : location.includes('analytics') ? role === 'worker' ? 'Analytics' : 'Page not found' : location.includes('help') ? 'Help & guidance' : 'Applications'}</strong></div><div className="portal-controls"><span className="portal-label">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</span><button className="switch-role" onClick={onSwitch} data-testid="button-switch-role">Switch Role</button><div className="prototype-badge">Student Prototype — Not an Official County System</div></div></header>
@@ -222,16 +218,22 @@ function Dashboard({ applications }: { applications: PermitApplication[] }) {
 
 function ApplicationRow({ application: a, compact = false }: { application: PermitApplication; compact?: boolean }) {
   const [, setLocation] = useLocation();
-  return <tr onClick={() => setLocation(`/applications/${a.id}`)} data-testid={`row-application-${a.id}`}><td><span className="table-title">{a.projectName}</span><span className="table-sub">{a.id} · {a.projectType} · {a.dataSource ?? 'Prototype Submission'}</span></td>{!compact && <td><span className="table-title">{a.applicantName}</span><span className="table-sub">{a.companyName}</span></td>}<td>{compact ? <span className={`priority ${a.priority.toLowerCase()}`}>{a.priority} priority</span> : shortDate(a.submittedAt)}</td>{compact && <td><StatusBadge status={a.aiStatus} /></td>}{!compact && <><td><div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 90 }}><div className="progress" style={{ flex: 1 }}><span style={{ width: `${a.completenessScore}%` }} /></div><small>{a.completenessScore}%</small></div></td><td><StatusBadge status={a.aiStatus} /></td></>}</tr>;
+  return <tr className={a.requiredReviewers?.length ? 'rule-incomplete' : ''} onClick={() => setLocation(`/applications/${a.id}`)} data-testid={`row-application-${a.id}`}>
+    <td><span className="table-title">{a.projectName}</span><span className="table-sub">{a.id} · {a.projectType} · {a.dataSource ?? 'Prototype Submission'}</span>{a.requiredReviewers?.length ? <StatusBadge status={a.reviewStatus} /> : null}{a.ruleChecks?.classificationConflicts.length ? <span className="table-sub" style={{ color: '#84241d', fontWeight: 700 }}>Needs Human Review</span> : null}{a.ruleChecks?.safetyCriticalFlags.length ? <span className="table-sub" style={{ color: '#84241d', fontWeight: 700 }}>Safety-Critical · Fire Marshal required</span> : null}</td>
+    {!compact && <td><span className="table-title">{a.applicantName}</span><span className="table-sub">{a.companyName}</span></td>}
+    <td>{compact ? <span className={`priority ${a.priority.toLowerCase()}`}>{a.verification_status === 'Unverified' && (a.affordableHousing || a.underservedCommunity) ? 'Priority claim under review' : `${a.priority} priority`}</span> : shortDate(a.submittedAt)}</td>
+    {compact && <td><StatusBadge status={a.aiStatus} /></td>}
+    {!compact && <><td><div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 90 }}><div className="progress" style={{ flex: 1 }}><span style={{ width: `${a.completenessScore}%` }} /></div><small>{a.completenessScore}%</small></div>{a.requiredReviewers?.length ? <small>{a.ruleChecks?.completenessLabel}</small> : null}</td><td><StatusBadge status={a.aiStatus} /></td></>}
+  </tr>;
 }
 
 function ApplicationsPage({ applications }: { applications: PermitApplication[] }) {
   const [query, setQuery] = useState(''); const [filter, setFilter] = useState('All applications');
-  const filters = ['All applications', 'New applications', 'Missing documents', 'Potential issues', 'Affordable housing', 'High priority', 'Ready for review', 'Additional agency review'];
+  const filters = ['All applications', 'Needs Human Review', 'Safety-Critical', 'New applications', 'Missing documents', 'Potential issues', 'Affordable housing', 'High priority', 'Ready for review', 'Additional agency review'];
   const filtered = applications.filter(a => {
     const haystack = `${a.projectName} ${a.id} ${a.applicantName} ${a.companyName} ${a.projectAddress}`.toLowerCase();
     const matches = haystack.includes(query.toLowerCase());
-    const byFilter = filter === 'All applications' || filter === 'New applications' && a.reviewStatus === 'New' || filter === 'Missing documents' && a.aiStatus === 'Missing Information' || filter === 'Potential issues' && a.aiStatus === 'Potential Issues Detected' || filter === 'Affordable housing' && a.affordableHousing || filter === 'High priority' && a.priority !== 'Normal' || filter === 'Ready for review' && a.aiStatus === 'Ready for Human Review' || filter === 'Additional agency review' && a.aiStatus === 'Additional Agency Review Required';
+    const byFilter = filter === 'All applications' || filter === 'Needs Human Review' && Boolean(a.ruleChecks?.classificationConflicts.length || a.reviewStatus === 'Needs Jurisdiction Verification') || filter === 'Safety-Critical' && Boolean(a.ruleChecks?.safetyCriticalFlags.length) || filter === 'New applications' && a.reviewStatus === 'New' || filter === 'Missing documents' && a.aiStatus === 'Missing Information' || filter === 'Potential issues' && a.aiStatus === 'Potential Issues Detected' || filter === 'Affordable housing' && a.affordableHousing || filter === 'High priority' && a.priority !== 'Normal' || filter === 'Ready for review' && a.aiStatus === 'Ready for Human Review' && !a.requiredReviewers?.length || filter === 'Additional agency review' && a.aiStatus === 'Additional Agency Review Required';
     return matches && byFilter;
   });
   return <><main className="page"><PageHeading eyebrow="Staff queue" title="Applications" description="Search, filter, and open submissions for a human review of completeness, routing, and next steps." actions={<Link href="/new-application" className="button teal" data-testid="link-new-application-queue"><Plus /> New application</Link>} /><div className="card"><div className="filters"><div className="search-wrap"><Search /><input className="input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by project, applicant, or ID" aria-label="Search applications" data-testid="input-search-applications" /></div><select className="select" value={filter} onChange={e => setFilter(e.target.value)} aria-label="Filter applications" data-testid="select-application-filter">{filters.map(item => <option key={item}>{item}</option>)}</select><span style={{ color: '#677982', fontSize: 11 }}>{filtered.length} of {applications.length} applications</span></div>{filtered.length ? <div className="table-wrap"><table><thead><tr><th>Application</th><th>Applicant</th><th>Submitted</th><th>Completeness</th><th>AI pre-screening</th></tr></thead><tbody>{filtered.map(a => <ApplicationRow key={a.id} application={a} />)}</tbody></table></div> : <div className="empty"><Search size={29} /><h2>No applications match these filters</h2><p>Try a different search term or clear the filter.</p><button className="button outline" onClick={() => { setQuery(''); setFilter('All applications'); }} data-testid="button-clear-filters">Clear filters</button></div>}</div></main><FooterDisclaimer /></>;
@@ -285,25 +287,46 @@ function RecordsPage({ applications }: { applications: PermitApplication[] }) {
   </main><FooterDisclaimer /></>;
 }
 
-type FormState = { applicantName: string; companyName: string; email: string; projectName: string; projectAddress: string; permitType: string; projectType: string; housingUnits: string; estimatedCost: string; description: string; affordableHousing: boolean; underservedCommunity: boolean };
-const defaultForm: FormState = { applicantName: '', companyName: '', email: '', projectName: '', projectAddress: '', permitType: 'Building permit', projectType: 'Single-family residential', housingUnits: '1', estimatedCost: '', description: '', affordableHousing: false, underservedCommunity: false };
+type FormState = { applicantName: string; companyName: string; email: string; projectName: string; projectAddress: string; permitType: string; projectType: string; housingUnits: string; estimatedCost: string; description: string; affordableHousing: boolean; underservedCommunity: boolean; censusTract: string };
+const defaultForm: FormState = { applicantName: '', companyName: '', email: '', projectName: '', projectAddress: '', permitType: 'Building permit', projectType: 'Single-family residential', housingUnits: '1', estimatedCost: '', description: '', affordableHousing: false, underservedCommunity: false, censusTract: '' };
 
 function NewApplication({ onAdd, role }: { onAdd: (app: PermitApplication) => void; role: PortalRole }) {
+  const profile = usePortalProfile();
+  const requestUpload = useRequestUploadUrl();
+  const [uploading, setUploading] = useState(false);
   const createApplication = useCreatePermitApplication();
-  const initialForm = () => role === 'applicant' ? { ...defaultForm, applicantName: DEMO_APPLICANT.name, email: DEMO_APPLICANT.email, companyName: DEMO_APPLICANT.company } : { ...defaultForm };
+  const initialForm = () => role === 'applicant' ? { ...defaultForm, applicantName: profile.name, email: profile.email, companyName: 'Personal project' } : { ...defaultForm };
   const [form, setForm] = useState<FormState>(initialForm); const [docs, setDocs] = useState<Document[]>(baseDocuments()); const [errors, setErrors] = useState<string[]>([]); const [persistenceError, setPersistenceError] = useState(''); const [result, setResult] = useState<{ app: PermitApplication; screening: ReturnType<typeof computeScreening> } | null>(null); const [submitting, setSubmitting] = useState(false);
   const update = (key: keyof FormState, value: string | boolean) => setForm(prev => ({ ...prev, [key]: value }));
-  const toggleDoc = (index: number) => setDocs(prev => prev.map((d, i) => i === index ? { ...d, received: !d.received, fileName: !d.received ? `${d.label.toLowerCase().replaceAll(' ', '-')}.pdf` : undefined, receivedAt: !d.received ? dateAt(0) : undefined } : d));
-  const selectDoc = (index: number, file?: File) => {
+  useEffect(() => {
+    setDocs(prev => {
+      const core = prev.filter(d => d.label !== EVIDENCE_LABEL);
+      const existing = prev.find(d => d.label === EVIDENCE_LABEL);
+      return form.affordableHousing ? [...core, existing ?? { category: 'Priority claim evidence', label: EVIDENCE_LABEL, required: true, received: false }] : core;
+    });
+  }, [form.affordableHousing]);
+  const jurisdiction = checkJurisdiction(form.projectAddress);
+  const fireRequired = /multifamily/i.test(form.projectType) || Number(form.housingUnits) >= 5;
+  const selectDoc = async (index: number, file?: File) => {
     if (!file) return;
-    setDocs(prev => prev.map((d, i) => i === index ? { ...d, received: true, fileName: file.name, receivedAt: new Date().toISOString() } : d));
+    if (file.size === 0 || file.size > 10 * 1024 * 1024 || !['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)) { setPersistenceError('Choose a PDF, PNG, or JPEG file between 1 byte and 10 MB.'); return; }
+    setUploading(true); setPersistenceError('');
+    try {
+      const result = await requestUpload.mutateAsync({ data: { name: file.name, size: file.size, contentType: file.type as 'application/pdf' | 'image/png' | 'image/jpeg' } });
+      const uploaded = await fetch(result.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+      if (!uploaded.ok) throw new Error('Upload failed');
+      setDocs(prev => prev.map((d, i) => i === index ? { ...d, received: true, objectPath: result.objectPath, fileName: file.name, receivedAt: new Date().toISOString() } : d));
+    } catch { setPersistenceError('The document was not uploaded. Please select it again before submitting.'); }
+    finally { setUploading(false); }
   };
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || uploading) return;
     const required: (keyof FormState)[] = ['applicantName', 'companyName', 'email', 'projectName', 'projectAddress', 'estimatedCost', 'description'];
     const missing = required.filter(k => !String(form[k]).trim());
     if (missing.length || !form.email.includes('@')) { setErrors([...missing.map(k => `${String(k)} is required`), ...(form.email && !form.email.includes('@') ? ['Enter a valid email address'] : [])]); return; }
+    if (!Number.isInteger(Number(form.housingUnits)) || Number(form.housingUnits) < 0 || Number(form.estimatedCost) < 0) { setErrors(['Housing units and cost must be non-negative; units must be a whole number.']); return; }
+    if (form.affordableHousing && !docs.some(d => d.label === EVIDENCE_LABEL && d.received && d.objectPath) && jurisdiction.status !== 'Outside County') { setErrors(['Upload supporting evidence for your affordable housing claim.']); return; }
     setErrors([]); setPersistenceError(''); setSubmitting(true);
     const screening = computeScreening({ ...form, housingUnits: Number(form.housingUnits), estimatedCost: Number(form.estimatedCost) }, docs);
     const app: PermitApplication = { ...form, id: uid(), housingUnits: Number(form.housingUnits), estimatedCost: Number(form.estimatedCost), submittedAt: new Date().toISOString(), aiStatus: screening.aiStatus, priority: screening.priority, assignedDepartment: screening.routing[0] || 'County Intake', reviewStatus: 'New', completenessScore: screening.score, documents: docs, flags: screening.flags, aiSummary: screening.summary, recommendedRouting: screening.routing, timeline: timelineFor('New', screening.flags.some(f => f.includes('Fire'))), notes: [] };
@@ -311,22 +334,41 @@ function NewApplication({ onAdd, role }: { onAdd: (app: PermitApplication) => vo
       const saved = await createApplication.mutateAsync({ data: app });
       onAdd(saved);
       await queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() });
-      setResult({ app: saved, screening });
-    } catch {
-      setPersistenceError('The application could not be saved to Application Records. No submission was completed. Please try again.');
+      setResult({ app: saved, screening: { score: saved.completenessScore, flags: saved.flags, routing: saved.recommendedRouting, aiStatus: saved.aiStatus, priority: saved.priority as 'High' | 'Normal', summary: saved.aiSummary } });
+    } catch (error) {
+      const message = (error as { data?: { error?: string } }).data?.error;
+      setPersistenceError(message || (jurisdiction.status === 'Outside County' ? OUTSIDE_COUNTY_MESSAGE : 'The application could not be saved. No submission was completed. Please try again.'));
     } finally { setSubmitting(false); }
   };
-   if (result) return <main className="page"><PageHeading eyebrow="Submission received" title="Pre-screening complete" description={`Application ${result.app.id} is now in the County review queue. The result below is an advisory intake aid, not a permit decision.`} actions={<><Link href={`/applications/${result.app.id}`} className="button teal" data-testid="link-open-submitted-application">Open application <ChevronRight /></Link><button className="button outline" onClick={() => { setResult(null); setForm(initialForm()); setDocs(baseDocuments()); }} data-testid="button-submit-another">Submit another</button></>} /><div className={`result-banner ${result.screening.aiStatus === 'Missing Information' ? 'warning' : result.screening.aiStatus.includes('Issue') ? 'issue' : ''}`}><div className="eyebrow">Rule-based AI pre-screening result</div><h2>{result.screening.aiStatus}</h2><p className="section-note">{result.screening.summary}</p><div className="score" style={{ marginTop: 16 }}><div className="score-num">{result.screening.score}%</div><div style={{ flex: 1 }}><div style={{ color: '#45606c', fontSize: 11, marginBottom: 7 }}>Completeness score</div><div className="progress"><span style={{ width: `${result.screening.score}%` }} /></div></div></div></div><div className="grid-2" style={{ marginTop: 20 }}><div className="card"><div className="card-header"><div><h2>Checklist</h2><p className="section-note">Required documents detected in this submission.</p></div></div><div className="card-body"><ul className="check-list">{result.app.documents.filter(d => d.required).map(d => <li key={d.label} className={d.received ? '' : 'missing'}>{d.received ? <CheckCircle2 /> : <XCircle />} {d.label}{d.received ? '' : ' — missing'}</li>)}</ul></div></div>{role === 'worker' ? <div className="card"><div className="card-header"><div><h2>Flags and routing</h2><p className="section-note">Suggestions for authorized staff review.</p></div></div><div className="card-body">{result.screening.flags.length ? <div className="flag-list">{result.screening.flags.map(f => <div className="flag" key={f}><AlertCircle size={15} />{f}</div>)}</div> : <div className="section-note">No screening flags identified.</div>}<div style={{ marginTop: 18, fontSize: 11, color: '#60747e' }}><strong>Suggested routing:</strong> {result.screening.routing.join(' · ')}</div></div></div> : <div className="card"><div className="card-header"><div><h2>What happens next</h2></div></div><div className="card-body"><p className="section-note">Your submission is saved. You can follow its progress in Application Records. A reviewer will assess your application before any decision is made.</p><Link href="/records" className="button outline" data-testid="link-view-own-records">View my records <ChevronRight /></Link></div></div>}</div><div className="notice" style={{ marginTop: 20 }}><ShieldCheck size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> This pre-screening is advisory only. A County employee must review the record and make all final decisions.</div></main>;
+   if (result) return <main className="page"><PageHeading eyebrow="Submission received" title={result.app.reviewStatus} description={`Application ${result.app.id} was saved with server-enforced checks. This is not a permit decision.`} actions={<Link href={`/applications/${result.app.id}`} className="button teal" data-testid="link-open-submitted-application">Open application <ChevronRight /></Link>} /><div className={`result-banner ${result.app.requiredReviewers?.length ? 'issue rule-incomplete' : 'warning'}`}><h2>{result.app.ruleChecks?.completenessLabel}</h2><p>{result.app.aiSummary}</p><div className="score"><div className="score-num">{result.app.completenessScore}%</div><div className="progress" style={{ flex: 1 }}><span style={{ width: `${result.app.completenessScore}%` }} /></div></div>{result.app.verification_status === 'Unverified' && (result.app.affordableHousing || result.app.underservedCommunity) && <p className="priority-pending">Priority claim under review</p>}{result.app.requiredReviewers?.length ? <p><strong>Required reviewers:</strong> {result.app.requiredReviewers.join(' · ')}</p> : null}</div><p className="notice">AI recommendations are advisory only. Prototype — Not an Official County System.</p><Link href="/records" className="button outline">View my records</Link></main>;
    return <main className="page"><PageHeading eyebrow="Applicant intake" title="Submit a permit application" description="Provide the project information and core documents needed for a first County intake review." actions={<Link href="/applications" className="button outline" data-testid="link-cancel-submission">{role === 'applicant' ? 'My applications' : 'View queue'}</Link>} />{errors.length > 0 && <div className="notice" style={{ borderColor: '#ddb1ac', background: '#fff3f1', color: '#7e403a', marginBottom: 18 }}><AlertCircle size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> Please correct the highlighted required information. {errors[0]}</div>}{persistenceError && <div className="notice" role="alert" data-testid="error-persistence" style={{ borderColor: '#ddb1ac', background: '#fff3f1', color: '#7e403a', marginBottom: 18 }}><AlertCircle size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> {persistenceError}</div>}<form onSubmit={submit} className="card">
-    <section className="form-section"><div className="form-section-title"><span className="step-number">1</span><div><h2>Applicant and project</h2><p className="section-note">{role === 'applicant' ? 'This demo submits under the Demo Applicant profile. Tell the County what is being proposed.' : 'Tell the County who is submitting and what is being proposed.'}</p></div></div><div className="form-grid"><Field label="Applicant name" required value={form.applicantName} readOnly={role === 'applicant'} onChange={v => update('applicantName', v)} error={errors.some(e => e.includes('applicantName'))} testId="input-applicant-name" /><Field label="Company or organization" required value={form.companyName} readOnly={role === 'applicant'} onChange={v => update('companyName', v)} error={errors.some(e => e.includes('companyName'))} testId="input-company-name" /><Field label="Email address" required type="email" value={form.email} readOnly={role === 'applicant'} onChange={v => update('email', v)} error={errors.some(e => e.includes('email'))} testId="input-applicant-email" /><Field label="Project name" required value={form.projectName} onChange={v => update('projectName', v)} error={errors.some(e => e.includes('projectName'))} testId="input-project-name" /><Field label="Project address" required full value={form.projectAddress} onChange={v => update('projectAddress', v)} error={errors.some(e => e.includes('projectAddress'))} testId="input-project-address" /><div className="field"><label htmlFor="permit-type">Permit type <span className="required">*</span></label><select id="permit-type" className="select" value={form.permitType} onChange={e => update('permitType', e.target.value)} data-testid="select-permit-type"><option>Building permit</option><option>Tenant improvement</option><option>Planning application</option><option>Encroachment permit</option></select></div><div className="field"><label htmlFor="project-type">Project type <span className="required">*</span></label><select id="project-type" className="select" value={form.projectType} onChange={e => update('projectType', e.target.value)} data-testid="select-project-type"><option>Single-family residential</option><option>Accessory dwelling unit</option><option>Small multifamily housing</option><option>Multifamily housing</option><option>Commercial</option><option>Senior residential care</option></select></div><Field label="Housing units" type="number" value={form.housingUnits} onChange={v => update('housingUnits', v)} testId="input-housing-units" /><Field label="Estimated construction cost" type="number" value={form.estimatedCost} onChange={v => update('estimatedCost', v)} error={errors.some(e => e.includes('estimatedCost'))} testId="input-estimated-cost" prefix="$" /><div className="field full"><label htmlFor="project-description">Project description <span className="required">*</span></label><textarea id="project-description" className="textarea" value={form.description} onChange={e => update('description', e.target.value)} placeholder="Briefly describe the scope, occupancy, and proposed work." data-testid="textarea-project-description" />{errors.some(e => e.includes('description')) && <span className="error-text">Project description is required.</span>}</div><div className="field full"><label>Priority context</label><div className="grid-3"><label className="checkbox-row"><input type="checkbox" checked={form.affordableHousing} onChange={e => update('affordableHousing', e.target.checked)} data-testid="checkbox-affordable-housing" /> Affordable housing project</label><label className="checkbox-row"><input type="checkbox" checked={form.underservedCommunity} onChange={e => update('underservedCommunity', e.target.checked)} data-testid="checkbox-underserved-community" /> Located in an underserved community</label></div></div></div></section>
-     <section className="form-section"><div className="form-section-title"><span className="step-number">2</span><div><h2>Documents</h2><p className="section-note">{role === 'applicant' ? 'Choose files for your demo submission. File names are recorded; file contents are not stored in this prototype.' : 'Use the controls to represent documents included with this demo submission. Uploads are simulated locally.'}</p></div></div><div className="doc-list">{docs.map((doc, i) => <div className="doc-row" key={doc.label}><div><div className="doc-label">{doc.label} {doc.required && <span className="required">*</span>}</div><span className="doc-category">{doc.category} · {doc.received ? doc.fileName : 'Not received'}</span></div>{role === 'applicant' ? <label className={`button ${doc.received ? 'secondary' : 'outline'} doc-upload`}><Paperclip /> {doc.received ? 'Change file' : 'Choose file'}<input type="file" accept=".pdf,.png,.jpg,.jpeg" aria-label={`Choose file for ${doc.label}`} onChange={e => selectDoc(i, e.target.files?.[0])} data-testid={`input-document-${doc.label.toLowerCase().replaceAll(' ', '-')}`} /></label> : <button type="button" className={`button ${doc.received ? 'secondary' : 'outline'}`} onClick={() => toggleDoc(i)} data-testid={`button-upload-${doc.label.toLowerCase().replaceAll(' ', '-')}`}>{doc.received ? <><Check /> Received</> : <><Paperclip /> Add document</>}</button>}</div>)}</div></section>
-     <section className="form-section" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}><span className="section-note" style={{ marginRight: 'auto', alignSelf: 'center' }}><span className="required">*</span> Required for submission</span><button type="button" className="button outline" disabled={submitting} onClick={() => { setForm(initialForm()); setDocs(baseDocuments()); setErrors([]); setPersistenceError(''); }} data-testid="button-clear-form">Clear form</button><button type="submit" className="button teal" disabled={submitting} data-testid="button-submit-application">{submitting ? 'Saving application…' : <><Send /> Submit for AI pre-screening</>}</button></section>
+    <section className="form-section">
+      <div className="form-section-title"><span className="step-number">1</span><div><h2>Applicant and project</h2><p className="section-note">Submissions are associated with your authenticated account. Staff may submit on an applicant's behalf.</p></div></div>
+      <div className="form-grid">
+        <Field label="Applicant name" required value={form.applicantName} readOnly={role === 'applicant'} onChange={v => update('applicantName', v)} testId="input-applicant-name" />
+        <Field label="Company or organization" required value={form.companyName} onChange={v => update('companyName', v)} testId="input-company-name" />
+        <Field label="Email address" required type="email" value={form.email} readOnly={role === 'applicant'} onChange={v => update('email', v)} testId="input-applicant-email" />
+        <Field label="Project name" required value={form.projectName} onChange={v => update('projectName', v)} testId="input-project-name" />
+        <Field label="Project address (street, city, CA ZIP)" required full value={form.projectAddress} onChange={v => update('projectAddress', v)} testId="input-project-address" />
+        {form.projectAddress && jurisdiction.status !== 'In County' && <div className="notice field full" role="alert" data-testid="jurisdiction-notice">{jurisdiction.status === 'Outside County' ? OUTSIDE_COUNTY_MESSAGE : 'Address could not be confidently matched. This submission will require human jurisdiction verification before it can progress.'}</div>}
+        <div className="field"><label htmlFor="permit-type">Permit type</label><select id="permit-type" className="select" value={form.permitType} onChange={e => update('permitType', e.target.value)} data-testid="select-permit-type"><option>Building permit</option><option>Tenant improvement</option><option>Planning application</option><option>Encroachment permit</option></select></div>
+        <div className="field"><label htmlFor="project-type">Project type</label><select id="project-type" className="select" value={form.projectType} onChange={e => update('projectType', e.target.value)} data-testid="select-project-type"><option>Single-family residential</option><option>Accessory dwelling unit</option><option>Addition</option><option>Small multifamily housing</option><option>Multifamily housing</option><option>Commercial</option><option>Senior residential care</option></select></div>
+        <Field label="Housing units" type="number" value={form.housingUnits} onChange={v => update('housingUnits', v)} testId="input-housing-units" />
+        <Field label="Estimated construction cost" type="number" value={form.estimatedCost} onChange={v => update('estimatedCost', v)} testId="input-estimated-cost" prefix="$" />
+        <Field label="Census tract (optional)" value={form.censusTract} onChange={v => update('censusTract', v)} testId="input-census-tract" />
+        <div className="field full"><label htmlFor="project-description">Project description <span className="required">*</span></label><textarea id="project-description" className="textarea" value={form.description} onChange={e => update('description', e.target.value)} placeholder="Describe the scope, occupancy and total unit count." data-testid="textarea-project-description" /></div>
+        <div className="field full"><label>Applicant priority claims — staff verification required</label><label className="checkbox-row"><input type="checkbox" checked={form.affordableHousing} onChange={e => update('affordableHousing', e.target.checked)} data-testid="checkbox-affordable-housing" /> Applicant-claimed: Affordable housing project</label><label className="checkbox-row"><input type="checkbox" checked={form.underservedCommunity} onChange={e => update('underservedCommunity', e.target.checked)} data-testid="checkbox-underserved-community" /> Applicant-claimed: Located in an underserved community.</label><p className="section-note">Claims remain at standard priority until staff verification. Affordable housing claims require a regulatory agreement, funding award letter, or deed restriction upload.</p></div>
+      </div>
+    </section>
+     <section className="form-section"><div className="form-section-title"><span className="step-number">2</span><div><h2>Documents</h2><p className="section-note">PDF, PNG or JPEG, up to 10 MB each. File contents are saved privately. Missing core plans may be submitted for clarification; affordable-housing supporting evidence is mandatory when claimed.</p></div></div><div className="doc-list">{docs.map((doc, i) => <div className="doc-row" key={doc.label}><div><div className="doc-label">{doc.label} {(doc.required || doc.label === 'Fire and life safety plan' && fireRequired) && <span className="required">*</span>}</div><span className="doc-category">{doc.category} · {doc.received ? doc.fileName : 'Not received'}</span></div><label className={`button ${doc.received ? 'secondary' : 'outline'} doc-upload`}><Paperclip /> {uploading ? 'Uploading…' : doc.received ? 'Change file' : 'Choose file'}<input type="file" disabled={uploading || submitting} accept=".pdf,.png,.jpg,.jpeg" aria-label={`Choose file for ${doc.label}`} onChange={e => selectDoc(i, e.target.files?.[0])} data-testid={`input-document-${doc.label.toLowerCase().replaceAll(' ', '-')}`} /></label></div>)}</div></section>
+     <section className="form-section" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}><span className="section-note" style={{ marginRight: 'auto', alignSelf: 'center' }}>Server-side checks determine jurisdiction, completeness, priority and required routing.</span><button type="button" className="button outline" disabled={submitting || uploading} onClick={() => { setForm(initialForm()); setDocs(baseDocuments()); setErrors([]); setPersistenceError(''); }} data-testid="button-clear-form">Clear form</button><button type="submit" className="button teal" disabled={submitting || uploading} data-testid="button-submit-application">{submitting ? 'Saving application…' : <><Send /> Submit for pre-screening</>}</button></section>
   </form><FooterDisclaimer /></main>;
 }
 
 function Field({ label, required, value, onChange, error, full, type = 'text', testId, prefix, readOnly = false }: { label: string; required?: boolean; value: string; onChange: (value: string) => void; error?: boolean; full?: boolean; type?: string; testId: string; prefix?: string; readOnly?: boolean }) { return <div className={`field ${full ? 'full' : ''}`}><label htmlFor={testId}>{label} {required && <span className="required">*</span>}</label><div style={{ position: 'relative' }}>{prefix && <span style={{ position: 'absolute', left: 11, top: 11, color: '#6b7d85', fontSize: 12 }}>{prefix}</span>}<input id={testId} className="input" style={prefix ? { paddingLeft: 23 } : undefined} type={type} value={value} readOnly={readOnly} onChange={e => onChange(e.target.value)} data-testid={testId} /> </div>{error && <span className="error-text">This field is required.</span>}</div>; }
 
 function DetailPage({ applications, updateApp }: { applications: PermitApplication[]; updateApp: (app: PermitApplication) => void }) {
+  const profile = usePortalProfile();
   const [, params] = useRoute('/applications/:id');
   const { data: records, isLoading, isError, refetch } = useListPermitApplications();
   const updateRecord = useUpdatePermitApplication();
@@ -351,6 +393,7 @@ function DetailPage({ applications, updateApp }: { applications: PermitApplicati
     }
   };
   const action = (label: string, status: ReviewStatus, timelineStatus?: string) => {
+    if (app.requiredReviewers?.length && status !== 'More Information Requested') { setSaveError('Resolve required jurisdiction, classification and safety reviews before progressing this application.'); return; }
     const finalDecision = status === 'Approved' || status === 'Denied';
     const timeline = timelineFor(status, app.flags.some(f => f.includes('Fire'))).map(event =>
       finalDecision && event.label === 'Final County decision' ? { ...event, date: new Date().toISOString() } : event
@@ -358,8 +401,11 @@ function DetailPage({ applications, updateApp }: { applications: PermitApplicati
     const next: PermitApplication = { ...app, reviewStatus: status, assignedDepartment: timelineStatus || app.assignedDepartment, timeline, aiStatus: status === 'Approved' ? 'Ready for Human Review' : app.aiStatus };
     void persistChange(next, `${label} recorded on the application`);
   };
-  const addNote = () => { if (!note.trim()) return; void persistChange({ ...app, notes: [{ id: `n-${Date.now()}`, author: 'Jordan Lee', body: note.trim(), createdAt: new Date().toISOString() }, ...app.notes] }, 'Note added', () => setNote('')); };
+  const addNote = () => { if (!note.trim()) return; void persistChange({ ...app, notes: [{ id: `n-${Date.now()}`, author: profile.id, body: note.trim(), createdAt: new Date().toISOString() }, ...app.notes] }, 'Note added', () => setNote('')); };
   return <><main className="page"><div className="detail-header" style={{ marginBottom: 27 }}><div><Link href="/applications" className="section-note" data-testid="link-back-to-queue">Applications / review queue</Link><p className="eyebrow" style={{ marginTop: 18 }}>Application detail</p><h1 style={{ marginBottom: 6 }}>{app.projectName}</h1><div className="detail-id">{app.id} · submitted {shortDate(app.submittedAt)}</div></div><div className="actions"><StatusBadge status={app.reviewStatus} /><button className="button outline" onClick={() => action('Escalation', 'Senior Review', 'Senior Reviewer')} data-testid="button-escalate-application"><Siren /> Escalate</button></div></div>
+    {!!app.ruleChecks?.safetyCriticalFlags.length && <div className="safety-critical" role="alert" data-testid="safety-critical-banner"><h2>Safety-Critical</h2>{app.ruleChecks.safetyCriticalFlags.map(flag => <p key={flag}>{flag}</p>)}<strong>Blocked — Safety Review Required. Fire Marshal is a REQUIRED reviewer.</strong></div>}
+    <div className={`notice ${app.requiredReviewers?.length ? 'rule-alert rule-incomplete' : ''}`} style={{ margin: '18px 0' }}><strong>{app.ruleChecks?.completenessLabel}</strong>{app.requiredReviewers?.length ? <p>Required reviewers: {app.requiredReviewers.join(' · ')}</p> : null}</div>
+    {dbApp && <><StaffChecksPanel application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} /><ClassificationCorrection key={app.id} application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} /></>}
     {(saveError || recordUnavailable) && <div className="notice" role="alert" data-testid="error-update-record" style={{ borderColor: '#ddb1ac', background: '#fff3f1', color: '#7e403a', marginBottom: 18 }}><AlertCircle size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> {recordUnavailable ? 'Saved records are unavailable. Review actions are paused until this record can be verified in the database.' : saveError}{recordUnavailable && <button className="button outline" onClick={() => refetch()} data-testid="button-retry-record-detail" style={{ marginLeft: 12 }}>Retry</button>}</div>}
     <div className="card" style={{ marginBottom: 20 }}><div className="card-header"><div><h2>Human review actions</h2><p className="section-note">These actions update saved records for database-backed applications and the demo queue for seeded examples. Approval requires an explicit staff action.</p></div><ShieldCheck size={20} color="#1b7c7b" /></div><fieldset disabled={updateRecord.isPending || recordUnavailable} className="card-body actions action-fieldset"><button className="button teal" onClick={() => action('Ready for review', 'Ready for Review')} data-testid="button-mark-ready"><CheckCircle2 /> Mark Ready for Review</button><button className="button secondary" onClick={() => action('Information request', 'More Information Requested')} data-testid="button-request-information"><MessageSquare /> Request More Information</button><button className="button secondary" onClick={() => action('Planning routing', 'Planning Review', 'Planning')} data-testid="button-send-planning"><Building2 /> Send to Planning</button><button className="button secondary" onClick={() => action('Building routing', 'Building Review', 'Building')} data-testid="button-send-building"><ClipboardCheck /> Send to Building</button><button className="button secondary" onClick={() => action('Fire routing', 'Fire Review', 'Fire Prevention')} data-testid="button-send-fire"><Siren /> Send to Fire</button><button className="button secondary" onClick={() => action('Environmental routing', 'Environmental Review', 'Environmental Health')} data-testid="button-send-environmental"><Activity /> Send to Environmental</button><button className="button danger" onClick={() => action('Revisions request', 'Revisions Required')} data-testid="button-mark-revisions"><XCircle /> Mark Revisions Required</button><button className="button danger" onClick={() => action('Denial', 'Denied')} data-testid="button-mark-denied"><XCircle /> Mark Denied</button><button className="button primary" onClick={() => action('Approval', 'Approved')} data-testid="button-mark-approved"><ShieldCheck /> Mark Approved</button></fieldset></div>
     <div className="grid-2"><div className="stack"><div className="card"><div className="card-header"><div><h2>Applicant and project</h2><p className="section-note">Submitted information for staff verification.</p></div><Pencil size={16} color="#6b828d" /></div><div className="card-body"><div className="info-list"><InfoItem label="Applicant" value={`${app.applicantName} · ${app.companyName}`} /><InfoItem label="Contact" value={app.email} /><InfoItem label="Project address" value={app.projectAddress} /><InfoItem label="Permit / project type" value={`${app.permitType} · ${app.projectType}`} /><InfoItem label="Housing units" value={String(app.housingUnits)} /><InfoItem label="Estimated cost" value={currency(app.estimatedCost)} /><InfoItem label="Priority context" value={`${app.affordableHousing ? 'Affordable housing' : 'Market-rate'}${app.underservedCommunity ? ' · Underserved community' : ''}`} /><InfoItem label="Assigned department" value={app.assignedDepartment} /><InfoItem label="Description" value={app.description} /></div></div></div><div className="card"><div className="card-header"><div><h2>Submitted documents</h2><p className="section-note">{app.documents.filter(d => d.received).length} of {app.documents.length} document categories received.</p></div><FileCheck2 size={17} color="#2b8282" /></div><div className="card-body doc-list">{app.documents.map(d => <div className="doc-row" key={d.label}><div><div className="doc-label">{d.label} {d.required && <span className="required">*</span>}</div><span className="doc-category">{d.category} · {d.received ? d.fileName : 'Not received'}</span></div>{d.received ? <span className="status status-ready">Received</span> : <span className="status status-missing">Missing</span>}</div>)}</div></div></div>
@@ -388,31 +434,39 @@ function WorkerGuidance() {
 function HelpPage({ onReset }: { onReset: () => void }) { const [reset, setReset] = useState(false); return <><main className="page"><PageHeading eyebrow="Guidance" title="Help & guardrails" description="A short guide for demonstrating how intake, screening, and human review work together." /><div className="grid-2"><div className="stack"><div className="card"><div className="card-header"><div><h2>How to use the prototype</h2><p className="section-note">A suggested flow for applicants and County staff.</p></div><HelpCircle size={18} color="#2b8282" /></div><div className="card-body"><div className="timeline"><div className="timeline-item completed"><div className="timeline-dot" /><div className="timeline-date">Step 01</div><div><div className="timeline-label">Submit an application</div><div className="timeline-detail">Use the intake form to provide project context and toggle document categories as received.</div></div></div><div className="timeline-item completed"><div className="timeline-dot" /><div className="timeline-date">Step 02</div><div><div className="timeline-label">Review pre-screening</div><div className="timeline-detail">The local rule set calculates completeness, flags, and suggested routing. Nothing is approved automatically.</div></div></div><div className="timeline-item current"><div className="timeline-dot" /><div className="timeline-date">Step 03</div><div><div className="timeline-label">County staff triage</div><div className="timeline-detail">Open a record, inspect documents, add notes, route it to a department, or request more information.</div></div></div><div className="timeline-item upcoming"><div className="timeline-dot" /><div className="timeline-date">Step 04</div><div><div className="timeline-label">Human decision</div><div className="timeline-detail">An authorized County employee explicitly records approval or revisions required.</div></div></div></div></div></div><div className="card"><div className="card-header"><div><h2>Demo data</h2><p className="section-note">Reset the local demo queue for a clean classroom demonstration.</p></div><RefreshCcw size={17} color="#2b8282" /></div><div className="card-body"><p className="section-note">This action restores the nine seeded examples in the local queue. It does not delete database records in Application Records; saved submissions remain available after reset.</p>{reset ? <div className="actions"><button className="button danger" onClick={() => { onReset(); setReset(false); }} data-testid="button-confirm-reset">Yes, reset demo data</button><button className="button outline" onClick={() => setReset(false)} data-testid="button-cancel-reset">Cancel</button></div> : <button className="button outline" onClick={() => setReset(true)} data-testid="button-reset-demo-data"><RefreshCcw /> Reset demo data</button>}</div></div></div><div className="stack"><div className="card"><div className="card-header"><div><h2>What the AI does</h2><p className="section-note">Local, explainable intake support only.</p></div><Sparkles size={17} color="#b4752e" /></div><div className="card-body"><ul className="check-list"><li><Check /> Checks whether core document categories are present.</li><li><Check /> Highlights missing plans and possible agency coordination.</li><li><Check /> Recognizes housing priority context from submitted fields.</li><li><Check /> Suggests an initial department routing.</li></ul></div></div><div className="notice"><ShieldCheck size={16} style={{ verticalAlign: 'middle', marginRight: 7 }} /><strong>Important limitation</strong><br />This student prototype does not access official County records, interpret building codes, verify documents, or replace authorized County judgment. Saved prototype applications are not official permit records.</div></div></div></main><FooterDisclaimer /></>; }
 
 function RouterView() {
+  const profile = usePortalProfile();
+  const hasStaffAccess = profile.role === 'worker' || profile.role === 'fire_marshal';
+  const requestAccess = useRequestStaffAccess();
   const [applications, setApplications] = useState<PermitApplication[]>(readApplications);
   const [applicantApplications, setApplicantApplications] = useState<PermitApplication[]>(readApplicantApplications);
-  const [role, setRole] = useState<PortalRole | null>(readRole);
-  const [showWorkerLogin, setShowWorkerLogin] = useState(false);
+  const [role, setRole] = useState<PortalRole | null>(() => hasStaffAccess ? readRole() ?? 'worker' : 'applicant');
+  const [showWorkerLogin, setShowWorkerLogin] = useState(() => readRole() === 'worker' && !hasStaffAccess);
+  useEffect(() => {
+    if (hasStaffAccess && showWorkerLogin) {
+      sessionStorage.setItem(ROLE_KEY, 'worker'); setShowWorkerLogin(false); setRole('worker');
+    }
+  }, [hasStaffAccess, showWorkerLogin]);
   const [, setLocation] = useLocation();
   const [, detailParams] = useRoute('/applications/:id');
-  const applicantFilter = role === 'applicant' ? { applicantEmail: DEMO_APPLICANT.email } : undefined;
+  const applicantFilter = role === 'applicant' ? { applicantEmail: profile.email } : undefined;
   const { data: savedRecords } = useListPermitApplications(applicantFilter, {
     query: {
-      queryKey: getListPermitApplicationsQueryKey(applicantFilter),
+      queryKey: [...getListPermitApplicationsQueryKey(applicantFilter), profile.id, role],
       enabled: role !== null,
       refetchOnMount: 'always',
       refetchOnWindowFocus: 'always',
-      refetchInterval: role === 'applicant' ? 15000 : false,
+      refetchInterval: 15000,
     },
   });
   const visibleApplicantApplications = useMemo(() => {
-    const byId = new Map(applicantApplications.filter(application => application.email === DEMO_APPLICANT.email && !REMOVED_LOCAL_SUBMISSION_IDS.has(application.id)).map(application => [application.id, application]));
+    const byId = new Map<string, PermitApplication>();
     for (const record of savedRecords ?? []) {
-      if (role === 'applicant' && record.email === DEMO_APPLICANT.email) byId.set(record.id, record);
+      if (role === 'applicant' && record.ownerUserId === profile.id) byId.set(record.id, record);
     }
     return [...byId.values()].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-  }, [applicantApplications, savedRecords, role]);
+  }, [savedRecords, role, profile.id]);
   const workerApplications = useMemo(() => {
-    const byId = new Map(withoutRemovedLocalSubmissions([...applications, ...applicantApplications]).map(application => [application.id, application]));
+    const byId = new Map(withoutRemovedLocalSubmissions([...applications, ...applicantApplications]).filter(a => SEEDED_DEMO_IDS.has(a.id)).map(application => [application.id, application]));
     for (const record of savedRecords ?? []) byId.set(record.id, record);
     return [...byId.values()].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   }, [applications, applicantApplications, savedRecords]);
@@ -427,34 +481,36 @@ function RouterView() {
     return () => window.removeEventListener('storage', syncDemoRecords);
   }, []);
   const add = (application: PermitApplication) => {
-    setApplications(prev => [application, ...prev.filter(item => item.id !== application.id)]);
-    if (role === 'applicant') setApplicantApplications(prev => [application, ...prev.filter(item => item.id !== application.id)]);
+    void application;
+    void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() });
   };
   const update = (application: PermitApplication) => {
-    setApplications(prev => prev.some(item => item.id === application.id) ? prev.map(item => item.id === application.id ? application : item) : [application, ...prev]);
-    setApplicantApplications(prev => prev.map(item => item.id === application.id ? application : item));
+    if (SEEDED_DEMO_IDS.has(application.id)) {
+      setApplications(prev => prev.map(item => item.id === application.id ? application : item));
+      setApplicantApplications(prev => prev.map(item => item.id === application.id ? application : item));
+    }
+    void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() });
   };
   const reset = () => setApplications(seedApplications());
   const chooseRole = (selected: PortalRole) => {
-    if (selected === 'worker') { setLocation('/'); setShowWorkerLogin(true); return; }
-    sessionStorage.setItem(ROLE_KEY, selected); queryClient.clear(); setLocation('/'); setRole(selected);
+    if (selected === 'worker' && !hasStaffAccess) { setShowWorkerLogin(true); return; }
+    sessionStorage.setItem(ROLE_KEY, selected); queryClient.removeQueries({ queryKey: getListPermitApplicationsQueryKey() }); setLocation('/'); setRole(selected);
   };
-  const enterWorker = () => {
-    sessionStorage.setItem(ROLE_KEY, 'worker'); queryClient.clear(); setLocation('/'); setRole('worker'); setShowWorkerLogin(false);
-  };
-  const switchRole = () => { sessionStorage.removeItem(ROLE_KEY); queryClient.clear(); setLocation('/'); setRole(null); setShowWorkerLogin(false); };
-  if (!role) return showWorkerLogin ? <WorkerLoginPage onContinue={enterWorker} onBack={() => setShowWorkerLogin(false)} /> : <RoleChooser onSelect={chooseRole} />;
+  const switchRole = () => { sessionStorage.removeItem(ROLE_KEY); queryClient.removeQueries({ queryKey: getListPermitApplicationsQueryKey() }); setLocation('/'); setRole(null); setShowWorkerLogin(false); };
+  if (showWorkerLogin || role === 'worker' && !hasStaffAccess) return <main className="page"><h1>City Worker access required</h1><p>Your authenticated account has applicant access. An administrator must assign City Worker or Fire Marshal permissions before you can view staff records or verify claims.</p><p>Your account ID: <code>{profile.id}</code></p><button className="button teal" disabled={requestAccess.isPending} onClick={() => requestAccess.mutate()}>{requestAccess.isSuccess || profile.staffAccessRequested ? 'Staff access requested' : 'Request staff access'}</button>{requestAccess.isError && <p role="alert">The access request could not be saved.</p>}<button className="button outline" onClick={() => { sessionStorage.setItem(ROLE_KEY, 'applicant'); setShowWorkerLogin(false); setRole('applicant'); }}>Continue as applicant</button><SignOutButton /></main>;
+  if (!role) return <><RoleChooser onSelect={chooseRole} /><SignOutButton /></>;
   return <AppShell role={role} onSwitch={switchRole}><Switch>
-    <Route path="/">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard applications={workerApplications} />}</Route>
+    <Route path="/"><Redirect to="/user-portal" /></Route>
+    <Route path="/user-portal">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard applications={workerApplications} />}</Route>
     <Route path="/new-application"><NewApplication role={role} onAdd={add} /></Route>
     <Route path="/applications">{role === 'applicant' ? <><ApplicantApplicationsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <ApplicationsPage applications={workerApplications} />}</Route>
     <Route path="/records">{role === 'applicant' ? <><ApplicantRecordsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <RecordsPage applications={workerApplications} />}</Route>
-    <Route path="/applications/:id">{role === 'applicant' ? <><ApplicantDetailPage application={visibleApplicantApplications.find(a => a.id === detailParams?.id)} /><FooterDisclaimer /></> : <DetailPage applications={workerApplications} updateApp={update} />}</Route>
+    <Route path="/applications/:id">{role === 'applicant' ? <><ApplicantDetailPage application={visibleApplicantApplications.find(a => a.id === detailParams?.id)} onSaved={update} /><FooterDisclaimer /></> : <DetailPage applications={workerApplications} updateApp={update} />}</Route>
     <Route path="/analytics">{role === 'worker' ? <><WorkerAnalytics applications={workerApplications} /><AnalyticsPage applications={workerApplications} /></> : <NotFound />}</Route>
-    <Route path="/help">{role === 'applicant' ? <><ApplicantHelpPage /><FooterDisclaimer /></> : <><WorkerGuidance /><HelpPage onReset={reset} /></>}</Route>
+    <Route path="/help">{role === 'applicant' ? <><ApplicantHelpPage /><FooterDisclaimer /></> : <><WorkerGuidance /><UnderservedConfigPanel /><HelpPage onReset={reset} /></>}</Route>
     <Route component={NotFound} />
   </Switch></AppShell>;
 }
 
-function App() { return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><ErrorBoundary resetKey={location.pathname}><RouterView /></ErrorBoundary></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>; }
+function App() { return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><PortalAuth><ErrorBoundary resetKey={location.pathname}><RouterView /></ErrorBoundary><div style={{ padding: 16 }}><SignOutButton /></div></PortalAuth></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>; }
 export default App;

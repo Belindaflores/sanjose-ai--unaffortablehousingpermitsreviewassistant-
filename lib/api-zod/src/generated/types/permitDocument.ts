@@ -12,5 +12,6 @@ export interface PermitDocument {
   required: boolean;
   received: boolean;
   fileName?: string;
+  objectPath?: string;
   receivedAt?: Date;
 }

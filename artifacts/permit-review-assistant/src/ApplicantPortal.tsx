@@ -1,14 +1,12 @@
 import type { PermitApplication } from './App';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Link } from 'wouter';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import {
   ArrowRight, ArrowUpRight, Building2, CheckCircle2, ChevronRight, ClipboardList,
   FilePlus2, FolderOpen, HelpCircle, Info, MapPin, ShieldCheck, UserRound
 } from 'lucide-react';
 import './applicant-portal.css';
+import { ClassificationCorrection } from './ReviewSafeguards';
+import type { PermitApplication as ApiApplication } from '@workspace/api-client-react';
 
 type ApplicationsProps = { applications: PermitApplication[] };
 
@@ -71,49 +69,7 @@ export function RoleChooser({ onSelect }: { onSelect: (role: 'applicant' | 'work
           <ArrowRight aria-hidden="true" />
         </button>
       </div>
-      <div className="role-demo-note"><Info aria-hidden="true" /><span>Role selection is for this demo only. It is not secure authentication and does not verify your identity. This is not an official County website.</span></div>
-    </section>
-  </main>;
-}
-
-const workerDemoSchema = z.object({
-  userId: z.string().trim().min(1, 'Enter a User ID.'),
-  password: z.string().trim().min(1, 'Enter a Password.'),
-});
-
-export function WorkerLoginPage({ onContinue, onBack }: { onContinue: () => void; onBack: () => void }) {
-  const form = useForm<z.infer<typeof workerDemoSchema>>({
-    resolver: zodResolver(workerDemoSchema),
-    defaultValues: { userId: '', password: '' },
-  });
-
-  return <main className="role-chooser worker-login">
-    <section className="role-intro" aria-label="Santa Clara County Permit Portal introduction">
-      <div className="role-brand"><span className="role-mark" aria-hidden="true">SC</span><span>Santa Clara County<br />Permit Portal</span></div>
-      <div><h1>Santa Clara County <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
-      <small>Santa Clara County permit experience · Student prototype</small>
-    </section>
-    <section className="role-main" aria-labelledby="worker-login-title">
-      <p className="ap-kicker">City Worker Portal</p>
-      <h2 id="worker-login-title">City Worker demo sign-in</h2>
-      <p>Enter a User ID and Password to explore the staff review workspace.</p>
-      <Form {...form}>
-        <form className="worker-login-form" onSubmit={form.handleSubmit(() => { form.reset(); onContinue(); })} noValidate>
-          <FormField control={form.control} name="userId" render={({ field }) => <FormItem>
-            <FormLabel>User ID</FormLabel>
-            <FormControl><input {...field} className="worker-login-input" autoComplete="off" placeholder="Enter a demo User ID" data-testid="input-worker-user-id" /></FormControl>
-            <FormMessage />
-          </FormItem>} />
-          <FormField control={form.control} name="password" render={({ field }) => <FormItem>
-            <FormLabel>Password</FormLabel>
-            <FormControl><input {...field} type="password" className="worker-login-input" autoComplete="off" placeholder="Enter a demo password" data-testid="input-worker-password" /></FormControl>
-            <FormMessage />
-          </FormItem>} />
-          <button type="submit" className="worker-login-submit" data-testid="button-worker-sign-in">Continue to City Worker Portal <ArrowRight aria-hidden="true" /></button>
-        </form>
-      </Form>
-      <button type="button" className="worker-login-back" onClick={onBack} data-testid="button-back-to-role-selection">Back to role selection</button>
-      <div className="role-demo-note"><Info aria-hidden="true" /><span>Demo only. Use made-up values, not a real password. Any non-empty User ID and Password will continue; these fields do not verify identity or protect records. This is not an official County website.</span></div>
+      <div className="role-demo-note"><Info aria-hidden="true" /><span>Sign in to access your own submissions. City Worker access requires administrator-assigned permissions. Selecting a view does not grant staff access. Prototype — Not an Official County System.</span></div>
     </section>
   </main>;
 }
@@ -168,15 +124,19 @@ export function ApplicantRecordsPage({ applications }: ApplicationsProps) {
   </main>;
 }
 
-export function ApplicantDetailPage({ application }: { application?: PermitApplication }) {
+export function ApplicantDetailPage({ application, onSaved }: { application?: PermitApplication; onSaved: (app: ApiApplication) => void }) {
   if (!application) return <main className="page applicant-page"><div className="ap-empty ap-panel"><ShieldCheck aria-hidden="true" /><h1 className="ap-heading">This application is unavailable.</h1><p>We could not find a project you can view at this address. Check your records for applications available to you.</p><Link href="/records" className="ap-btn" data-testid="link-back-records-unavailable"><FolderOpen aria-hidden="true" /> Go to your records</Link></div></main>;
   const a = application;
   return <main className="page applicant-page">
     <div className="ap-hero"><div className="ap-hero-copy"><Link href="/records" className="ap-text-link" data-testid="link-back-records-detail">Your records <ChevronRight aria-hidden="true" /></Link><p className="ap-kicker" style={{ marginTop: 24 }}>Project details</p><h1 className="ap-heading" data-testid="text-project-name">{a.projectName}</h1><p className="ap-lede"><MapPin size={15} aria-hidden="true" style={{ display: 'inline', verticalAlign: '-2px', marginRight: 5 }} />{a.projectAddress}</p></div><div><span className="ap-id" data-testid="text-application-id">{a.id}</span><div style={{ marginTop: 10 }}><Status value={a.reviewStatus} id={a.id} /></div></div></div>
+    {a.verification_status === 'Unverified' && (a.claimed_affordable || a.claimed_underserved) && <p className="priority-pending" data-testid="priority-under-review">Priority claim under review</p>}
+    {a.ruleChecks?.safetyCriticalFlags.length ? <div className="safety-critical" role="alert"><h2>Safety-Critical</h2>{a.ruleChecks.safetyCriticalFlags.map(f => <p key={f}>{f}</p>)}</div> : null}
+    <p className={a.requiredReviewers?.length ? 'rule-alert' : ''}>{a.ruleChecks?.completenessLabel}</p>
+    <ClassificationCorrection key={a.id} application={a} onSaved={onSaved} />
     <div className="ap-detail-grid">
       <div className="ap-page-stack">
         <section className="ap-panel ap-content-panel" aria-labelledby="project-title"><h2 id="project-title">Project overview</h2><dl className="ap-facts"><div><dt>Permit type</dt><dd>{a.permitType}</dd></div><div><dt>Project type</dt><dd>{a.projectType}</dd></div><div><dt>Submitted</dt><dd>{formatDate(a.submittedAt)}</dd></div><div><dt>Applicant</dt><dd>{a.applicantName}</dd></div></dl>{a.description && <p style={{ margin: '22px 0 0', paddingTop: 18, borderTop: '1px solid #e2ebf0' }}>{a.description}</p>}</section>
-        <section className="ap-panel ap-content-panel" aria-labelledby="documents-title"><h2 id="documents-title">Submitted documents</h2><p>These are the documents currently recorded for this application. A file name is shown for reference; files cannot be opened from this demo view.</p>{a.documents.length ? a.documents.map((doc, index) => <div className="ap-document" key={`${doc.category}-${doc.label}-${index}`} data-testid={`document-${index}`}><div><strong>{doc.label}</strong><small>{doc.category}{doc.required ? ' · Usually required' : ' · Additional document'}{doc.received && doc.fileName ? ` · ${doc.fileName}` : ''}</small></div><span className={`ap-document-state ${doc.received ? '' : 'missing'}`} data-testid={`status-document-${index}`}>{doc.received ? 'Received' : 'Not received'}</span></div>) : <p>No documents are listed for this application.</p>}</section>
+        <section className="ap-panel ap-content-panel" aria-labelledby="documents-title"><h2 id="documents-title">Submitted documents</h2><p>Stored documents can be downloaded only by their owner or authorized staff.</p>{a.documents.length ? a.documents.map((doc, index) => <div className="ap-document" key={`${doc.category}-${doc.label}-${index}`} data-testid={`document-${index}`}><div><strong>{doc.label}</strong><small>{doc.category}{doc.required ? ' · Usually required' : ' · Additional document'}{doc.received && doc.fileName ? ` · ${doc.fileName}` : ''}</small>{doc.objectPath && <a href={`/api/storage${doc.objectPath}`} target="_blank" rel="noopener noreferrer">Download document</a>}</div><span className={`ap-document-state ${doc.received ? '' : 'missing'}`} data-testid={`status-document-${index}`}>{doc.received ? 'Received' : 'Not received'}</span></div>) : <p>No documents are listed for this application.</p>}</section>
       </div>
       <div className="ap-page-stack">
         <section className="ap-panel ap-content-panel" aria-labelledby="timeline-title"><h2 id="timeline-title">Status timeline</h2><p>Your project's recorded progress. Upcoming steps are estimates, not a decision or guarantee of timing.</p><ol className="ap-timeline">{a.timeline.map((event, index) => <li className={event.status} key={`${event.label}-${index}`} data-testid={`timeline-step-${index}`}><span className="ap-timeline-dot" aria-hidden="true" /><div><strong>{event.label === 'AI pre-screening' ? 'Initial completeness check' : event.label}</strong><small>{event.date ? formatDate(event.date) : event.status === 'upcoming' ? 'Upcoming' : 'In progress'}</small></div></li>)}</ol></section>

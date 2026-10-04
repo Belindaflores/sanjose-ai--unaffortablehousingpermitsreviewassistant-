@@ -31,7 +31,10 @@ A student prototype for AI-assisted permit intake, database-backed application r
 ## Architecture decisions
 
 - Seeded classroom demo records remain browser-local; applications submitted through the intake form are also saved to PostgreSQL and appear on Application Records.
-- Rule-based AI screening remains client-side and explainable. The database stores both the applicant input and generated screening output.
+- Screening rules are shared by the UI and server, but only the server's recalculated result is authoritative. Never trust caller-provided priority, verification, screening flags, ownership, or review histories.
+- Real sign-in uses managed Clerk with cookie-based API authentication. New accounts are applicants; staff roles are assigned administratively, not through the portal chooser.
+- Permit ownership is by authenticated user ID, not an email filter. Legacy records without an owner remain staff-only.
+- Document contents are persisted privately in App Storage. A document marked received requires a completed, owned upload.
 - Final approval remains an explicit staff action; AI never approves or denies a permit.
 
 ## Product
@@ -49,6 +52,9 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 - Re-run API code generation after every OpenAPI change.
 - Demo reset does not delete persistent Application Records.
+- Unit regression checks: `pnpm --filter @workspace/api-server test`.
+- To provision a staff account after it signs in, run `pnpm --filter @workspace/api-server exec tsx src/scripts/set-portal-role.ts <Clerk user ID> worker` from an authorized administrative shell. Use `fire_marshal` for Fire Marshal staff or `applicant` to revoke staff access. The worker-access screen shows the current account ID.
+- Underserved area configuration is editable by staff under Help & guidance. Initial values are clearly labelled placeholders and never automatically verify claims.
 
 ## Pointers
 

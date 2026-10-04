@@ -18,4 +18,5 @@
 //   export type Post = typeof postsTable.$inferSelect;
 
 export * from "./permit-applications";
+export * from "./permit-safeguards";
 export * from "./county-public-records";
