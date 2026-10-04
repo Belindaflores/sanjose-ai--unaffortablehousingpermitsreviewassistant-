@@ -828,11 +828,24 @@ export const UpdatePermitApplicationResponse = zod.object({
  * Returns records imported from the County of Santa Clara Open Data SCC Plan Check Progress dataset.
  * @summary List imported County public plan-check records
  */
+
+
+
 export const ListCountyPublicRecordsResponseItem = zod.object({
   "sourceRecordId": zod.string(),
-  "dataSource": zod.enum(['County of Santa Clara Open Data']),
+  "dataSource": zod.enum(['County of Santa Clara Open Data', 'City of San Jose Open Data']),
   "datasetName": zod.string(),
   "sourceUrl": zod.string().url(),
+  "housingDetails": zod.union([zod.object({
+  "permitNumber": zod.string(),
+  "projectType": zod.string(),
+  "workDescription": zod.string(),
+  "dwellingUnits": zod.number().int().min(1),
+  "status": zod.string(),
+  "issuedDate": zod.coerce.date().nullable(),
+  "finalDate": zod.coerce.date().nullable(),
+  "permitValuation": zod.number().nullable()
+}),zod.null()]).optional(),
   "businessName": zod.string().nullable(),
   "siteLocation": zod.string().nullable(),
   "city": zod.string().nullable(),

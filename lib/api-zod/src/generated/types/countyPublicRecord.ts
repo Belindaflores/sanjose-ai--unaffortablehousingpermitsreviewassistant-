@@ -6,12 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CountyPublicRecordDataSource } from './countyPublicRecordDataSource';
+import type { PublicHousingPermitDetails } from './publicHousingPermitDetails';
 
 export interface CountyPublicRecord {
   sourceRecordId: string;
   dataSource: CountyPublicRecordDataSource;
   datasetName: string;
   sourceUrl: string;
+  housingDetails?: PublicHousingPermitDetails | null;
   /** @nullable */
   businessName: string | null;
   /** @nullable */

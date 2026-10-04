@@ -1,5 +1,6 @@
 import {
   date,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -10,6 +11,16 @@ export const countyPublicRecordsTable = pgTable("county_public_records", {
   dataSource: text("data_source").notNull().default("County of Santa Clara Open Data"),
   datasetName: text("dataset_name").notNull(),
   sourceUrl: text("source_url").notNull(),
+  housingDetails: jsonb("housing_details").$type<{
+    permitNumber: string;
+    projectType: string;
+    workDescription: string;
+    dwellingUnits: number;
+    status: string;
+    issuedDate: string | null;
+    finalDate: string | null;
+    permitValuation: number | null;
+  }>(),
   businessName: text("business_name"),
   siteLocation: text("site_location"),
   city: text("city"),

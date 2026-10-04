@@ -1,2 +1,3 @@
 - [Post-merge workflow ports](post-merge-workflow-ports.md) — a failed managed restart can leave an older server occupying the port while preview still responds.
 - [Permit geography](permit-geography.md) — the requested county-wide screen is a prototype geography boundary, not an official legal jurisdiction determination.
+- [Applicant showcase](applicant-showcase.md) — showcase authentic housing-construction permits only, never pools; keep public examples separate from private submissions.

@@ -496,6 +496,18 @@ components:
         updatedBy: { type: string }
         updatedAt: { type: string }
       required: [zips, censusTracts, placeholder]
+    PublicHousingPermitDetails:
+      type: object
+      properties:
+        permitNumber: { type: string }
+        projectType: { type: string }
+        workDescription: { type: string }
+        dwellingUnits: { type: integer, minimum: 1 }
+        status: { type: string }
+        issuedDate: { type: ["string", "null"], format: date }
+        finalDate: { type: ["string", "null"], format: date }
+        permitValuation: { type: ["number", "null"] }
+      required: [permitNumber, projectType, workDescription, dwellingUnits, status, issuedDate, finalDate, permitValuation]
     CountyPublicRecord:
       type: object
       properties:
@@ -503,12 +515,16 @@ components:
           type: string
         dataSource:
           type: string
-          enum: [County of Santa Clara Open Data]
+          enum: [County of Santa Clara Open Data, City of San Jose Open Data]
         datasetName:
           type: string
         sourceUrl:
           type: string
           format: uri
+        housingDetails:
+          anyOf:
+            - $ref: "#/components/schemas/PublicHousingPermitDetails"
+            - type: "null"
         businessName:
           type: ["string", "null"]
         siteLocation:

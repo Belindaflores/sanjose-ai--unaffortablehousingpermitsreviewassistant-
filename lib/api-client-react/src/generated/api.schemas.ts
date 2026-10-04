@@ -228,11 +228,27 @@ export interface PermitRuleConfig {
   updatedAt?: string;
 }
 
+export interface PublicHousingPermitDetails {
+  permitNumber: string;
+  projectType: string;
+  workDescription: string;
+  /** @minimum 1 */
+  dwellingUnits: number;
+  status: string;
+  /** @nullable */
+  issuedDate: string | null;
+  /** @nullable */
+  finalDate: string | null;
+  /** @nullable */
+  permitValuation: number | null;
+}
+
 export type CountyPublicRecordDataSource = typeof CountyPublicRecordDataSource[keyof typeof CountyPublicRecordDataSource];
 
 
 export const CountyPublicRecordDataSource = {
   County_of_Santa_Clara_Open_Data: 'County of Santa Clara Open Data',
+  City_of_San_Jose_Open_Data: 'City of San Jose Open Data',
 } as const;
 
 export interface CountyPublicRecord {
@@ -240,6 +256,7 @@ export interface CountyPublicRecord {
   dataSource: CountyPublicRecordDataSource;
   datasetName: string;
   sourceUrl: string;
+  housingDetails?: PublicHousingPermitDetails | null;
   /** @nullable */
   businessName: string | null;
   /** @nullable */

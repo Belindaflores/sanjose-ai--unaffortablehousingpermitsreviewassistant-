@@ -11,4 +11,5 @@ export type CountyPublicRecordDataSource = typeof CountyPublicRecordDataSource[k
 
 export const CountyPublicRecordDataSource = {
   County_of_Santa_Clara_Open_Data: 'County of Santa Clara Open Data',
+  City_of_San_Jose_Open_Data: 'City of San Jose Open Data',
 } as const;

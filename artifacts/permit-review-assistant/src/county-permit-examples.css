@@ -1,0 +1,20 @@
+.county-examples { margin: 0 0 28px; }
+.county-example-notice { display: flex; align-items: flex-start; gap: 9px; padding: 12px 14px; background: #edf5f9; color: #385766; border-left: 3px solid #0067a5; font-size: 13px; line-height: 1.5; margin: 0 0 14px; }
+.county-example-notice > svg { flex: none; margin-top: 2px; }
+.county-example { padding: 19px 20px; }
+.county-example-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.county-example-heading h3 { margin: 0 0 5px; font-size: 16px; line-height: 1.4; }
+.county-example-heading .ap-kicker { margin: 0 0 7px; font-size: 10px; }
+.county-example-heading .ap-status { flex: none; }
+.county-example-location { display: flex; align-items: center; gap: 7px; margin: 12px 0 4px; font-size: 13px; }
+.county-example-location svg { flex: none; }
+.county-example-details { margin: 14px 0; border-top: 1px solid #d8e5eb; padding-top: 12px; }
+.county-example-details summary { cursor: pointer; color: #0067a5; font-size: 13px; font-weight: 700; }
+.county-example-details summary:focus-visible { outline: 3px solid #ba8b24; outline-offset: 4px; }
+.county-example-details dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; font-size: 12px; }
+.county-example-details dt { font-weight: 700; margin-bottom: 4px; }
+.county-example-details dd { margin: 0; color: #385766; }
+@media (max-width: 600px) {
+  .county-example-heading { flex-direction: column; gap: 10px; }
+  .county-example-details dl { grid-template-columns: 1fr; }
+}
