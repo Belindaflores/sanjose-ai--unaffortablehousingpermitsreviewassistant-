@@ -195,24 +195,12 @@ function Metric({ icon: Icon, label, value, detail }: { icon: typeof Activity; l
 function StatusBadge({ status }: { status: string }) { return <span className={`status ${statusClass(status)}`} data-testid={`status-${status.toLowerCase().replaceAll(' ', '-')}`}>{status}</span>; }
 function PageHeading({ eyebrow, title, description, actions }: { eyebrow: string; title: string; description: string; actions?: React.ReactNode }) { return <div className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="lead">{description}</p></div>{actions && <div className="actions">{actions}</div>}</div>; }
 
-function Dashboard({ applications }: { applications: PermitApplication[] }) {
-  const missing = applications.filter(a => a.aiStatus === 'Missing Information').length;
-  const priority = applications.filter(a => a.priority !== 'Normal').length;
-  const ready = applications.filter(a => a.aiStatus === 'Ready for Human Review').length;
-  const needingReview = applications.filter(a => !['Approved', 'Denied'].includes(a.reviewStatus)).length;
-  const approved = applications.filter(a => a.reviewStatus === 'Approved').length;
-  const denied = applications.filter(a => a.reviewStatus === 'Denied').length;
-  const revisions = applications.filter(a => a.reviewStatus === 'Revisions Required').length;
-  return <><main className="page"><PageHeading eyebrow="Staff overview" title="Good morning, Jordan." description="A clear view of the permit work that needs attention today." actions={<Link href="/applications" className="button outline" data-testid="link-review-queue">Open review queue <ChevronRight /></Link>} />
-     <div className="notice" style={{ marginBottom: 22 }}><Info size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> AI pre-screening organizes the queue and surfaces questions. It does not make permit decisions.</div>
-     <PublicBuildingPermitOverview />
-    <div className="section-intro"><h2>Permit decisions at a glance</h2><p className="section-note">Current staff review outcomes across the demo queue.</p></div>
-    <div className="metric-grid"><Metric icon={ClipboardCheck} label="Needing review" value={needingReview} detail="Open submissions" /><Metric icon={CheckCircle2} label="Approved permits" value={approved} detail="Human approval recorded" /><Metric icon={XCircle} label="Denied permits" value={denied} detail="Human denial recorded" /><Metric icon={RefreshCcw} label="Revision requests" value={revisions} detail="Changes requested from applicants" /></div>
-    <div className="section-intro"><h2>Operational overview</h2><p className="section-note">The existing queue and screening measures.</p></div>
-    <div className="metric-grid"><Metric icon={FileText} label="Applications" value={Math.min(applications.length, 100)} detail="Display capped at 100; full queue available" /><Metric icon={Clock3} label="Needs attention" value={missing + applications.filter(a => a.aiStatus === 'Potential Issues Detected').length} detail="Missing documents or flags" /><Metric icon={ShieldCheck} label="Priority housing" value={applications.filter(a => a.affordableHousing).length} detail="Affordable housing projects" /><Metric icon={CheckCircle2} label="Ready for review" value={ready} detail={`${priority} high-priority items in queue`} /></div>
-    <div className="grid-2"><div className="card"><div className="card-header"><div><h2>Priority work</h2><p className="section-note">Applications with a higher need for staff attention.</p></div><Link href="/applications?filter=priority" className="button outline" data-testid="link-priority-work">View all</Link></div><div className="table-wrap"><table><thead><tr><th>Application</th><th>Signal</th><th>Status</th><th>Age</th></tr></thead><tbody>{applications.filter(a => a.priority !== 'Normal' || a.flags.length > 1).slice(0, 5).map(a => <ApplicationRow key={a.id} application={a} compact />)}</tbody></table></div></div>
-      <div className="stack"><div className="card"><div className="card-header"><div><h2>Quick actions</h2><p className="section-note">Common steps for today's intake work.</p></div></div><div className="card-body actions" style={{ display: 'grid' }}><Link href="/applications?filter=missing" className="button secondary" data-testid="link-missing-documents"><AlertCircle /> See missing documents</Link><Link href="/analytics" className="button secondary" data-testid="link-view-analytics"><BarChart3 /> Review workload metrics</Link></div></div><div className="card"><div className="card-header"><div><h2>Review pulse</h2><p className="section-note">Queue mix at a glance.</p></div><Activity size={17} color="#298787" /></div><div className="card-body"><div className="score"><div className="score-num">{Math.round(applications.reduce((sum, a) => sum + a.completenessScore, 0) / applications.length)}%</div><div style={{ flex: 1 }}><div style={{ fontSize: 12, color: '#385766', marginBottom: 8 }}>Average completeness</div><div className="progress"><span style={{ width: `${Math.round(applications.reduce((sum, a) => sum + a.completenessScore, 0) / applications.length)}%` }} /></div></div></div></div></div></div>
-    </div><div className="card" style={{ marginTop: 20 }}><div className="card-header"><div><h2>Recent applications</h2><p className="section-note">Most recently received submissions.</p></div><Link href="/applications" className="button outline" data-testid="link-recent-applications">Browse queue <ChevronRight /></Link></div><div className="table-wrap"><table><thead><tr><th>Application</th><th>Applicant</th><th>Submitted</th><th>Completeness</th><th>Screening result</th></tr></thead><tbody>{applications.slice().sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)).slice(0, 6).map(a => <ApplicationRow key={a.id} application={a} />)}</tbody></table></div></div>
+function Dashboard() {
+  return <><main className="page">
+    <PageHeading eyebrow="Staff overview" title="City Worker overview" description="Applications from the official City of San José Active Building Permits dataset."
+      actions={<Link href="/applications" className="button outline" data-testid="link-review-queue">Browse official applications <ChevronRight /></Link>} />
+    <PublicBuildingPermitOverview />
+    <PublicBuildingPermits search="" preview />
   </main><FooterDisclaimer /></>;
 }
 
@@ -227,39 +215,37 @@ function ApplicationRow({ application: a, compact = false }: { application: Perm
   </tr>;
 }
 
-function ApplicationsPage({ applications }: { applications: PermitApplication[] }) {
-  const [query, setQuery] = useState(''); const [filter, setFilter] = useState('All applications');
-  const filters = ['All applications', 'Needs Human Review', 'Safety-Critical', 'New applications', 'Missing documents', 'Potential issues', 'Affordable housing', 'High priority', 'Ready for review', 'Additional agency review'];
-  const filtered = applications.filter(a => {
-    const haystack = `${a.projectName} ${a.id} ${a.applicantName} ${a.companyName} ${a.projectAddress}`.toLowerCase();
-    const matches = haystack.includes(query.toLowerCase());
-    const byFilter = filter === 'All applications' || filter === 'Needs Human Review' && Boolean(a.ruleChecks?.classificationConflicts.length || a.reviewStatus === 'Needs Jurisdiction Verification') || filter === 'Safety-Critical' && Boolean(a.ruleChecks?.safetyCriticalFlags.length) || filter === 'New applications' && a.reviewStatus === 'New' || filter === 'Missing documents' && a.aiStatus === 'Missing Information' || filter === 'Potential issues' && a.aiStatus === 'Potential Issues Detected' || filter === 'Affordable housing' && a.affordableHousing || filter === 'High priority' && a.priority !== 'Normal' || filter === 'Ready for review' && a.aiStatus === 'Ready for Human Review' && !a.requiredReviewers?.length || filter === 'Additional agency review' && a.aiStatus === 'Additional Agency Review Required';
-    return matches && byFilter;
-  });
-  return <><main className="page"><PageHeading eyebrow="Staff queue" title="Applications" description="Search, filter, and open submissions for a human review of completeness, routing, and next steps." /><div className="card"><div className="filters"><div className="search-wrap"><Search /><input className="input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by project, applicant, or ID" aria-label="Search applications" data-testid="input-search-applications" /></div><select className="select" value={filter} onChange={e => setFilter(e.target.value)} aria-label="Filter applications" data-testid="select-application-filter">{filters.map(item => <option key={item}>{item}</option>)}</select><span style={{ color: '#677982', fontSize: 11 }}>{filtered.length} of {applications.length} applications</span></div>{filtered.length ? <div className="table-wrap"><table><thead><tr><th>Application</th><th>Applicant</th><th>Submitted</th><th>Completeness</th><th>AI pre-screening</th></tr></thead><tbody>{filtered.map(a => <ApplicationRow key={a.id} application={a} />)}</tbody></table></div> : <div className="empty"><Search size={29} /><h2>No applications match these filters</h2><p>Try a different search term or clear the filter.</p><button className="button outline" onClick={() => { setQuery(''); setFilter('All applications'); }} data-testid="button-clear-filters">Clear filters</button></div>}</div></main><FooterDisclaimer /></>;
+function ApplicationsPage() {
+  const [query, setQuery] = useState('');
+  return <><main className="page">
+    <PageHeading eyebrow="Official City applications" title="Applications" description="Browse and search authentic City of San José building-permit records. No demo applications are included." />
+    <div className="card filters"><div className="search-wrap"><Search />
+      <input className="input" value={query} maxLength={200} onChange={event => setQuery(event.target.value)}
+        placeholder="Search official permits by project, applicant, address, or permit number"
+        aria-label="Search applications" data-testid="input-search-applications" />
+    </div></div>
+    <PublicBuildingPermits search={query} />
+  </main><FooterDisclaimer /></>;
 }
 
 type RecordSourceFilter = 'All' | 'Public Building Permits' | 'Portal Applications';
 
-function RecordsPage({ applications }: { applications: PermitApplication[] }) {
+function RecordsPage() {
   const { data: records, isLoading, isError, refetch, isFetching } = useListPermitApplications(undefined, { query: { queryKey: getListPermitApplicationsQueryKey(), refetchInterval: 15000 } });
   const [query, setQuery] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<RecordSourceFilter>('All');
-  const savedIds = new Set((records ?? []).map(application => application.id));
-  const demoRecords = applications.filter(application => SEEDED_DEMO_IDS.has(application.id) && !savedIds.has(application.id));
+  const [sourceFilter, setSourceFilter] = useState<RecordSourceFilter>('Public Building Permits');
   const prototypeRecords = [
-    ...(records ?? []).map(application => ({ application, source: 'saved' as const })),
-    ...demoRecords.map(application => ({ application, source: 'demo' as const })),
+    ...(records ?? []).filter(application => !SEEDED_DEMO_IDS.has(application.id) && application.dataSource !== 'Synthetic')
+      .map(application => ({ application })),
   ].sort((left, right) => right.application.submittedAt.localeCompare(left.application.submittedAt));
   const search = query.trim().toLowerCase();
   const visiblePrototypes = sourceFilter === 'Public Building Permits' ? [] : prototypeRecords.filter(({ application: a }) => `${a.id} ${a.projectName} ${a.projectAddress} ${a.applicantName} ${a.companyName}`.toLowerCase().includes(search));
   return <><main className="page"><PageHeading eyebrow="Staff records" title="Application Records" description="Browse the full official City building-permit dataset and saved portal applications separately. Public source statuses are not portal review decisions." /><div className="card filters record-search"><div className="search-wrap"><Search /><input className="input" value={query} maxLength={200} onChange={e => setQuery(e.target.value)} placeholder="Search records by project, applicant, address, or permit number" aria-label="Search application records" data-testid="input-search-records" /></div><select className="select" value={sourceFilter} onChange={e => setSourceFilter(e.target.value as RecordSourceFilter)} aria-label="Filter records by source" data-testid="select-record-source-filter"><option>All</option><option>Public Building Permits</option><option>Portal Applications</option></select><span className="section-note" data-testid="text-record-count">{visiblePrototypes.length} of {prototypeRecords.length} portal application records · official dataset paginated below</span></div>
-    {isLoading && !demoRecords.length && <div className="card" role="status" aria-label="Loading application records"><div className="card-body"><div className="record-skeleton" /><div className="record-skeleton" /><div className="record-skeleton" /></div></div>}
-    {isLoading && demoRecords.length > 0 && <p className="section-note" role="status">Loading saved records; demo examples are available below.</p>}
-    {isError && <div className="card empty" role="alert" data-testid="error-records"><AlertCircle size={29} /><h2>Saved records are unavailable</h2><p>We could not load database records. Browser-local demo examples are still available below.</p><button className="button outline" onClick={() => refetch()} disabled={isFetching} data-testid="button-retry-records"><RefreshCcw /> Retry</button></div>}
+    {sourceFilter !== 'Public Building Permits' && isLoading && <div className="card" role="status" aria-label="Loading application records"><div className="card-body"><div className="record-skeleton" /><div className="record-skeleton" /><div className="record-skeleton" /></div></div>}
+    {sourceFilter !== 'Public Building Permits' && isError && <div className="card empty" role="alert" data-testid="error-records"><AlertCircle size={29} /><h2>Saved records are unavailable</h2><p>We could not load database records. No demo records are substituted.</p><button className="button outline" onClick={() => refetch()} disabled={isFetching} data-testid="button-retry-records"><RefreshCcw /> Retry</button></div>}
     {sourceFilter !== 'Portal Applications' && <PublicBuildingPermits search={query} />}
-    {visiblePrototypes.length > 0 && <section aria-label="Prototype submissions" className="record-section"><div className="record-section-heading"><h2>Prototype Submissions</h2><span className="record-source prototype">{visiblePrototypes.length} records · not official County records</span></div><div className="record-list">{visiblePrototypes.map(({ application: a, source }) => <Link key={a.id} href={`/applications/${encodeURIComponent(a.id)}`} className="card record-card" data-testid={`link-record-${a.id}`}>
-          <div className="record-top"><div><span className="detail-id">{a.id}</span><span className={`record-source ${source === 'demo' ? 'demo' : 'prototype'}`}>{source === 'demo' ? 'Synthetic example' : a.dataSource ?? 'Prototype Submission'}</span><h2>{a.projectName}</h2><span className="section-note">{a.projectAddress}</span></div><ChevronRight size={18} aria-hidden="true" /></div>
+    {visiblePrototypes.length > 0 && <section aria-label="Saved portal applications" className="record-section"><div className="record-section-heading"><h2>Saved Portal Applications</h2><span className="record-source prototype">{visiblePrototypes.length} records · separate from the official City dataset</span></div><div className="record-list">{visiblePrototypes.map(({ application: a }) => <Link key={a.id} href={`/applications/${encodeURIComponent(a.id)}`} className="card record-card" data-testid={`link-record-${a.id}`}>
+          <div className="record-top"><div><span className="detail-id">{a.id}</span><span className="record-source prototype">Portal submission</span><h2>{a.projectName}</h2><span className="section-note">{a.projectAddress}</span></div><ChevronRight size={18} aria-hidden="true" /></div>
           <div className="record-facts"><div><span className="info-label">Applicant</span><strong>{a.applicantName}</strong></div><div><span className="info-label">Project type</span><strong>{a.projectType}</strong></div><div><span className="info-label">Housing units</span><strong>{a.housingUnits}</strong></div><div><span className="info-label">Affordable housing</span><strong>{a.affordableHousing ? 'Yes' : 'No'}</strong></div><div><span className="info-label">Priority</span><strong className={`priority ${a.priority.toLowerCase()}`}>{a.priority}</strong></div><div><span className="info-label">Submitted</span><strong>{new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(a.submittedAt))}</strong></div></div>
           <div className="record-summary"><span className="ai-prototype-label">PROTOTYPE AI ANALYSIS</span><StatusBadge status={a.aiStatus} /><p>{a.aiSummary}</p></div>
         </Link>)}</div></section>}
@@ -448,10 +434,12 @@ function RouterView() {
     return [...byId.values()].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   }, [savedRecords, role, profile.id]);
   const workerApplications = useMemo(() => {
-    const byId = new Map(withoutRemovedLocalSubmissions([...applications, ...applicantApplications]).filter(a => SEEDED_DEMO_IDS.has(a.id)).map(application => [application.id, application]));
-    for (const record of savedRecords ?? []) byId.set(record.id, record);
+    const byId = new Map<string, PermitApplication>();
+    for (const record of savedRecords ?? []) {
+      if (!SEEDED_DEMO_IDS.has(record.id) && record.dataSource !== 'Synthetic') byId.set(record.id, record);
+    }
     return [...byId.values()].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-  }, [applications, applicantApplications, savedRecords]);
+  }, [savedRecords]);
   useEffect(() => saveApplications(applications), [applications]);
   useEffect(() => localStorage.setItem(APPLICANT_STORE_KEY, JSON.stringify(withoutRemovedLocalSubmissions(applicantApplications))), [applicantApplications]);
   useEffect(() => {
@@ -483,10 +471,10 @@ function RouterView() {
   if (!role) return <><RoleChooser onSelect={chooseRole} /><SignOutButton /></>;
   return <AppShell role={role} onSwitch={switchRole}><Switch>
     <Route path="/"><Redirect to="/user-portal" /></Route>
-    <Route path="/user-portal">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard applications={workerApplications} />}</Route>
+    <Route path="/user-portal">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard />}</Route>
     <Route path="/new-application">{role === 'applicant' ? <NewApplication role={role} onAdd={add} /> : <Redirect to="/applications" />}</Route>
-    <Route path="/applications">{role === 'applicant' ? <><ApplicantApplicationsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <ApplicationsPage applications={workerApplications} />}</Route>
-    <Route path="/records">{role === 'applicant' ? <><ApplicantRecordsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <RecordsPage applications={workerApplications} />}</Route>
+    <Route path="/applications">{role === 'applicant' ? <><ApplicantApplicationsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <ApplicationsPage />}</Route>
+    <Route path="/records">{role === 'applicant' ? <><ApplicantRecordsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <RecordsPage />}</Route>
     <Route path="/applications/:id">{role === 'applicant' ? <><ApplicantDetailPage application={visibleApplicantApplications.find(a => a.id === detailParams?.id)} onSaved={update} /><FooterDisclaimer /></> : <DetailPage applications={workerApplications} updateApp={update} />}</Route>
     <Route path="/analytics">{role === 'worker' ? <><WorkerAnalytics applications={workerApplications} /><AnalyticsPage applications={workerApplications} /></> : <NotFound />}</Route>
     <Route path="/help">{role === 'applicant' ? <><ApplicantHelpPage /><FooterDisclaimer /></> : <><WorkerGuidance /><UnderservedConfigPanel /><HelpPage onReset={reset} /></>}</Route>

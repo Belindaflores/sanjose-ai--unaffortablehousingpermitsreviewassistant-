@@ -11,8 +11,8 @@ export function PublicBuildingPermitOverview() {
   const result = useListBuildingPermitRecords(params, {
     query: { queryKey: getListBuildingPermitRecordsQueryKey(params), staleTime: 60_000, refetchInterval: 60_000, retry: 1 },
   });
-  return <div className="card public-data-overview">
-    <div><strong>Official City building permits</strong>
+  return <div className="card public-data-overview" data-testid="metric-applications">
+    <div><strong>Applications · official City building permits</strong>
       <p data-testid="official-building-permit-total">
         {result.isLoading ? 'Checking the official source…' : result.isError
           ? 'The official source is temporarily unavailable.'
@@ -24,7 +24,7 @@ export function PublicBuildingPermitOverview() {
   </div>;
 }
 
-export function PublicBuildingPermits({ search }: { search: string }) {
+export function PublicBuildingPermits({ search, preview = false }: { search: string; preview?: boolean }) {
   const [params, setParams] = useState<{ q: string; page: number; pageSize: 25 | 50 | 100 }>({ q: '', page: 1, pageSize: 25 });
   useEffect(() => {
     const timer = setTimeout(() => setParams(current => ({ ...current, q: search.trim(), page: 1 })), 300);
@@ -54,8 +54,8 @@ export function PublicBuildingPermits({ search }: { search: string }) {
 
   return <section className="card official-public-permits" aria-label="Official City building permits" data-testid="official-building-permits">
     <div className="card-header official-public-heading">
-      <div><h2>Active Building Permits</h2><p className="section-note">City of San José Open Data · complete official dataset, not just the two ADUs</p>
-        {data && !query.isError && <p><strong>{data.datasetTotal.toLocaleString()} total public records</strong></p>}
+      <div><h2>{preview ? 'Official applications' : 'Active Building Permits'}</h2><p className="section-note">City of San José Open Data · authentic official source records</p>
+        {!preview && data && !query.isError && <p><strong>{data.datasetTotal.toLocaleString()} total public records</strong></p>}
       </div>
       <a className="button outline" href="https://data.sanjoseca.gov/dataset/active-building-permits" target="_blank" rel="noopener noreferrer">Open official dataset</a>
     </div>
@@ -66,11 +66,11 @@ export function PublicBuildingPermits({ search }: { search: string }) {
         <p>We could not load the public dataset. Saved portal applications are unaffected.</p>
         <button className="button outline" disabled={query.isFetching} onClick={() => query.refetch()}><RefreshCcw /> Retry official source</button>
       </div> : <>
-        {pagination}
+        {!preview && pagination}
         {query.isLoading || searching ? <p role="status">Loading official building permits…</p> : data && <>
           {data.records.length === 0 ? <p role="status">No official building permits match this search.</p> : <div className="table-wrap">
             <table className="official-table"><thead><tr><th>Permit number</th><th>Project / source details</th><th>Address</th><th>Permit type</th><th>Source status</th><th>Issued</th></tr></thead>
-              <tbody>{data.records.map(record => <tr key={record.sourceId} data-testid={`official-permit-${record.sourceId}`}>
+              <tbody>{(preview ? data.records.slice(0, 6) : data.records).map(record => <tr key={record.sourceId} data-testid={`official-permit-${record.sourceId}`}>
                 <td>{value(record.permitNumber)}</td>
                 <td><strong>{value(record.projectName)}</strong>
                   <details className="official-details"><summary>View source fields</summary>
@@ -84,7 +84,7 @@ export function PublicBuildingPermits({ search }: { search: string }) {
               </tr>)}</tbody>
             </table>
           </div>}
-          {data.records.length > 0 && pagination}
+          {!preview && data.records.length > 0 && pagination}
           <p className="section-note">Source retrieved {new Date(data.fetchedAt).toLocaleString()}. Counts and records may change when the City updates its dataset.</p>
         </>}
       </>}
