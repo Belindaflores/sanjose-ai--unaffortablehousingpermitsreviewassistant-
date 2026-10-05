@@ -20,10 +20,6 @@ function respondWithDraft(row: typeof savedApplicationDraftsTable.$inferSelect) 
     description: row.description,
     dateSaved: row.dateSaved.toISOString(),
     lastUpdated: row.lastUpdated.toISOString(),
-    presentationOnly: row.presentationOnly,
-    submittedAt: row.submittedAt?.toISOString() ?? null,
-    documents: row.documents,
-    timeline: row.timeline,
   };
 }
 
@@ -47,16 +43,6 @@ router.patch("/saved-applications/:id", requirePortalUser, async (req, res): Pro
     return;
   }
   const user = res.locals.portalUser;
-  const [existing] = await db.select({ presentationOnly: savedApplicationDraftsTable.presentationOnly })
-    .from(savedApplicationDraftsTable).where(and(
-      eq(savedApplicationDraftsTable.id, id), eq(savedApplicationDraftsTable.ownerUserId, user.id),
-      eq(savedApplicationDraftsTable.applicantEmail, user.email),
-    ));
-  if (!existing) { res.status(404).json({ error: "Saved application not found." }); return; }
-  if (existing.presentationOnly) {
-    res.status(409).json({ error: "Submitted presentation records are read-only." });
-    return;
-  }
   const [updated] = await db.update(savedApplicationDraftsTable)
     .set({
       projectName: projectName.trim(), projectAddress: projectAddress.trim(),
@@ -65,8 +51,7 @@ router.patch("/saved-applications/:id", requirePortalUser, async (req, res): Pro
     })
     .where(and(eq(savedApplicationDraftsTable.id, id),
       eq(savedApplicationDraftsTable.ownerUserId, user.id),
-      eq(savedApplicationDraftsTable.applicantEmail, user.email),
-      eq(savedApplicationDraftsTable.presentationOnly, false)))
+      eq(savedApplicationDraftsTable.applicantEmail, user.email)))
     .returning();
   if (!updated) { res.status(404).json({ error: "Saved application not found." }); return; }
   res.json(UpdateSavedApplicationResponse.parse(respondWithDraft(updated)));

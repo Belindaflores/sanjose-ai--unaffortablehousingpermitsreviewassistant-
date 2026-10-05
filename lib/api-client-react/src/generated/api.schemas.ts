@@ -12,45 +12,7 @@ export const SavedApplicationStatus = {
   Draft: 'Draft',
   In_progress: 'In progress',
   Action_needed: 'Action needed',
-  'Submitted_—_awaiting_initial_review': 'Submitted — awaiting initial review',
 } as const;
-
-export type PresentationDocumentUploadStatus = typeof PresentationDocumentUploadStatus[keyof typeof PresentationDocumentUploadStatus];
-
-
-export const PresentationDocumentUploadStatus = {
-  Received: 'Received',
-} as const;
-
-export interface PresentationDocument {
-  id: string;
-  documentName: string;
-  fileName: string;
-  category: string;
-  required: boolean;
-  uploadStatus: PresentationDocumentUploadStatus;
-  uploadDate: string;
-  fileType: string;
-  /** @minimum 0 */
-  fileSizeBytes: number;
-  synthetic: true;
-}
-
-export type PresentationTimelineEventStatus = typeof PresentationTimelineEventStatus[keyof typeof PresentationTimelineEventStatus];
-
-
-export const PresentationTimelineEventStatus = {
-  done: 'done',
-  current: 'current',
-  upcoming: 'upcoming',
-} as const;
-
-export interface PresentationTimelineEvent {
-  label: string;
-  date: string;
-  status: PresentationTimelineEventStatus;
-  documentsMilestone: boolean;
-}
 
 export interface SavedApplication {
   id: string;
@@ -64,11 +26,6 @@ export interface SavedApplication {
   description: string;
   dateSaved: string;
   lastUpdated: string;
-  presentationOnly: boolean;
-  /** @nullable */
-  submittedAt: string | null;
-  documents: PresentationDocument[];
-  timeline: PresentationTimelineEvent[];
 }
 
 export interface SavedApplicationChanges {

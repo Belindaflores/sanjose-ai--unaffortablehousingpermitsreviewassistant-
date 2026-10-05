@@ -296,41 +296,11 @@ components:
         projectName: { type: string }
         projectAddress: { type: string }
         applicationType: { type: string }
-        status: { type: string, enum: [Draft, In progress, Action needed, "Submitted — awaiting initial review"] }
+        status: { type: string, enum: [Draft, In progress, Action needed] }
         description: { type: string }
         dateSaved: { type: string, format: date-time }
         lastUpdated: { type: string, format: date-time }
-        presentationOnly: { type: boolean }
-        submittedAt: { type: ["string", "null"], format: date-time }
-        documents:
-          type: array
-          items: { $ref: "#/components/schemas/PresentationDocument" }
-        timeline:
-          type: array
-          items: { $ref: "#/components/schemas/PresentationTimelineEvent" }
-      required: [id, applicationNumber, applicantEmail, accountOwner, projectName, projectAddress, applicationType, status, description, dateSaved, lastUpdated, presentationOnly, submittedAt, documents, timeline]
-    PresentationDocument:
-      type: object
-      properties:
-        id: { type: string }
-        documentName: { type: string }
-        fileName: { type: string }
-        category: { type: string }
-        required: { type: boolean }
-        uploadStatus: { type: string, enum: [Received] }
-        uploadDate: { type: string, format: date }
-        fileType: { type: string }
-        fileSizeBytes: { type: integer, minimum: 0 }
-        synthetic: { type: boolean, const: true }
-      required: [id, documentName, fileName, category, required, uploadStatus, uploadDate, fileType, fileSizeBytes, synthetic]
-    PresentationTimelineEvent:
-      type: object
-      properties:
-        label: { type: string }
-        date: { type: string, format: date }
-        status: { type: string, enum: [done, current, upcoming] }
-        documentsMilestone: { type: boolean }
-      required: [label, date, status, documentsMilestone]
+      required: [id, applicationNumber, applicantEmail, accountOwner, projectName, projectAddress, applicationType, status, description, dateSaved, lastUpdated]
     SavedApplicationChanges:
       type: object
       properties:
