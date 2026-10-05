@@ -8,7 +8,7 @@ try {
   const users = await db.select().from(portalUsersTable).where(eq(portalUsersTable.email, starterDraftEmail));
   if (users.length !== 1) throw new Error("Expected exactly one existing account for the requested email.");
   await ensureStarterDrafts(users[0]!);
-  console.log("Two account-owned saved drafts are available in the application data source.");
+  console.log("Account-owned applications provisioned: saved draft and portal presentation submission.");
 } catch (error) {
   console.error(error);
   process.exitCode = 1;

@@ -8,6 +8,9 @@
 import * as zod from 'zod';
 
 
+
+
+
 export const ListSavedApplicationsResponseItem = zod.object({
   "id": zod.string(),
   "applicationNumber": zod.string(),
@@ -16,10 +19,30 @@ export const ListSavedApplicationsResponseItem = zod.object({
   "projectName": zod.string(),
   "projectAddress": zod.string(),
   "applicationType": zod.string(),
-  "status": zod.enum(['Draft', 'In progress', 'Action needed']),
+  "status": zod.enum(['Draft', 'In progress', 'Action needed', 'Submitted — awaiting initial review']),
   "description": zod.string(),
   "dateSaved": zod.coerce.date(),
-  "lastUpdated": zod.coerce.date()
+  "lastUpdated": zod.coerce.date(),
+  "isPresentationSubmission": zod.boolean(),
+  "submittedAt": zod.coerce.date().nullable(),
+  "documents": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "fileName": zod.string(),
+  "category": zod.string(),
+  "required": zod.boolean(),
+  "uploadStatus": zod.enum(['Received']),
+  "uploadedAt": zod.coerce.date(),
+  "fileType": zod.enum(['application/pdf']),
+  "sizeBytes": zod.number().int().min(1),
+  "synthetic": zod.boolean()
+})),
+  "timeline": zod.array(zod.object({
+  "label": zod.string(),
+  "date": zod.coerce.date(),
+  "status": zod.enum(['complete', 'current', 'upcoming']),
+  "documentIds": zod.array(zod.string())
+}))
 })
 export const ListSavedApplicationsResponse = zod.array(ListSavedApplicationsResponseItem)
 
@@ -45,6 +68,9 @@ export const UpdateSavedApplicationBody = zod.object({
   "description": zod.string().max(updateSavedApplicationBodyDescriptionMax)
 })
 
+
+
+
 export const UpdateSavedApplicationResponse = zod.object({
   "id": zod.string(),
   "applicationNumber": zod.string(),
@@ -53,10 +79,30 @@ export const UpdateSavedApplicationResponse = zod.object({
   "projectName": zod.string(),
   "projectAddress": zod.string(),
   "applicationType": zod.string(),
-  "status": zod.enum(['Draft', 'In progress', 'Action needed']),
+  "status": zod.enum(['Draft', 'In progress', 'Action needed', 'Submitted — awaiting initial review']),
   "description": zod.string(),
   "dateSaved": zod.coerce.date(),
-  "lastUpdated": zod.coerce.date()
+  "lastUpdated": zod.coerce.date(),
+  "isPresentationSubmission": zod.boolean(),
+  "submittedAt": zod.coerce.date().nullable(),
+  "documents": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "fileName": zod.string(),
+  "category": zod.string(),
+  "required": zod.boolean(),
+  "uploadStatus": zod.enum(['Received']),
+  "uploadedAt": zod.coerce.date(),
+  "fileType": zod.enum(['application/pdf']),
+  "sizeBytes": zod.number().int().min(1),
+  "synthetic": zod.boolean()
+})),
+  "timeline": zod.array(zod.object({
+  "label": zod.string(),
+  "date": zod.coerce.date(),
+  "status": zod.enum(['complete', 'current', 'upcoming']),
+  "documentIds": zod.array(zod.string())
+}))
 })
 
 

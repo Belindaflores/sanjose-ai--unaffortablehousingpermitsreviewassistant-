@@ -13,4 +13,5 @@ export const SavedApplicationStatus = {
   Draft: 'Draft',
   In_progress: 'In progress',
   Action_needed: 'Action needed',
+  'Submitted_—_awaiting_initial_review': 'Submitted — awaiting initial review',
 } as const;
