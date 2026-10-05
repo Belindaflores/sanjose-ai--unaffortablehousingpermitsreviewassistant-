@@ -146,10 +146,14 @@ paths:
             schema:
               type: object
               properties:
-                action: { type: string, enum: [claim, safety, jurisdiction] }
-                claim: { type: string, enum: [affordable, underserved] }
+                action: { type: string, enum: [claim, safety, jurisdiction, request_documentation, conflict] }
+                claim: { type: string }
                 decision: { type: string, enum: [Verified, Rejected] }
                 document: { type: string }
+                projectType: { type: string }
+                housingUnits: { type: integer, minimum: 0 }
+                description: { type: string }
+                permitType: { type: string }
                 note: { type: string, minLength: 1, maxLength: 2000 }
               required: [action, note]
       responses:
@@ -401,6 +405,14 @@ components:
         ownerUserId: { type: ["string", "null"] }
         claimed_affordable: { type: boolean }
         claimed_underserved: { type: boolean }
+        claimedPriorityCategories: { type: array, items: { type: string, minLength: 1, maxLength: 100 }, maxItems: 10 }
+        workspaceId: { type: string }
+        auditHistory:
+          type: array
+          items: { $ref: "#/components/schemas/PermitAuditEvent" }
+        issues:
+          type: array
+          items: { $ref: "#/components/schemas/PermitIssue" }
         censusTract: { type: string }
         verification_status: { type: string, enum: [Unverified, Verified, Rejected] }
         priorityClaims: { $ref: "#/components/schemas/PriorityClaims" }
@@ -471,6 +483,9 @@ components:
             - Needs Jurisdiction Verification
             - Blocked — Safety Review Required
             - Needs Human Review — Data Inconsistency
+            - On Hold — Safety Review Required
+            - On Hold — Information Review Required
+            - Human jurisdiction review
         completenessScore:
           type: integer
           minimum: 0
@@ -544,11 +559,23 @@ components:
       properties:
         affordable: { $ref: "#/components/schemas/ClaimVerification" }
         underserved: { $ref: "#/components/schemas/ClaimVerification" }
+        additional:
+          type: array
+          items:
+            type: object
+            properties:
+              category: { type: string }
+              status: { type: string, enum: [Unverified, Verified, Rejected] }
+              note: { type: string }
+              by: { type: string }
+              at: { type: string }
+            required: [category, status]
       required: [affordable, underserved]
     ReviewDecisions:
       type: object
       properties:
         jurisdiction: { $ref: "#/components/schemas/AuditDecision" }
+        classification: { $ref: "#/components/schemas/AuditDecision" }
         safety:
           type: array
           items: { $ref: "#/components/schemas/SafetyDecision" }
@@ -560,6 +587,29 @@ components:
         at: { type: string }
         document: { type: string }
       required: [note, by, at, document]
+    PermitAuditEvent:
+      type: object
+      properties:
+        id: { type: string }
+        action: { type: string }
+        decision: { type: string }
+        reason: { type: string }
+        workerId: { type: string }
+        workerName: { type: string }
+        at: { type: string }
+        detail: { type: string }
+      required: [id, action, decision, reason, workerId, workerName, at, detail]
+    PermitIssue:
+      type: object
+      properties:
+        type: { type: string, enum: [safety, jurisdiction, conflict, priority, documents, information] }
+        severity: { type: string, enum: [critical, review, verification, informational, resolved] }
+        reason: { type: string }
+        requiredAction: { type: string }
+        assignedDepartment: { type: string }
+        status: { type: string }
+        flaggedAt: { type: string }
+      required: [type, severity, reason, requiredAction, assignedDepartment, status, flaggedAt]
     RuleChecks:
       type: object
       properties:
@@ -568,6 +618,7 @@ components:
         safetyCriticalFlags: { type: array, items: { type: string } }
         underservedMatch: { type: string }
         completenessLabel: { type: string }
+        jurisdictionReason: { type: string }
       required: [jurisdictionStatus, classificationConflicts, safetyCriticalFlags, underservedMatch, completenessLabel]
     PortalUser:
       type: object
@@ -577,6 +628,7 @@ components:
         name: { type: string }
         role: { type: string, enum: [applicant, worker, fire_marshal] }
         staffAccessRequested: { type: boolean }
+        workspaceId: { type: string }
       required: [id, email, name, role, staffAccessRequested]
     PermitRuleConfig:
       type: object

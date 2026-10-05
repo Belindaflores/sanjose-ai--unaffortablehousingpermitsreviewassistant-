@@ -25,4 +25,7 @@ export const PermitApplicationReviewStatus = {
   Needs_Jurisdiction_Verification: 'Needs Jurisdiction Verification',
   'Blocked_—_Safety_Review_Required': 'Blocked — Safety Review Required',
   'Needs_Human_Review_—_Data_Inconsistency': 'Needs Human Review — Data Inconsistency',
+  'On_Hold_—_Safety_Review_Required': 'On Hold — Safety Review Required',
+  'On_Hold_—_Information_Review_Required': 'On Hold — Information Review Required',
+  Human_jurisdiction_review: 'Human jurisdiction review',
 } as const;
