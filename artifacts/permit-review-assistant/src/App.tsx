@@ -193,7 +193,7 @@ function Metric({ icon: Icon, label, value, detail }: { icon: typeof Activity; l
 function StatusBadge({ status }: { status: string }) { return <span className={`status ${statusClass(status)}`} data-testid={`status-${status.toLowerCase().replaceAll(' ', '-')}`}>{status}</span>; }
 function PageHeading({ eyebrow, title, description, actions }: { eyebrow: string; title: string; description: string; actions?: React.ReactNode }) { return <div className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="lead">{description}</p></div>{actions && <div className="actions">{actions}</div>}</div>; }
 
-function Dashboard({ applications }: { applications: PermitApplication[] }) {
+function Dashboard({ applications, role }: { applications: PermitApplication[]; role: PortalRole | 'cityWorker' | 'staff' }) {
   const missing = applications.filter(a => a.aiStatus === 'Missing Information').length;
   const priority = applications.filter(a => a.priority !== 'Normal').length;
   const ready = applications.filter(a => a.aiStatus === 'Ready for Human Review').length;
@@ -201,7 +201,7 @@ function Dashboard({ applications }: { applications: PermitApplication[] }) {
   const approved = applications.filter(a => a.reviewStatus === 'Approved').length;
   const denied = applications.filter(a => a.reviewStatus === 'Denied').length;
   const revisions = applications.filter(a => a.reviewStatus === 'Revisions Required').length;
-  return <><main className="page"><PageHeading eyebrow="Staff overview" title="Good morning, Jordan." description="A clear view of the permit work that needs attention today." actions={<><Link href="/new-application" className="button teal" data-testid="link-new-application"><Plus /> New application</Link><Link href="/applications" className="button outline" data-testid="link-review-queue">Open review queue <ChevronRight /></Link></>} />
+  return <><main className="page"><PageHeading eyebrow="Staff overview" title="Good morning, Jordan." description="A clear view of the permit work that needs attention today." actions={<>{role === 'applicant' && <Link href="/new-application" className="button teal" data-testid="link-new-application"><Plus /> New application</Link>}<Link href="/applications" className="button outline" data-testid="link-review-queue">Open review queue <ChevronRight /></Link></>} />
      <div className="notice" style={{ marginBottom: 22 }}><Info size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> AI pre-screening organizes the queue and surfaces questions. It does not make permit decisions.</div>
     <div className="section-intro"><h2>Permit decisions at a glance</h2><p className="section-note">Current staff review outcomes across the demo queue.</p></div>
     <div className="metric-grid"><Metric icon={ClipboardCheck} label="Needing review" value={needingReview} detail="Open submissions" /><Metric icon={CheckCircle2} label="Approved permits" value={approved} detail="Human approval recorded" /><Metric icon={XCircle} label="Denied permits" value={denied} detail="Human denial recorded" /><Metric icon={RefreshCcw} label="Revision requests" value={revisions} detail="Changes requested from applicants" /></div>
@@ -513,7 +513,7 @@ function RouterView() {
   if (!role) return <><RoleChooser onSelect={chooseRole} /><SignOutButton /></>;
   return <AppShell role={role} onSwitch={switchRole}><Switch>
     <Route path="/"><Redirect to="/user-portal" /></Route>
-    <Route path="/user-portal">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard applications={workerApplications} />}</Route>
+    <Route path="/user-portal">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard applications={workerApplications} role={role} />}</Route>
     <Route path="/new-application"><NewApplication role={role} onAdd={add} /></Route>
     <Route path="/applications">{role === 'applicant' ? <><ApplicantApplicationsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <ApplicationsPage applications={workerApplications} />}</Route>
     <Route path="/records">{role === 'applicant' ? <><ApplicantRecordsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <RecordsPage applications={workerApplications} />}</Route>
