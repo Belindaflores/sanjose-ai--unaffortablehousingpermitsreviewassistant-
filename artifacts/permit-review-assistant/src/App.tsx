@@ -11,6 +11,7 @@ import './safeguards.css';
 import { ErrorBoundary } from '@/components/error-boundary';
 import NotFound from '@/pages/not-found';
 import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, ApplicantHelpPage, ApplicantRecordsPage, RoleChooser } from './ApplicantPortal';
+import { SavedApplicationPage } from './SavedApplications';
 import { WorkerAnalytics } from './WorkerAnalytics';
 import {
   Activity, AlertCircle, BarChart3, Bell, Building2, Check, CheckCircle2, ChevronRight,
@@ -173,15 +174,15 @@ function AppShell({ children, role, onSwitch }: { children: React.ReactNode; rol
   const profile = usePortalProfile();
   const [location] = useLocation(); const [menu, setMenu] = useState(false);
   const links = [{ href: '/user-portal', label: 'Overview', icon: LayoutDashboard }, { href: '/applications', label: 'Applications', icon: ClipboardCheck }, { href: '/records', label: 'Application Records', icon: FileText }, ...(role === 'worker' ? [{ href: '/analytics', label: 'Analytics', icon: BarChart3 }] : []), { href: '/help', label: 'Help & guidance', icon: HelpCircle }];
-  const current = location === '/' ? '/user-portal' : location.startsWith('/applications/') || location === '/new-application' ? '/applications' : location;
+  const current = location === '/' ? '/user-portal' : location.startsWith('/applications/') || location.startsWith('/saved-applications/') || location === '/new-application' ? '/applications' : location;
   return <div className="app-shell">
     <aside className={`side-nav ${menu ? 'open' : ''}`}>
-      <div className="brand"><div className="brand-mark">SC</div><div className="brand-name">Santa Clara County Permit Portal</div><div className="brand-subtitle">Student prototype</div><div className="side-role" data-testid="label-current-role">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</div></div>
+      <div className="brand"><div className="brand-mark">SC</div><div className="brand-name">Santa Clara County Permit Portal</div><div className="brand-subtitle">Independent portal</div><div className="side-role" data-testid="label-current-role">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</div></div>
       <nav className="nav-area" aria-label="Main navigation"><div className="nav-label">Workspace</div>{links.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setMenu(false)} className={`nav-link ${current === href ? 'active' : ''}`} data-testid={`link-${label.toLowerCase().replaceAll(' ', '-')}`}><Icon /><span>{label}</span></Link>)}</nav>
       <div className="side-footer"><div className="staff-chip"><div className="staff-avatar">{profile.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</div><div><strong>{profile.name}</strong><span className="staff-role">{role === 'worker' ? profile.role === 'fire_marshal' ? 'Fire Marshal · Authorized staff' : 'City Worker · Authorized staff' : 'Authenticated permit applicant'}</span></div></div></div>
     </aside>
     <div className="main-column">
-      <header className="topbar"><button className="mobile-menu" aria-label={menu ? 'Close navigation' : 'Open navigation'} aria-expanded={menu} data-testid="button-open-navigation" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button><div className="crumb"><Building2 size={15} /><span>County permit workspace</span><ChevronRight size={13} /><strong>{location === '/' ? 'Overview' : location.includes('new-application') ? 'New application' : location.includes('records') ? 'Application Records' : location.includes('analytics') ? role === 'worker' ? 'Analytics' : 'Page not found' : location.includes('help') ? 'Help & guidance' : 'Applications'}</strong></div><div className="portal-controls"><span className="portal-label">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</span><button className="switch-role" onClick={onSwitch} data-testid="button-switch-role">Switch Role</button><div className="prototype-badge">Student Prototype — Not an Official County System</div></div></header>
+      <header className="topbar"><button className="mobile-menu" aria-label={menu ? 'Close navigation' : 'Open navigation'} aria-expanded={menu} data-testid="button-open-navigation" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button><div className="crumb"><Building2 size={15} /><span>County permit workspace</span><ChevronRight size={13} /><strong>{location === '/' ? 'Overview' : location.includes('new-application') ? 'New application' : location.includes('records') ? 'Application Records' : location.includes('analytics') ? role === 'worker' ? 'Analytics' : 'Page not found' : location.includes('help') ? 'Help & guidance' : 'Applications'}</strong></div><div className="portal-controls"><span className="portal-label">{role === 'applicant' ? 'Permit Applicant Portal' : 'City Worker Portal'}</span><button className="switch-role" onClick={onSwitch} data-testid="button-switch-role">Switch Role</button><div className="prototype-badge">Independent educational portal — Not an official government service</div></div></header>
       {children}
     </div>
   </div>;
@@ -273,7 +274,7 @@ function RecordsPage({ applications }: { applications: PermitApplication[] }) {
     {isError && <div className="card empty" role="alert" data-testid="error-records"><AlertCircle size={29} /><h2>Saved records are unavailable</h2><p>We could not load database records. Browser-local demo examples are still available below.</p><button className="button outline" onClick={() => refetch()} disabled={isFetching} data-testid="button-retry-records"><RefreshCcw /> Retry</button></div>}
     {countyQuery.isLoading && <div className="card" role="status" aria-label="Loading County public records"><div className="card-body"><p>Loading County public records from the database…</p></div></div>}
     {countyQuery.isError && <div className="card empty" role="alert" data-testid="error-county-records"><AlertCircle size={29} /><h2>County public records are unavailable</h2><p>Prototype submissions remain available. Try again after the API is available.</p><button className="button outline" onClick={() => countyQuery.refetch()} disabled={countyQuery.isFetching}><RefreshCcw /> Retry County data</button></div>}
-     {visibleHousingRecords.length > 0 && <section aria-label="City housing permits" className="record-section"><div className="record-section-heading"><h2>City Housing Permits</h2><span className="record-source county">Public City source · {visibleHousingRecords.length} records</span></div><div className="record-list">{visibleHousingRecords.map(record => {
+     {visibleHousingRecords.length > 0 && <section aria-label="City housing permits" className="record-section"><div className="record-section-heading"><h2>City Housing Permits</h2><span className="record-source county">{visibleHousingRecords.length} imported here · 17,272 records in the City source dataset</span></div><div className="record-list">{visibleHousingRecords.map(record => {
        const housing = record.housingDetails;
        if (!housing) return null;
        return <article key={record.sourceRecordId} className="card record-card county-record" data-testid={`city-housing-record-${record.sourceRecordId}`}>
@@ -457,6 +458,8 @@ function RouterView() {
   }, [hasStaffAccess, showWorkerLogin]);
   const [, setLocation] = useLocation();
   const [, detailParams] = useRoute('/applications/:id');
+  const [, draftParams] = useRoute('/saved-applications/:id');
+  const [, draftEditParams] = useRoute('/saved-applications/:id/edit');
   const applicantFilter = role === 'applicant' ? { applicantEmail: profile.email } : undefined;
   const { data: savedRecords } = useListPermitApplications(applicantFilter, {
     query: {
@@ -514,6 +517,8 @@ function RouterView() {
     <Route path="/new-application"><NewApplication role={role} onAdd={add} /></Route>
     <Route path="/applications">{role === 'applicant' ? <><ApplicantApplicationsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <ApplicationsPage applications={workerApplications} />}</Route>
     <Route path="/records">{role === 'applicant' ? <><ApplicantRecordsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <RecordsPage applications={workerApplications} />}</Route>
+    <Route path="/saved-applications/:id/edit">{role === 'applicant' && draftEditParams ? <><SavedApplicationPage id={draftEditParams.id} editing /><FooterDisclaimer /></> : <NotFound />}</Route>
+    <Route path="/saved-applications/:id">{role === 'applicant' && draftParams ? <><SavedApplicationPage id={draftParams.id} editing={false} /><FooterDisclaimer /></> : <NotFound />}</Route>
     <Route path="/applications/:id">{role === 'applicant' ? <><ApplicantDetailPage application={visibleApplicantApplications.find(a => a.id === detailParams?.id)} onSaved={update} /><FooterDisclaimer /></> : <DetailPage applications={workerApplications} updateApp={update} />}</Route>
     <Route path="/analytics">{role === 'worker' ? <><WorkerAnalytics applications={workerApplications} /><AnalyticsPage applications={workerApplications} /></> : <NotFound />}</Route>
     <Route path="/help">{role === 'applicant' ? <><ApplicantHelpPage /><FooterDisclaimer /></> : <><WorkerGuidance /><UnderservedConfigPanel /><HelpPage onReset={reset} /></>}</Route>

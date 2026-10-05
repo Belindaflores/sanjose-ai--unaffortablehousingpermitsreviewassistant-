@@ -7,6 +7,7 @@ import {
 import './applicant-portal.css';
 import { ClassificationCorrection } from './ReviewSafeguards';
 import type { PermitApplication as ApiApplication } from '@workspace/api-client-react';
+import { SavedApplicationsSection, useOwnedSavedApplications } from './SavedApplications';
 
 type ApplicationsProps = { applications: PermitApplication[] };
 
@@ -51,7 +52,7 @@ export function RoleChooser({ onSelect }: { onSelect: (role: 'applicant' | 'work
     <section className="role-intro" aria-label="Santa Clara County Permit Portal introduction">
       <div className="role-brand"><span className="role-mark" aria-hidden="true">SC</span><span>Santa Clara County<br />Permit Portal</span></div>
       <div><h1>Santa Clara County <span>Permit Portal</span></h1><p>Follow a permit submission from the first documents to the final decision, with the information you need at each step.</p></div>
-      <small>Santa Clara County permit experience · Student prototype</small>
+      <small>Independent educational portal · Not an official County service</small>
     </section>
     <section className="role-main" aria-labelledby="role-title">
       <p className="ap-kicker">Choose your view</p>
@@ -69,26 +70,30 @@ export function RoleChooser({ onSelect }: { onSelect: (role: 'applicant' | 'work
           <ArrowRight aria-hidden="true" />
         </button>
       </div>
-      <div className="role-demo-note"><Info aria-hidden="true" /><span>Sign in to access your own submissions. City Worker access requires administrator-assigned permissions. Selecting a view does not grant staff access. Prototype — Not an Official County System.</span></div>
+      <div className="role-demo-note"><Info aria-hidden="true" /><span>Sign in to access your own saved work and submissions. City Worker access requires administrator-assigned permissions. Selecting a view does not grant staff access. This is not an official County system.</span></div>
     </section>
   </main>;
 }
 
 export function ApplicantDashboard({ applications }: ApplicationsProps) {
+  const drafts = useOwnedSavedApplications();
   const sorted = [...applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   const awaiting = applications.filter(a => a.reviewStatus === 'More Information Requested' || a.reviewStatus === 'Revisions Required').length;
   const inProgress = applications.filter(a => !['Approved', 'Denied', 'Revisions Required'].includes(a.reviewStatus)).length;
+  const savedInProgress = drafts.data?.filter(a => a.status === 'In progress').length ?? 0;
+  const savedActionNeeded = drafts.data?.filter(a => a.status === 'Action needed').length ?? 0;
   return <main className="page applicant-page">
     <header className="ap-hero">
       <div className="ap-hero-copy"><p className="ap-kicker">Applicant home</p><h1 className="ap-heading">My applications</h1><p className="ap-lede">View the applications associated with your account and review their current status.</p></div>
       <Link href="/new-application" className="ap-btn" data-testid="link-new-application-dashboard"><FilePlus2 aria-hidden="true" /> Start a new application</Link>
     </header>
     <section className="ap-summary" aria-label="Your application summary">
-      <div className="ap-summary-item" data-testid="summary-total-applications"><span>Your submissions</span><strong>{applications.length}</strong><small>All your projects</small></div>
-      <div className="ap-summary-item" data-testid="summary-needs-attention"><span>May need your attention</span><strong>{awaiting}</strong><small>Information or revisions requested</small></div>
-      <div className="ap-summary-item" data-testid="summary-in-progress"><span>In progress</span><strong>{inProgress}</strong><small>Not yet approved</small></div>
+      <div className="ap-summary-item" data-testid="summary-total-applications"><span>Saved applications</span><strong>{drafts.data?.length ?? 0}</strong><small>Continue your projects</small></div>
+      <div className="ap-summary-item" data-testid="summary-needs-attention"><span>May need your attention</span><strong>{awaiting + savedActionNeeded}</strong><small>Items requiring your attention</small></div>
+      <div className="ap-summary-item" data-testid="summary-in-progress"><span>In progress</span><strong>{inProgress + savedInProgress}</strong><small>Saved work or active reviews</small></div>
     </section>
-    <div className="ap-overview-grid">
+    <SavedApplicationsSection />
+    {sorted.length > 0 && <div className="ap-overview-grid">
       <section aria-labelledby="recent-projects-title">
         <div className="ap-section-heading"><div><h2 id="recent-projects-title">Recent applications</h2><p>Updates to your submitted applications.</p></div><Link href="/records" className="ap-text-link" data-testid="link-all-records-dashboard">All records <ArrowRight aria-hidden="true" /></Link></div>
         {sorted.length ? <div className="ap-record-list">{sorted.slice(0, 3).map(a => <RecordLink key={a.id} application={a} />)}</div> : <EmptyRecords compact />}
@@ -98,7 +103,7 @@ export function ApplicantDashboard({ applications }: ApplicationsProps) {
         <p>Get your project description, address, and supporting plans together before you begin.</p>
         <Link href="/applications" className="ap-text-link" data-testid="link-applications-dashboard">Application guide <ArrowRight aria-hidden="true" /></Link>
       </aside>
-    </div>
+    </div>}
   </main>;
 }
 
@@ -107,11 +112,12 @@ export function ApplicantApplicationsPage({ applications }: ApplicationsProps) {
   return <main className="page applicant-page">
     <header className="ap-hero"><div className="ap-hero-copy"><p className="ap-kicker">Applications</p><h1 className="ap-heading">My applications</h1><p className="ap-lede">View the applications associated with your account and review their current status.</p></div><Link href="/new-application" className="ap-btn" data-testid="link-new-application-applicant"><FilePlus2 aria-hidden="true" /> Start a new application</Link></header>
     <div className="ap-page-stack">
+      <SavedApplicationsSection />
       <section className="ap-guidance-grid" aria-label="Submission preparation">
         <div className="ap-content-panel ap-panel"><p className="ap-kicker">Before you begin</p><h2>Have the essentials ready</h2><p>A clear application makes it easier to understand your proposed work. Document needs can vary by project type and the County's review.</p><ul className="ap-list"><li>Project address, description, permit type, and estimated cost</li><li>Architectural and structural plans, plus a site plan or survey</li><li>Owner authorization, fire and life safety plans, and Title 24 energy forms when applicable</li></ul></div>
         <aside className="ap-side-note"><HelpCircle aria-hidden="true" /><h2>Not sure what applies?</h2><p>Requirements can differ by scope. Review the guide before submitting; County staff make all final determinations.</p><Link href="/help" className="ap-text-link" data-testid="link-help-applications">Read the guidance <ArrowRight aria-hidden="true" /></Link></aside>
       </section>
-      <section aria-labelledby="applications-list-title"><div className="ap-section-heading"><div><h2 id="applications-list-title">Your applications</h2><p>Only projects available in your applicant view are shown.</p></div><Link href="/records" className="ap-text-link" data-testid="link-records-applications">View all records <ArrowRight aria-hidden="true" /></Link></div>{sorted.length ? <div className="ap-record-list">{sorted.map(a => <RecordLink key={a.id} application={a} />)}</div> : <EmptyRecords />}</section>
+      {sorted.length > 0 && <section aria-labelledby="applications-list-title"><div className="ap-section-heading"><div><h2 id="applications-list-title">Submitted applications</h2><p>Your submitted projects remain separate from saved work.</p></div><Link href="/records" className="ap-text-link" data-testid="link-records-applications">View submitted records <ArrowRight aria-hidden="true" /></Link></div><div className="ap-record-list">{sorted.map(a => <RecordLink key={a.id} application={a} />)}</div></section>}
     </div>
   </main>;
 }
@@ -157,7 +163,7 @@ export function ApplicantHelpPage() {
       <aside className="ap-page-stack">
         <div className="ap-side-note"><Building2 aria-hidden="true" /><h2>Official County information</h2><p>For verified contact details, permit rules, forms, and current procedures, use the County of Santa Clara website.</p><a href="https://www.santaclaracounty.gov/" target="_blank" rel="noopener noreferrer" className="ap-text-link" data-testid="link-official-county-website">Visit the official County website <ArrowUpRight aria-hidden="true" /></a></div>
         <div className="ap-panel ap-content-panel"><CheckCircle2 aria-hidden="true" style={{ width: 21, color: '#0067a5', marginBottom: 12 }} /><h2>Your own project history</h2><p>Once you submit, your application record keeps the status and received-document list together.</p><Link href="/records" className="ap-text-link" data-testid="link-records-help">View your records <ArrowRight aria-hidden="true" /></Link></div>
-        <p className="ap-disclaimer">This is a student prototype, not an official County website. Information here is for demonstration only and does not replace County instructions or decisions.</p>
+        <p className="ap-disclaimer">This is an independent educational portal, not an official County website. Information here does not replace County instructions or decisions.</p>
       </aside>
     </div>
   </main>;

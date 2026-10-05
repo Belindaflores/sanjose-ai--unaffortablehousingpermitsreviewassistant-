@@ -29,7 +29,9 @@ import type {
   PortalUser,
   RequestUploadUrl200,
   RequestUploadUrlBody,
-  ReviewPermitChecksBody
+  ReviewPermitChecksBody,
+  SavedApplication,
+  SavedApplicationChanges
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -58,6 +60,160 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListSavedApplicationsUrl = () => {
+
+
+
+
+  return `/api/saved-applications`
+}
+
+export const listSavedApplications = async ( options?: Parameters<typeof customFetch>[1]): Promise<SavedApplication[]> => {
+
+  return customFetch<SavedApplication[]>(getListSavedApplicationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSavedApplicationsQueryKey = () => {
+    return [
+    `/api/saved-applications`
+    ] as const;
+    }
+
+
+export const getListSavedApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof listSavedApplications>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSavedApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSavedApplicationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSavedApplications>>> = ({ signal }) => listSavedApplications({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSavedApplications>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSavedApplicationsQueryResult = NonNullable<Awaited<ReturnType<typeof listSavedApplications>>>
+export type ListSavedApplicationsQueryError = ErrorType<unknown>
+
+
+
+export function useListSavedApplications<TData = Awaited<ReturnType<typeof listSavedApplications>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSavedApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSavedApplicationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSavedApplicationUrl = (id: string,) => {
+
+
+
+
+  return `/api/saved-applications/${id}`
+}
+
+export const updateSavedApplication = async (id: string,
+    savedApplicationChanges: SavedApplicationChanges, options?: Parameters<typeof customFetch>[1]): Promise<SavedApplication> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SavedApplication>(getUpdateSavedApplicationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(savedApplicationChanges)
+  }
+);}
+
+
+
+
+
+export const getUpdateSavedApplicationMutationKey = () => ['updateSavedApplication'] as const;
+
+export const getUpdateSavedApplicationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSavedApplication>>, TError,UpdateSavedApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSavedApplication>>, TError,UpdateSavedApplicationMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSavedApplicationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSavedApplication>>, UpdateSavedApplicationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSavedApplication(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSavedApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof updateSavedApplication>>>
+    export type UpdateSavedApplicationMutationBody = BodyType<SavedApplicationChanges>
+    export type UpdateSavedApplicationMutationError = ErrorType<unknown>
+    export type UpdateSavedApplicationMutationVariables = {id: string;data: BodyType<SavedApplicationChanges>}
+
+    export const useUpdateSavedApplication = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSavedApplication>>, TError,UpdateSavedApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSavedApplication>>,
+        TError,
+        UpdateSavedApplicationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSavedApplicationMutationOptions(options));
+    }
 
 export const getGetPortalUserUrl = () => {
 

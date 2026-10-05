@@ -14,7 +14,44 @@ tags:
     description: Persistent permit application records
   - name: county-public-records
     description: Public records imported from the County of Santa Clara Open Data portal
+  - name: saved-applications
+    description: Private saved drafts; never official submissions
 paths:
+  /saved-applications:
+    get:
+      operationId: listSavedApplications
+      tags: [saved-applications]
+      responses:
+        "200":
+          description: Saved drafts owned by the signed-in account
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedApplication"
+  /saved-applications/{id}:
+    patch:
+      operationId: updateSavedApplication
+      tags: [saved-applications]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedApplicationChanges"
+      responses:
+        "200":
+          description: Updated saved draft belonging to the signed-in account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedApplication"
   /portal-user:
     get:
       operationId: getPortalUser
@@ -249,6 +286,29 @@ paths:
                   $ref: "#/components/schemas/CountyPublicRecord"
 components:
   schemas:
+    SavedApplication:
+      type: object
+      properties:
+        id: { type: string }
+        applicationNumber: { type: string }
+        applicantEmail: { type: string, format: email }
+        accountOwner: { type: string }
+        projectName: { type: string }
+        projectAddress: { type: string }
+        applicationType: { type: string }
+        status: { type: string, enum: [Draft, In progress, Action needed] }
+        description: { type: string }
+        dateSaved: { type: string, format: date-time }
+        lastUpdated: { type: string, format: date-time }
+      required: [id, applicationNumber, applicantEmail, accountOwner, projectName, projectAddress, applicationType, status, description, dateSaved, lastUpdated]
+    SavedApplicationChanges:
+      type: object
+      properties:
+        projectName: { type: string, minLength: 1, maxLength: 180 }
+        projectAddress: { type: string, minLength: 1, maxLength: 240 }
+        applicationType: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+      required: [projectName, projectAddress, applicationType, description]
     HealthStatus:
       type: object
       properties:

@@ -5,6 +5,49 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type SavedApplicationStatus = typeof SavedApplicationStatus[keyof typeof SavedApplicationStatus];
+
+
+export const SavedApplicationStatus = {
+  Draft: 'Draft',
+  In_progress: 'In progress',
+  Action_needed: 'Action needed',
+} as const;
+
+export interface SavedApplication {
+  id: string;
+  applicationNumber: string;
+  applicantEmail: string;
+  accountOwner: string;
+  projectName: string;
+  projectAddress: string;
+  applicationType: string;
+  status: SavedApplicationStatus;
+  description: string;
+  dateSaved: string;
+  lastUpdated: string;
+}
+
+export interface SavedApplicationChanges {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  projectName: string;
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  projectAddress: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  applicationType: string;
+  /** @maxLength 2000 */
+  description: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

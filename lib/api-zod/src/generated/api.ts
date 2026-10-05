@@ -8,6 +8,58 @@
 import * as zod from 'zod';
 
 
+export const ListSavedApplicationsResponseItem = zod.object({
+  "id": zod.string(),
+  "applicationNumber": zod.string(),
+  "applicantEmail": zod.string().email(),
+  "accountOwner": zod.string(),
+  "projectName": zod.string(),
+  "projectAddress": zod.string(),
+  "applicationType": zod.string(),
+  "status": zod.enum(['Draft', 'In progress', 'Action needed']),
+  "description": zod.string(),
+  "dateSaved": zod.coerce.date(),
+  "lastUpdated": zod.coerce.date()
+})
+export const ListSavedApplicationsResponse = zod.array(ListSavedApplicationsResponseItem)
+
+
+export const UpdateSavedApplicationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateSavedApplicationBodyProjectNameMax = 180;
+
+export const updateSavedApplicationBodyProjectAddressMax = 240;
+
+export const updateSavedApplicationBodyApplicationTypeMax = 100;
+
+export const updateSavedApplicationBodyDescriptionMax = 2000;
+
+
+
+export const UpdateSavedApplicationBody = zod.object({
+  "projectName": zod.string().min(1).max(updateSavedApplicationBodyProjectNameMax),
+  "projectAddress": zod.string().min(1).max(updateSavedApplicationBodyProjectAddressMax),
+  "applicationType": zod.string().min(1).max(updateSavedApplicationBodyApplicationTypeMax),
+  "description": zod.string().max(updateSavedApplicationBodyDescriptionMax)
+})
+
+export const UpdateSavedApplicationResponse = zod.object({
+  "id": zod.string(),
+  "applicationNumber": zod.string(),
+  "applicantEmail": zod.string().email(),
+  "accountOwner": zod.string(),
+  "projectName": zod.string(),
+  "projectAddress": zod.string(),
+  "applicationType": zod.string(),
+  "status": zod.enum(['Draft', 'In progress', 'Action needed']),
+  "description": zod.string(),
+  "dateSaved": zod.coerce.date(),
+  "lastUpdated": zod.coerce.date()
+})
+
+
 export const GetPortalUserResponse = zod.object({
   "id": zod.string(),
   "email": zod.string(),
