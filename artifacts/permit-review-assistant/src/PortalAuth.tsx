@@ -1,21 +1,16 @@
-import { createContext, useContext, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { Route, Switch, useLocation } from 'wouter';
-import { useGetPortalUser, type PortalUser } from '@workspace/api-client-react';
+import { useGetPortalUser } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { RoleChooser } from './ApplicantPortal';
+import { ProfileContext } from './PortalProfile';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
-const ProfileContext = createContext<PortalUser | null>(null);
-export const usePortalProfile = () => {
-  const profile = useContext(ProfileContext);
-  if (!profile) throw new Error('A signed-in portal profile is required.');
-  return profile;
-};
 function ProfileGate({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, userId } = useAuth();
   const queryClient = useQueryClient();

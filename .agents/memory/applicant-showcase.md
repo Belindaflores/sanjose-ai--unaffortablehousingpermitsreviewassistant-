@@ -3,12 +3,14 @@ name: Authentic applicant showcase
 description: Public City housing records belong only in the credential-protected worker records view, never in applicant-owned submissions.
 ---
 
-Only genuine submissions actually owned by the signed-in account may appear as private applicant applications. Keep public City housing-permit records separate in the credential-protected City Worker Application Records view; do not show them on applicant pages or imply that the applicant submitted them.
+Keep public City housing-permit records separate in the credential-protected City Worker Application Records view; never relabel them as applicant-owned submissions.
 
-For the specifically requested account, two independently stored **saved drafts** may reuse the public cards' general project themes and addresses, but must receive their own DRAFT application numbers and actual save/edit timestamps. Saved drafts are not submitted permits, City public records, verified submissions, or staff review items.
+The user explicitly authorized one synthetic submitted account presentation (Opal ADU) and one saved draft (Meridian apartments). The submitted presentation is not an official City filing, public record, or staff review item. Its historical dates are supplied presentation data, not a verified submission history.
+
+Document entries for this presentation contain synthetic metadata only. Filenames and received labels must not imply that actual PDFs, signed authorizations, or verified plans exist. Offer document-information views and disclose this distinction; do not invent downloadable files.
 
 The showcase must be **housing construction only**, such as apartment construction or ADUs. Never substitute pools or spas—even those located at apartments, mobile-home parks, or residential communities.
 
-**Why:** The user confirmed there are no verified submissions and requested two account-specific saved applications instead. They explicitly prohibited presenting drafts as officially submitted or approved, while keeping City public permits separate from the applicant portal.
+**Why:** The user superseded the earlier two-draft request with explicit instructions to convert Opal into a submitted synthetic presentation, while keeping Meridian saved. They still prohibit claiming an official City submission or mixing either account record into public permit totals.
 
-**How to apply:** Keep public data under worker credentials and private drafts/submissions owner-scoped by authenticated identity, with drafts in a separate data store from staff-reviewed submissions. Don't reuse City permit IDs or issue dates as draft identifiers or timestamps. Never invent official review decisions. SCC Plan Check Progress is environmental-health data, not housing-construction permitting.
+**How to apply:** Use one account-owned data source for cards, submitted-project lists, details, documents, and timeline. Keep this presentation separate from the staff-reviewed submission workflow and public dataset. Respect the supplied presentation dates and statuses without inventing official decisions. SCC Plan Check Progress is environmental-health data, not housing-construction permitting.

@@ -12,17 +12,59 @@ export const SavedApplicationStatus = {
   Draft: 'Draft',
   In_progress: 'In progress',
   Action_needed: 'Action needed',
+  Submitted: 'Submitted',
 } as const;
+
+export type AccountTimelineEventStatus = typeof AccountTimelineEventStatus[keyof typeof AccountTimelineEventStatus];
+
+
+export const AccountTimelineEventStatus = {
+  complete: 'complete',
+  upcoming: 'upcoming',
+} as const;
+
+export interface AccountTimelineEvent {
+  label: string;
+  /** @nullable */
+  date: string | null;
+  status: AccountTimelineEventStatus;
+}
+
+export type AccountDocumentUploadStatus = typeof AccountDocumentUploadStatus[keyof typeof AccountDocumentUploadStatus];
+
+
+export const AccountDocumentUploadStatus = {
+  Received: 'Received',
+} as const;
+
+export interface AccountDocument {
+  name: string;
+  fileName: string;
+  category: string;
+  required: boolean;
+  uploadStatus: AccountDocumentUploadStatus;
+  uploadDate: string;
+  fileType: string;
+  /** @minimum 0 */
+  fileSize: number;
+  synthetic: boolean;
+}
 
 export interface SavedApplication {
   id: string;
   applicationNumber: string;
   applicantEmail: string;
   accountOwner: string;
+  applicantName: string;
+  address: string;
   projectName: string;
   projectAddress: string;
   applicationType: string;
   status: SavedApplicationStatus;
+  /** @nullable */
+  submissionDate: string | null;
+  timeline: AccountTimelineEvent[];
+  documents: AccountDocument[];
   description: string;
   dateSaved: string;
   lastUpdated: string;

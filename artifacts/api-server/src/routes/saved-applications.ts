@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { db, savedApplicationDraftsTable } from "@workspace/db";
 import { ListSavedApplicationsResponse, UpdateSavedApplicationBody, UpdateSavedApplicationResponse } from "@workspace/api-zod";
 import { requirePortalUser } from "../middlewares/portal-auth";
@@ -13,6 +13,8 @@ function respondWithDraft(row: typeof savedApplicationDraftsTable.$inferSelect) 
     applicationNumber: row.applicationNumber,
     applicantEmail: row.applicantEmail,
     accountOwner: row.accountOwner,
+    applicantName: row.accountOwner,
+    address: row.projectAddress,
     projectName: row.projectName,
     projectAddress: row.projectAddress,
     applicationType: row.applicationType,
@@ -20,6 +22,9 @@ function respondWithDraft(row: typeof savedApplicationDraftsTable.$inferSelect) 
     description: row.description,
     dateSaved: row.dateSaved.toISOString(),
     lastUpdated: row.lastUpdated.toISOString(),
+    submissionDate: row.submissionDate?.toISOString() ?? null,
+    documents: row.documents,
+    timeline: row.timeline,
   };
 }
 
@@ -51,9 +56,16 @@ router.patch("/saved-applications/:id", requirePortalUser, async (req, res): Pro
     })
     .where(and(eq(savedApplicationDraftsTable.id, id),
       eq(savedApplicationDraftsTable.ownerUserId, user.id),
-      eq(savedApplicationDraftsTable.applicantEmail, user.email)))
+      eq(savedApplicationDraftsTable.applicantEmail, user.email),
+      ne(savedApplicationDraftsTable.status, "Submitted")))
     .returning();
-  if (!updated) { res.status(404).json({ error: "Saved application not found." }); return; }
+  if (!updated) {
+    const [owned] = await db.select({ id: savedApplicationDraftsTable.id }).from(savedApplicationDraftsTable)
+      .where(and(eq(savedApplicationDraftsTable.id, id), eq(savedApplicationDraftsTable.ownerUserId, user.id),
+        eq(savedApplicationDraftsTable.applicantEmail, user.email)));
+    res.status(owned ? 409 : 404).json({ error: owned ? "Submitted applications cannot be edited as drafts." : "Application not found." });
+    return;
+  }
   res.json(UpdateSavedApplicationResponse.parse(respondWithDraft(updated)));
 });
 

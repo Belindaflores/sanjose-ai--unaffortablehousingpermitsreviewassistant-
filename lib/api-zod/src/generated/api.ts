@@ -8,15 +8,38 @@
 import * as zod from 'zod';
 
 
+export const listSavedApplicationsResponseDocumentsItemFileSizeMin = 0;
+
+
+
 export const ListSavedApplicationsResponseItem = zod.object({
   "id": zod.string(),
   "applicationNumber": zod.string(),
   "applicantEmail": zod.string().email(),
   "accountOwner": zod.string(),
+  "applicantName": zod.string(),
+  "address": zod.string(),
   "projectName": zod.string(),
   "projectAddress": zod.string(),
   "applicationType": zod.string(),
-  "status": zod.enum(['Draft', 'In progress', 'Action needed']),
+  "status": zod.enum(['Draft', 'In progress', 'Action needed', 'Submitted']),
+  "submissionDate": zod.coerce.date().nullable(),
+  "timeline": zod.array(zod.object({
+  "label": zod.string(),
+  "date": zod.coerce.date().nullable(),
+  "status": zod.enum(['complete', 'upcoming'])
+})),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "fileName": zod.string(),
+  "category": zod.string(),
+  "required": zod.boolean(),
+  "uploadStatus": zod.enum(['Received']),
+  "uploadDate": zod.coerce.date(),
+  "fileType": zod.string(),
+  "fileSize": zod.number().int().min(listSavedApplicationsResponseDocumentsItemFileSizeMin),
+  "synthetic": zod.boolean()
+})),
   "description": zod.string(),
   "dateSaved": zod.coerce.date(),
   "lastUpdated": zod.coerce.date()
@@ -45,15 +68,38 @@ export const UpdateSavedApplicationBody = zod.object({
   "description": zod.string().max(updateSavedApplicationBodyDescriptionMax)
 })
 
+export const updateSavedApplicationResponseDocumentsItemFileSizeMin = 0;
+
+
+
 export const UpdateSavedApplicationResponse = zod.object({
   "id": zod.string(),
   "applicationNumber": zod.string(),
   "applicantEmail": zod.string().email(),
   "accountOwner": zod.string(),
+  "applicantName": zod.string(),
+  "address": zod.string(),
   "projectName": zod.string(),
   "projectAddress": zod.string(),
   "applicationType": zod.string(),
-  "status": zod.enum(['Draft', 'In progress', 'Action needed']),
+  "status": zod.enum(['Draft', 'In progress', 'Action needed', 'Submitted']),
+  "submissionDate": zod.coerce.date().nullable(),
+  "timeline": zod.array(zod.object({
+  "label": zod.string(),
+  "date": zod.coerce.date().nullable(),
+  "status": zod.enum(['complete', 'upcoming'])
+})),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "fileName": zod.string(),
+  "category": zod.string(),
+  "required": zod.boolean(),
+  "uploadStatus": zod.enum(['Received']),
+  "uploadDate": zod.coerce.date(),
+  "fileType": zod.string(),
+  "fileSize": zod.number().int().min(updateSavedApplicationResponseDocumentsItemFileSizeMin),
+  "synthetic": zod.boolean()
+})),
   "description": zod.string(),
   "dateSaved": zod.coerce.date(),
   "lastUpdated": zod.coerce.date()

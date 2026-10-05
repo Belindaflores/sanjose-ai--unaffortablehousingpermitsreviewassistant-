@@ -1,3 +1,4 @@
 - [Post-merge workflow ports](post-merge-workflow-ports.md) — a failed managed restart can leave an older server occupying the port while preview still responds.
 - [Permit geography](permit-geography.md) — the requested county-wide screen is a prototype geography boundary, not an official legal jurisdiction determination.
-- [Public permit separation](applicant-showcase.md) — public City records stay staff-only; account-owned saved drafts are separate from submitted permits.
+- [Public permit separation](applicant-showcase.md) — synthetic account presentations and drafts stay separate from public City records and official filings.
+- [Development database resets](development-db-resets.md) — an administrative connection reset can stop the API while the frontend still serves; it is not a credential failure.

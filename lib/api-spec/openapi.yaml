@@ -293,14 +293,45 @@ components:
         applicationNumber: { type: string }
         applicantEmail: { type: string, format: email }
         accountOwner: { type: string }
+        applicantName: { type: string }
+        address: { type: string }
         projectName: { type: string }
         projectAddress: { type: string }
         applicationType: { type: string }
-        status: { type: string, enum: [Draft, In progress, Action needed] }
+        status: { type: string, enum: [Draft, In progress, Action needed, Submitted] }
+        submissionDate: { type: ["string", "null"], format: date-time }
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountTimelineEvent"
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountDocument"
         description: { type: string }
         dateSaved: { type: string, format: date-time }
         lastUpdated: { type: string, format: date-time }
-      required: [id, applicationNumber, applicantEmail, accountOwner, projectName, projectAddress, applicationType, status, description, dateSaved, lastUpdated]
+      required: [id, applicationNumber, applicantEmail, accountOwner, applicantName, address, projectName, projectAddress, applicationType, status, description, dateSaved, lastUpdated, submissionDate, timeline, documents]
+    AccountTimelineEvent:
+      type: object
+      properties:
+        label: { type: string }
+        date: { type: ["string", "null"], format: date-time }
+        status: { type: string, enum: [complete, upcoming] }
+      required: [label, date, status]
+    AccountDocument:
+      type: object
+      properties:
+        name: { type: string }
+        fileName: { type: string }
+        category: { type: string }
+        required: { type: boolean }
+        uploadStatus: { type: string, enum: [Received] }
+        uploadDate: { type: string, format: date-time }
+        fileType: { type: string }
+        fileSize: { type: integer, minimum: 0 }
+        synthetic: { type: boolean }
+      required: [name, fileName, category, required, uploadStatus, uploadDate, fileType, fileSize, synthetic]
     SavedApplicationChanges:
       type: object
       properties:

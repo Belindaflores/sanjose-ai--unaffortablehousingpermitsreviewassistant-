@@ -7,7 +7,8 @@ import {
 import './applicant-portal.css';
 import { ClassificationCorrection } from './ReviewSafeguards';
 import type { PermitApplication as ApiApplication } from '@workspace/api-client-react';
-import { SavedApplicationsSection, useOwnedSavedApplications } from './SavedApplications';
+import { SavedApplicationsSection, AccountApplicationCard } from './SavedApplications';
+import { useOwnedSavedApplications } from './hooks/use-owned-saved-applications';
 
 type ApplicationsProps = { applications: PermitApplication[] };
 
@@ -41,7 +42,7 @@ function RecordLink({ application }: { application: PermitApplication }) {
 function EmptyRecords({ compact = false }: { compact?: boolean }) {
   return <div className="ap-empty ap-panel" data-testid="empty-applicant-records">
     <FolderOpen aria-hidden="true" />
-    <h2>No applications yet</h2>
+    <h2>No submitted projects</h2>
     <p>Your submitted projects will appear here, together with their current status and documents.</p>
     <Link href="/new-application" className="ap-btn" data-testid={compact ? 'link-start-first-application-dashboard' : 'link-start-first-application-records'}><FilePlus2 aria-hidden="true" /> Start an application</Link>
   </div>;
@@ -82,15 +83,17 @@ export function ApplicantDashboard({ applications }: ApplicationsProps) {
   const inProgress = applications.filter(a => !['Approved', 'Denied', 'Revisions Required'].includes(a.reviewStatus)).length;
   const savedInProgress = drafts.data?.filter(a => a.status === 'In progress').length ?? 0;
   const savedActionNeeded = drafts.data?.filter(a => a.status === 'Action needed').length ?? 0;
+  const submittedCount = drafts.data?.filter(a => a.status === 'Submitted').length ?? 0;
+  const savedCount = (drafts.data?.length ?? 0) - submittedCount;
   return <main className="page applicant-page">
     <header className="ap-hero">
       <div className="ap-hero-copy"><p className="ap-kicker">Applicant home</p><h1 className="ap-heading">My applications</h1><p className="ap-lede">View the applications associated with your account and review their current status.</p></div>
       <Link href="/new-application" className="ap-btn" data-testid="link-new-application-dashboard"><FilePlus2 aria-hidden="true" /> Start a new application</Link>
     </header>
     <section className="ap-summary" aria-label="Your application summary">
-      <div className="ap-summary-item" data-testid="summary-total-applications"><span>Saved applications</span><strong>{drafts.data?.length ?? 0}</strong><small>Continue your projects</small></div>
+      <div className="ap-summary-item" data-testid="summary-total-applications"><span>Your applications</span><strong>{(drafts.data?.length ?? 0) + applications.length}</strong><small>{savedCount} saved · {submittedCount + applications.length} submitted</small></div>
       <div className="ap-summary-item" data-testid="summary-needs-attention"><span>May need your attention</span><strong>{awaiting + savedActionNeeded}</strong><small>Items requiring your attention</small></div>
-      <div className="ap-summary-item" data-testid="summary-in-progress"><span>In progress</span><strong>{inProgress + savedInProgress}</strong><small>Saved work or active reviews</small></div>
+      <div className="ap-summary-item" data-testid="summary-in-progress"><span>In progress</span><strong>{inProgress + savedInProgress + submittedCount}</strong><small>Saved work or pending review</small></div>
     </section>
     <SavedApplicationsSection />
     {sorted.length > 0 && <div className="ap-overview-grid">
@@ -123,10 +126,17 @@ export function ApplicantApplicationsPage({ applications }: ApplicationsProps) {
 }
 
 export function ApplicantRecordsPage({ applications }: ApplicationsProps) {
+  const account = useOwnedSavedApplications();
+  const submitted = account.accountApplications?.filter(application => application.status === 'Submitted') ?? [];
   const sorted = [...applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   return <main className="page applicant-page">
     <header className="ap-hero"><div className="ap-hero-copy"><p className="ap-kicker">Your records</p><h1 className="ap-heading">A record of every step.</h1><p className="ap-lede">Find your current and past submissions here. Open a project for its documents and status history.</p></div><Link href="/new-application" className="ap-btn secondary" data-testid="link-new-application-records"><FilePlus2 aria-hidden="true" /> New application</Link></header>
-    <section aria-labelledby="all-records-title"><div className="ap-section-heading"><h2 id="all-records-title">Your submitted projects ({applications.length})</h2></div>{sorted.length ? <div className="ap-record-list">{sorted.map(a => <RecordLink key={a.id} application={a} />)}</div> : <EmptyRecords />}</section>
+    <section aria-labelledby="all-records-title"><div className="ap-section-heading"><h2 id="all-records-title">Your submitted projects ({submitted.length + applications.length})</h2></div>
+      {account.isPending && <p role="status">Loading submitted projects…</p>}
+      {account.isError && <p role="alert">Could not load submitted projects. <button onClick={() => account.refetch()}>Retry</button></p>}
+      <div className="ap-record-list">{submitted.map(record => <AccountApplicationCard key={record.id} record={record} />)}{sorted.map(a => <RecordLink key={a.id} application={a} />)}</div>
+      {account.isSuccess && submitted.length + sorted.length === 0 && <EmptyRecords />}
+    </section>
   </main>;
 }
 

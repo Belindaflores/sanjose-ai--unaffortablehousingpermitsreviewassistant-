@@ -1,0 +1,69 @@
+DOCUMENT REQUIREMENTS
+
+The submitted “Opal Drive Detached ADU” application must include all required documents. Do not show the required documents as “Not received.”
+
+Use the existing Documents section and mark these required documents as uploaded/received:
+
+1. Architectural plans — Required — Received
+   File name: Opal_Drive_ADU_Architectural_Plans.pdf
+
+2. Structural plans — Required — Received
+   File name: Opal_Drive_ADU_Structural_Plans.pdf
+
+3. Site plan and survey — Required — Received
+   File name: Opal_Drive_ADU_Site_Plan_and_Survey.pdf
+
+4. Title 24 energy forms — Required — Received
+   File name: Opal_Drive_ADU_Title_24_Energy_Forms.pdf
+
+5. Owner authorization — Required — Received
+   File name: Opal_Drive_ADU_Owner_Authorization.pdf
+
+Also include these supporting documents:
+
+6. Fire and life safety plan — Supporting document — Received
+   File name: Opal_Drive_ADU_Fire_and_Life_Safety_Plan.pdf
+
+7. Planning / zoning forms — Supporting document — Received
+   File name: Opal_Drive_ADU_Planning_and_Zoning_Forms.pdf
+
+Use synthetic document metadata only. These files are for the portal’s presentation data and must not contain real personal information.
+
+Each document record should include:
+- Document name
+- File name
+- Category
+- Required or supporting status
+- Upload status
+- Upload date
+- File type
+- File size
+- View or download action
+
+For the submitted application, display:
+“7 documents received”
+“Required documents complete”
+
+The submitted application must not show:
+- “Not received” for any required document
+- “Missing required documents”
+- “Upload documents to continue”
+- “Incomplete submission”
+
+The application details page must include a Documents tab or Documents section that displays the same uploaded document records. The documents shown from:
+- Applications
+- Application Records
+- View application
+- Application timeline
+
+must all use the same shared document data.
+
+Add this document milestone to the application timeline:
+
+“Required documents received”
+Date: October 4, 2026
+
+Keep the submitted status:
+“Submitted — awaiting initial review”
+
+The draft “Meridian Avenue apartment project” may continue showing missing documents because it has not been submitted. Only the submitted Opal Drive Detached ADU application should show all required documents as received.

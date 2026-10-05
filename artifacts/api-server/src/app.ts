@@ -6,8 +6,18 @@ import { logger } from "./lib/logger";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
+import { pool } from "@workspace/db";
 
 const app: Express = express();
+
+// pg removes failed idle clients and reconnects on the next query. An unhandled
+// pool error instead terminates the entire API after a database interruption.
+pool.on("error", error => {
+  logger.error({
+    code: "code" in error ? String(error.code) : undefined,
+    message: error.message,
+  }, "Idle database connection interrupted; subsequent requests will reconnect");
+});
 
 app.use(
   pinoHttp({

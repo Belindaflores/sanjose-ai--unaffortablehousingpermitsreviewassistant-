@@ -5,6 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AccountDocument } from './accountDocument';
+import type { AccountTimelineEvent } from './accountTimelineEvent';
 import type { SavedApplicationStatus } from './savedApplicationStatus';
 
 export interface SavedApplication {
@@ -12,10 +14,16 @@ export interface SavedApplication {
   applicationNumber: string;
   applicantEmail: string;
   accountOwner: string;
+  applicantName: string;
+  address: string;
   projectName: string;
   projectAddress: string;
   applicationType: string;
   status: SavedApplicationStatus;
+  /** @nullable */
+  submissionDate: Date | null;
+  timeline: AccountTimelineEvent[];
+  documents: AccountDocument[];
   description: string;
   dateSaved: Date;
   lastUpdated: Date;

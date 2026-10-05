@@ -1,0 +1,162 @@
+Update the applicant portal so the account has one submitted application and one saved application.
+
+Account:
+alondracampos280@gmail.com
+
+Use realistic but fully synthetic application data. Do not use real applicant information, real private records, or claim that the application is an official City submission.
+
+APPLICATION 1 — SUBMITTED
+
+Convert the existing “Opal Drive detached ADU” saved application into a submitted application.
+
+Use these details:
+
+Project name:
+Opal Drive Detached ADU
+
+Application number:
+APP-2026-1047
+
+Address:
+973 Opal Drive, San José, CA 95117
+
+Application type:
+Accessory Dwelling Unit
+
+Status:
+Submitted
+
+Submission date:
+October 4, 2026
+
+Last updated:
+October 4, 2026
+
+Applicant:
+Alondra Campos
+
+Applicant email:
+alondracampos280@gmail.com
+
+Use the visible card label:
+“SUBMITTED APPLICATION”
+
+Replace the “Continue application” button on this card with:
+“View application”
+
+The submitted application should open an application-details page showing:
+- Application number
+- Project name
+- Address
+- Application type
+- Applicant name
+- Submission date
+- Current status
+- Application timeline
+- Documents section
+- Next steps
+
+Create a timeline containing:
+1. Application started
+2. Application information completed
+3. Application submitted
+4. Under initial review
+
+The current status should be:
+“Submitted — awaiting initial review”
+
+APPLICATION 2 — SAVED APPLICATION
+
+Keep “Meridian Avenue apartment project” as a saved application with:
+
+Application number:
+DRAFT-2026-0317
+
+Address:
+969 Meridian Avenue, San José, CA 95126
+
+Application type:
+Apartment construction
+
+Status:
+Draft
+
+Use the visible card label:
+“SAVED APPLICATION”
+
+Keep the “Continue application” button for this card.
+
+APPLICATIONS TAB
+
+The Applications tab should show both records under “Your applications”:
+
+1. Opal Drive Detached ADU — Submitted
+2. Meridian Avenue apartment project — Draft
+
+Use one shared accountApplications dataset. Both records must belong to:
+alondracampos280@gmail.com
+
+Do not hardcode different versions of these records into separate pages.
+
+APPLICATION RECORDS TAB
+
+Update the applicant’s Application Records page so it shows:
+
+Heading:
+“Your submitted projects (1)”
+
+Display the submitted Opal Drive Detached ADU application in the records list.
+
+Do not include the Meridian Avenue draft application in submitted projects.
+
+Replace the empty state “No applications yet” with the submitted application record.
+
+The submitted record should show:
+- Project name
+- Application number
+- Address
+- Submitted date
+- Current status
+- View details button
+
+Clicking “View details” must open the same application-details page used from the Applications tab.
+
+DATA AND BEHAVIOR
+
+Create or update the shared data structure so the records include:
+
+{
+  id,
+  applicationNumber,
+  projectName,
+  address,
+  applicationType,
+  applicantName,
+  applicantEmail,
+  status,
+  submissionDate,
+  lastUpdated,
+  timeline,
+  documents
+}
+
+Filter the applicant pages by the signed-in user’s email. Only records where applicantEmail equals “alondracampos280@gmail.com” should appear.
+
+Keep the City Worker Portal and public permit dataset separate. Do not add this synthetic account application to the 17,272 public-record count or public Application Records dataset.
+
+Do not use the words:
+- Prototype Submission
+- Demo application
+- Public permit example
+- Authentic City permit
+- Read-only example
+- No applications yet
+
+Use professional labels such as:
+- Submitted application
+- Saved application
+- Under initial review
+- View application
+- Continue application
+
+Make sure the Applications tab and Application Records tab update consistently and show the same submitted application details.
