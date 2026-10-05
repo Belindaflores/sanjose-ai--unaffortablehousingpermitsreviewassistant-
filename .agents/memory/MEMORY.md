@@ -1,3 +1,3 @@
-- [Workflow runtime drift](post-merge-workflow-ports.md) — merges/restores can leave stale servers or compiled builds running despite the restored source.
+- [Post-merge workflow ports](post-merge-workflow-ports.md) — a failed managed restart can leave an older server occupying the port while preview still responds.
 - [Permit geography](permit-geography.md) — the requested county-wide screen is a prototype geography boundary, not an official legal jurisdiction determination.
 - [Public permit separation](applicant-showcase.md) — public City records stay staff-only; account-owned saved drafts are separate from submitted permits.
