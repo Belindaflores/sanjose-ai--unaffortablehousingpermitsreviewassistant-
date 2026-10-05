@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useCorrectPermitClassification, useGetPermitRuleConfig, useReviewPermitChecks, useUpdatePermitRuleConfig, type PermitApplication as ApiApplication } from '@workspace/api-client-react';
 import type { PermitApplication } from './App';
-import { usePortalProfile } from './PortalAuth';
 
 export function ClassificationCorrection({ application: app, onSaved }: { application: PermitApplication; onSaved: (app: ApiApplication) => void }) {
   const correct = useCorrectPermitClassification();
@@ -19,7 +18,6 @@ export function ClassificationCorrection({ application: app, onSaved }: { applic
 }
 export function StaffChecksPanel({ application: app, onSaved }: { application: PermitApplication; onSaved: (app: ApiApplication) => void }) {
   const review = useReviewPermitChecks();
-  const profile = usePortalProfile();
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const submit = async (action: 'claim' | 'safety' | 'jurisdiction', extra: { claim?: 'affordable' | 'underserved'; decision?: 'Verified' | 'Rejected'; document?: string } = {}) => {
@@ -39,7 +37,7 @@ export function StaffChecksPanel({ application: app, onSaved }: { application: P
     })}
     {!app.affordableHousing && !app.underservedCommunity && <p>No applicant priority claims.</p>}
     {app.ruleChecks?.jurisdictionStatus === 'Needs Verification' && !app.reviewDecisions?.jurisdiction && <div className="claim-row"><h3>Jurisdiction verification</h3><p>Confirm this project is within the prototype's Santa Clara County geography before intake proceeds.</p><button className="button teal" disabled={review.isPending || !note.trim()} onClick={() => submit('jurisdiction')}>Confirm County jurisdiction</button></div>}
-    {app.ruleChecks?.safetyCriticalFlags.length ? <div className="claim-row safety-critical"><h3>Required Fire Marshal review</h3><p>Only staff with Fire Marshal permissions may override this hold. A reason is required and the missing document remains incomplete.</p>{profile.role === 'fire_marshal' ? <button className="button danger" disabled={review.isPending || !note.trim()} onClick={() => submit('safety', { document: 'Fire and life safety plan' })} data-testid="resolve-fire-safety">Record Fire Marshal safety override</button> : <p>Your account does not have Fire Marshal override permissions. Request review by authorized Fire Marshal staff.</p>}</div> : null}
+    {app.ruleChecks?.safetyCriticalFlags.length ? <div className="claim-row safety-critical"><h3>Required safety review</h3><p>Fire Marshal or City Worker must document the resolution. A waiver does not mark a missing document complete.</p><button className="button danger" disabled={review.isPending || !note.trim()} onClick={() => submit('safety', { document: 'Fire and life safety plan' })} data-testid="resolve-fire-safety">Record fire/life-safety resolution</button></div> : null}
     {app.reviewDecisions?.safety?.map((d, index) => <p key={index}>Safety resolution: {d.document} — {d.note} · {d.by} · {d.at}</p>)}
     {error && <p className="rule-alert" role="alert">{error}</p>}
   </section>;

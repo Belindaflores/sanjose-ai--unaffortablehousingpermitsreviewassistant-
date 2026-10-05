@@ -1,11 +1,10 @@
 // Import only verified public residential permits, never private applicant data.
 import { db, pool, countyPublicRecordsTable } from "@workspace/db";
-import { getSharedOfficialApplicant, PUBLIC_HOUSING_SHOWCASE_IDS } from "@workspace/api-zod";
 
 const resourceId = "761b7ae8-3be1-4ad6-923d-c7af6404a904";
-const permitNumbers = PUBLIC_HOUSING_SHOWCASE_IDS;
+const permitNumbers = ["2023-081161-MF", "2024-111170-RS"];
 const sourceUrl = "https://data.sanjoseca.gov/dataset/active-building-permits";
-const fields = ["FOLDERNUMBER", "APPLICANT", "FOLDERNAME", "FOLDERDESC", "SUBTYPEDESCRIPTION", "WORKDESCRIPTION", "gx_location", "Status", "ISSUEDATE", "FINALDATE", "DWELLINGUNITS", "PERMITVALUATION"];
+const fields = ["FOLDERNUMBER", "FOLDERNAME", "FOLDERDESC", "SUBTYPEDESCRIPTION", "WORKDESCRIPTION", "gx_location", "Status", "ISSUEDATE", "FINALDATE", "DWELLINGUNITS", "PERMITVALUATION"];
 
 function sourceDate(value: string | null) {
   if (!value) return null;
@@ -39,14 +38,12 @@ try {
       datasetName: "Active Building Permits", sourceUrl,
       businessName: record.FOLDERNAME, siteLocation: record.gx_location.trim().replace(/\s+/g, " "), city: "SAN JOSE",
       housingDetails: {
-        permitNumber, officialApplicant: record.APPLICANT?.trim() ?? "",
-        projectType: record.SUBTYPEDESCRIPTION!, workDescription: record.WORKDESCRIPTION,
+        permitNumber, projectType: record.SUBTYPEDESCRIPTION!, workDescription: record.WORKDESCRIPTION,
         dwellingUnits, status: record.Status, issuedDate: sourceDate(record.ISSUEDATE ?? null),
         finalDate: sourceDate(record.FINALDATE ?? null), permitValuation: valuation,
       },
     };
   });
-  if (!getSharedOfficialApplicant(values)) throw new Error("Both public housing permits must explicitly name the same official applicant. No records imported.");
   await db.transaction(async tx => {
     for (const value of values) {
       await tx.insert(countyPublicRecordsTable).values(value).onConflictDoUpdate({

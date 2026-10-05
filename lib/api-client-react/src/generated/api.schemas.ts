@@ -5,58 +5,6 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-export interface BuildingPermitRecord {
-  sourceId: number;
-  /** @nullable */
-  permitNumber: string | null;
-  /** @nullable */
-  projectName: string | null;
-  /** @nullable */
-  address: string | null;
-  /** @nullable */
-  applicant: string | null;
-  /** @nullable */
-  permitType: string | null;
-  /** @nullable */
-  projectType: string | null;
-  /** @nullable */
-  workDescription: string | null;
-  /** @nullable */
-  status: string | null;
-  /** @nullable */
-  issuedDate: string | null;
-  /** @nullable */
-  finalDate: string | null;
-  /** @nullable */
-  dwellingUnits: string | null;
-  /** @nullable */
-  valuation: string | null;
-}
-
-export interface BuildingPermitPage {
-  records: BuildingPermitRecord[];
-  /** @minimum 0 */
-  total: number;
-  /** @minimum 0 */
-  datasetTotal: number;
-  page: number;
-  pageSize: number;
-  /** @nullable */
-  nextPage: number | null;
-  sourceName: string;
-  datasetName: string;
-  sourceUrl: string;
-  fetchedAt: string;
-}
-
-export interface PermitDeletionConfirmation {
-  /**
-     * @minLength 1
-     * @maxLength 180
-     */
-  confirmationId: string;
-}
-
 export interface HealthStatus {
   status: string;
 }
@@ -148,7 +96,6 @@ export const PermitApplicationReviewStatus = {
   Revisions_Required: 'Revisions Required',
   Needs_Jurisdiction_Verification: 'Needs Jurisdiction Verification',
   'Blocked_—_Safety_Review_Required': 'Blocked — Safety Review Required',
-  'On_Hold_-_Safety_Review_Required': 'On Hold - Safety Review Required',
   'Needs_Human_Review_—_Data_Inconsistency': 'Needs Human Review — Data Inconsistency',
 } as const;
 
@@ -180,19 +127,11 @@ export interface AuditDecision {
   document?: string;
 }
 
-export type SafetyDecisionRole = typeof SafetyDecisionRole[keyof typeof SafetyDecisionRole];
-
-
-export const SafetyDecisionRole = {
-  fire_marshal: 'fire_marshal',
-} as const;
-
 export interface SafetyDecision {
   note: string;
   by: string;
   at: string;
   document: string;
-  role?: SafetyDecisionRole;
 }
 
 export interface ReviewDecisions {
@@ -261,11 +200,6 @@ export interface PermitApplication {
   notes: PermitStaffNote[];
 }
 
-export interface FirePlanUploadInput {
-  /** @minLength 1 */
-  objectPath: string;
-}
-
 export type PortalUserRole = typeof PortalUserRole[keyof typeof PortalUserRole];
 
 
@@ -296,11 +230,6 @@ export interface PermitRuleConfig {
 
 export interface PublicHousingPermitDetails {
   permitNumber: string;
-  /**
-     * Applicant explicitly named in the official public permit source; not a portal account or property-owner inference.
-     * @minLength 1
-     */
-  officialApplicant?: string;
   projectType: string;
   workDescription: string;
   /** @minimum 1 */
@@ -433,26 +362,4 @@ export type CorrectPermitClassificationBody = {
 export type ListPermitApplicationsParams = {
 applicantEmail?: string;
 };
-
-export type ListBuildingPermitRecordsParams = {
-/**
- * @minimum 1
- * @maximum 100000
- */
-page?: number;
-pageSize?: ListBuildingPermitRecordsPageSize;
-/**
- * @maxLength 200
- */
-q?: string;
-};
-
-export type ListBuildingPermitRecordsPageSize = typeof ListBuildingPermitRecordsPageSize[keyof typeof ListBuildingPermitRecordsPageSize];
-
-
-export const ListBuildingPermitRecordsPageSize = {
-  NUMBER_25: 25,
-  NUMBER_50: 50,
-  NUMBER_100: 100,
-} as const;
 

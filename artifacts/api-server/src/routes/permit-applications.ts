@@ -2,12 +2,11 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { db, permitApplicationsTable, permitRejectedAttemptsTable } from "@workspace/db";
-import { CreatePermitApplicationBody, CreatePermitApplicationResponse, ListPermitApplicationsQueryParams, ListPermitApplicationsResponse, UpdatePermitApplicationBody, UpdatePermitApplicationParams, UpdatePermitApplicationResponse, ReviewPermitChecksBody, CorrectPermitClassificationBody, UploadPermitFirePlanBody, checkJurisdiction, OUTSIDE_COUNTY_MESSAGE, screenApplication, EVIDENCE_LABEL, SAFETY_CRITICAL_DOCS } from "@workspace/api-zod";
+import { CreatePermitApplicationBody, CreatePermitApplicationResponse, ListPermitApplicationsQueryParams, ListPermitApplicationsResponse, UpdatePermitApplicationBody, UpdatePermitApplicationParams, UpdatePermitApplicationResponse, ReviewPermitChecksBody, CorrectPermitClassificationBody, checkJurisdiction, OUTSIDE_COUNTY_MESSAGE, screenApplication, EVIDENCE_LABEL, SAFETY_CRITICAL_DOCS } from "@workspace/api-zod";
 import { requirePortalUser, requireStaff, isStaff, canViewApplication } from "../middlewares/portal-auth";
 import { readRuleConfig, screenedResponse, toValues } from "../lib/permit-screening";
 import { validateUploadedDocument } from "./storage";
 import { buildPermitTimeline } from "../lib/permit-timeline";
-import { DeletePermitApplicationParams, DeletePermitApplicationBody } from "@workspace/api-zod";
 
 const router = Router();
 router.use("/permit-applications", requirePortalUser);
@@ -19,25 +18,6 @@ router.get("/permit-applications", async (req, res): Promise<void> => {
   const rows = await db.select().from(permitApplicationsTable).where(isStaff(user) ? (parsed.data.applicantEmail ? eq(permitApplicationsTable.email, parsed.data.applicantEmail) : undefined) : eq(permitApplicationsTable.ownerUserId, user.id)).orderBy(desc(permitApplicationsTable.submittedAt));
   const applications = await Promise.all(rows.filter(row => checkJurisdiction(row.projectAddress).status !== "Outside County").map(screenedResponse));
   res.json(ListPermitApplicationsResponse.parse(applications));
-});
-router.delete("/permit-applications/:id", async (req, res): Promise<void> => {
-  const params = DeletePermitApplicationParams.safeParse(req.params);
-  const body = DeletePermitApplicationBody.safeParse(req.body);
-  if (!params.success || !body.success || body.data.confirmationId !== params.data.id) {
-    res.status(400).json({ error: "Type the exact application ID to confirm deletion." }); return;
-  }
-  const user = res.locals.portalUser;
-  const removed = await db.transaction(async tx => {
-    const [row] = await tx.select().from(permitApplicationsTable)
-      .where(eq(permitApplicationsTable.id, params.data.id)).for("update");
-    // Return the same response for absent and inaccessible records.
-    if (!row || !canViewApplication(user, row.ownerUserId)) return false;
-    await tx.delete(permitApplicationsTable).where(eq(permitApplicationsTable.id, row.id));
-    return true;
-  });
-  if (!removed) { res.status(404).json({ error: "Application not found or unavailable to your account." }); return; }
-  req.log.info({ applicationId: params.data.id, actorId: user.id, actorRole: user.role }, "Permit application permanently deleted; uploaded files retained");
-  res.status(204).end();
 });
 router.post("/permit-applications", async (req, res): Promise<void> => {
   const parsed = CreatePermitApplicationBody.safeParse(req.body);
@@ -75,24 +55,21 @@ router.patch("/permit-applications/:id", requirePortalUser, requireStaff, async 
   const params = UpdatePermitApplicationParams.safeParse(req.params);
   const body = UpdatePermitApplicationBody.safeParse(req.body);
   if (!params.success || !body.success) { res.status(400).json({ error: "Invalid application update." }); return; }
-  await db.transaction(async tx => {
-  const [row] = await tx.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, params.data.id)).for("update");
+  const [row] = await db.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, params.data.id));
   if (!row) { res.status(404).json({ error: "Saved permit application not found" }); return; }
   const existing = await screenedResponse(row);
   const additions = body.data.notes.filter(n => !row.notes.some(old => old.id === n.id)).map(n => ({ ...n, author: res.locals.portalUser.id, createdAt: new Date() }));
   const next = screenApplication({ ...existing, reviewStatus: body.data.reviewStatus, assignedDepartment: body.data.assignedDepartment, notes: [...additions, ...existing.notes] }, await readRuleConfig());
   if (existing.requiredReviewers?.length && !["More Information Requested", existing.reviewStatus].includes(body.data.reviewStatus)) { res.status(409).json({ error: "Resolve required jurisdiction, classification, and safety reviews before progressing this application." }); return; }
   next.timeline = buildPermitTimeline(next.reviewStatus, row.submittedAt, next.recommendedRouting.includes("Fire Marshal"));
-  const [saved] = await tx.update(permitApplicationsTable).set(toValues(UpdatePermitApplicationResponse.parse(next))).where(eq(permitApplicationsTable.id, params.data.id)).returning();
+  const [saved] = await db.update(permitApplicationsTable).set(toValues(UpdatePermitApplicationResponse.parse(next))).where(eq(permitApplicationsTable.id, params.data.id)).returning();
   res.json(await screenedResponse(saved!));
-  });
 });
 router.post("/permit-applications/:id/review-checks", requirePortalUser, requireStaff, async (req, res): Promise<void> => {
   const body = ReviewPermitChecksBody.safeParse(req.body);
   const id = typeof req.params.id === "string" ? req.params.id : "";
   if (!body.success || !body.data.note.trim() || !id) { res.status(400).json({ error: "A review action and a non-empty staff note are required." }); return; }
-  await db.transaction(async tx => {
-  const [row] = await tx.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, id)).for("update");
+  const [row] = await db.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, id));
   if (!row) { res.status(404).json({ error: "Application not found." }); return; }
   const application = await screenedResponse(row);
   const audit = { note: body.data.note.trim(), by: res.locals.portalUser.id, at: new Date().toISOString() };
@@ -102,10 +79,8 @@ router.post("/permit-applications/:id/review-checks", requirePortalUser, require
     if (claim === "affordable" && decision === "Verified" && !application.documents.some(d => d.label === EVIDENCE_LABEL && d.received && d.objectPath)) { res.status(422).json({ error: "Affordable housing evidence must be uploaded before verification." }); return; }
     application.priorityClaims![claim] = { status: decision, ...audit };
   } else if (body.data.action === "safety") {
-    if (res.locals.portalUser.role !== "fire_marshal") { res.status(403).json({ error: "Only staff with Fire Marshal permissions can clear or override a fire/life-safety hold." }); return; }
     if (!body.data.document || !SAFETY_CRITICAL_DOCS.some(r => r.label === body.data.document)) { res.status(400).json({ error: "Select a configured safety-critical document." }); return; }
-    if (!application.ruleChecks?.safetyCriticalFlags.length) { res.status(409).json({ error: "There is no unresolved safety hold to override." }); return; }
-    application.reviewDecisions = { ...application.reviewDecisions, safety: [...(application.reviewDecisions?.safety ?? []), { ...audit, document: body.data.document, role: "fire_marshal" }] };
+    application.reviewDecisions = { ...application.reviewDecisions, safety: [...(application.reviewDecisions?.safety ?? []), { ...audit, document: body.data.document }] };
   } else {
     if (application.ruleChecks?.jurisdictionStatus !== "Needs Verification") { res.status(400).json({ error: "Only ambiguous County jurisdiction can be confirmed. Outside-County addresses cannot be overridden." }); return; }
     application.reviewDecisions = { ...application.reviewDecisions, jurisdiction: audit };
@@ -114,54 +89,22 @@ router.post("/permit-applications/:id/review-checks", requirePortalUser, require
   application.notes.unshift({ id: randomUUID(), author: audit.by, body: `${body.data.action} review — ${decisionLabel}: ${audit.note}`, createdAt: new Date(audit.at) });
   const screened = CreatePermitApplicationResponse.parse(screenApplication(application, await readRuleConfig()));
   screened.timeline = buildPermitTimeline(screened.reviewStatus, row.submittedAt, screened.recommendedRouting.includes("Fire Marshal"));
-  const [saved] = await tx.update(permitApplicationsTable).set(toValues(screened)).where(eq(permitApplicationsTable.id, id)).returning();
+  const [saved] = await db.update(permitApplicationsTable).set(toValues(screened)).where(eq(permitApplicationsTable.id, id)).returning();
   res.json(await screenedResponse(saved!));
-  });
-});
-router.post("/permit-applications/:id/fire-plan", requirePortalUser, async (req, res): Promise<void> => {
-  const body = UploadPermitFirePlanBody.safeParse(req.body);
-  const id = typeof req.params.id === "string" ? req.params.id : "";
-  if (!body.success || !id) { res.status(400).json({ error: "A fire/life-safety document upload is required." }); return; }
-  const user = res.locals.portalUser;
-  // Lock the row so simultaneous plan uploads and safety decisions cannot lose updates.
-  try {
-    const result = await db.transaction(async tx => {
-      const [row] = await tx.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, id)).for("update");
-      if (!row || !canViewApplication(user, row.ownerUserId)) return { status: 404, error: "Application not found." };
-      if (["Approved", "Denied"].includes(row.reviewStatus)) return { status: 409, error: "Finalized applications cannot have their documents changed." };
-      const upload = await validateUploadedDocument(body.data.objectPath, user.id);
-      const original = await screenedResponse(row);
-      const document = { label: "Fire and life safety plan", category: "Fire", required: true, received: true, objectPath: body.data.objectPath, fileName: upload.name, receivedAt: new Date().toISOString() };
-      const next = CreatePermitApplicationResponse.parse(screenApplication({
-        ...original, documents: [...original.documents.filter(d => d.label !== document.label), document],
-        notes: [{ id: randomUUID(), author: user.id, body: "Uploaded required fire/life-safety plan. Safety screening recalculated; no automatic approval.", createdAt: new Date() }, ...original.notes],
-      }, await readRuleConfig()));
-      next.timeline = buildPermitTimeline(next.reviewStatus, row.submittedAt, next.recommendedRouting.includes("Fire Marshal"));
-      const [saved] = await tx.update(permitApplicationsTable).set(toValues(next)).where(eq(permitApplicationsTable.id, id)).returning();
-      return { status: 200, application: await screenedResponse(saved!) };
-    });
-    if ("error" in result) { res.status(result.status).json({ error: result.error }); return; }
-    res.json(result.application);
-  } catch (error) { res.status(422).json({ error: error instanceof Error ? error.message : "The fire/life-safety upload could not be verified." }); }
 });
 router.patch("/permit-applications/:id/classification", requirePortalUser, async (req, res): Promise<void> => {
   const parsed = CorrectPermitClassificationBody.safeParse(req.body);
   const id = typeof req.params.id === "string" ? req.params.id : "";
   if (!parsed.success) { res.status(400).json({ error: "Valid project type, units, and description are required." }); return; }
-  await db.transaction(async tx => {
-  const [row] = await tx.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, id)).for("update");
+  const [row] = await db.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, id));
   if (!row || !canViewApplication(res.locals.portalUser, row.ownerUserId)) { res.status(404).json({ error: "Application not found." }); return; }
   const original = await screenedResponse(row);
   if (!isStaff(res.locals.portalUser) && (!original.ruleChecks?.classificationConflicts.length || ["Approved", "Denied"].includes(row.reviewStatus))) {
     res.status(403).json({ error: "Applicants may correct only pending classification conflicts, not finalized or otherwise reviewed records." }); return;
   }
   const next = CreatePermitApplicationResponse.parse(screenApplication({ ...original, ...parsed.data, reviewDecisions: { ...original.reviewDecisions, safety: [] }, notes: [{ id: randomUUID(), author: res.locals.portalUser.id, body: `Classification corrected from ${row.projectType}, ${row.housingUnits} units to ${parsed.data.projectType}, ${parsed.data.housingUnits} units.`, createdAt: new Date() }, ...original.notes] }, await readRuleConfig()));
-  if (original.ruleChecks?.safetyCriticalFlags.length && !next.ruleChecks?.safetyCriticalFlags.length) {
-    res.status(409).json({ error: "Classification changes cannot bypass an active safety hold. Upload the fire/life-safety plan or obtain an audited Fire Marshal override first." }); return;
-  }
   next.timeline = buildPermitTimeline(next.reviewStatus, row.submittedAt, next.recommendedRouting.includes("Fire Marshal"));
-  const [saved] = await tx.update(permitApplicationsTable).set(toValues(next)).where(eq(permitApplicationsTable.id, id)).returning();
+  const [saved] = await db.update(permitApplicationsTable).set(toValues(next)).where(eq(permitApplicationsTable.id, id)).returning();
   res.json(await screenedResponse(saved!));
-  });
 });
 export default router;

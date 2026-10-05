@@ -94,30 +94,6 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Private document available only to its owner or staff }
-  /permit-applications/{id}/fire-plan:
-    post:
-      operationId: uploadPermitFirePlan
-      summary: Attach a verified fire/life-safety upload to an owned or staff-accessible application
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/FirePlanUploadInput" }
-      responses:
-        "200":
-          description: Updated server-screened application
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/PermitApplication" }
-        "403":
-          description: Access denied
-        "422":
-          description: Upload could not be verified
   /permit-applications/{id}/review-checks:
     post:
       operationId: reviewPermitChecks
@@ -230,25 +206,6 @@ paths:
         "422":
           description: Outside County jurisdiction or missing required supporting evidence. No County record created.
   /permit-applications/{id}:
-    delete:
-      operationId: deletePermitApplication
-      tags: [permit-applications]
-      summary: Permanently delete a saved application as its owner or authorized staff
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string, minLength: 1, maxLength: 180 }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/PermitDeletionConfirmation" }
-      responses:
-        "204": { description: Application removed from both portal views; separately stored files retained }
-        "400": { description: Application ID confirmation does not match }
-        "401": { description: Sign-in required }
-        "404": { description: Application not found or not accessible to this account }
     patch:
       operationId: updatePermitApplication
       tags: [permit-applications]
@@ -275,32 +232,6 @@ paths:
                 $ref: "#/components/schemas/PermitApplication"
         "404":
           description: Saved permit application not found
-  /public-building-permits:
-    get:
-      operationId: listBuildingPermitRecords
-      summary: Browse the complete official San José Active Building Permits dataset
-      description: Read-only paginated public-source feed. Does not create or modify portal applications.
-      parameters:
-        - in: query
-          name: page
-          schema: { type: integer, minimum: 1, maximum: 100000, default: 1 }
-        - in: query
-          name: pageSize
-          schema: { type: integer, enum: [25, 50, 100], default: 25 }
-        - in: query
-          name: q
-          schema: { type: string, maxLength: 200, default: "" }
-      responses:
-        "200":
-          description: Official public records and source-reported counts
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BuildingPermitPage"
-        "400":
-          description: Invalid pagination or search
-        "503":
-          description: Official source is unavailable
   /county-public-records:
     get:
       operationId: listCountyPublicRecords
@@ -318,45 +249,6 @@ paths:
                   $ref: "#/components/schemas/CountyPublicRecord"
 components:
   schemas:
-    BuildingPermitRecord:
-      type: object
-      required: [sourceId, permitNumber, projectName, address, applicant, permitType, projectType, workDescription, status, issuedDate, finalDate, dwellingUnits, valuation]
-      properties:
-        sourceId: { type: integer }
-        permitNumber: { type: [string, "null"] }
-        projectName: { type: [string, "null"] }
-        address: { type: [string, "null"] }
-        applicant: { type: [string, "null"] }
-        permitType: { type: [string, "null"] }
-        projectType: { type: [string, "null"] }
-        workDescription: { type: [string, "null"] }
-        status: { type: [string, "null"] }
-        issuedDate: { type: [string, "null"] }
-        finalDate: { type: [string, "null"] }
-        dwellingUnits: { type: [string, "null"] }
-        valuation: { type: [string, "null"] }
-    BuildingPermitPage:
-      type: object
-      required: [records, total, datasetTotal, page, pageSize, nextPage, sourceName, datasetName, sourceUrl, fetchedAt]
-      properties:
-        records:
-          type: array
-          items:
-            $ref: "#/components/schemas/BuildingPermitRecord"
-        total: { type: integer, minimum: 0 }
-        datasetTotal: { type: integer, minimum: 0 }
-        page: { type: integer }
-        pageSize: { type: integer }
-        nextPage: { type: [integer, "null"] }
-        sourceName: { type: string }
-        datasetName: { type: string }
-        sourceUrl: { type: string, format: uri }
-        fetchedAt: { type: string, format: date-time }
-    PermitDeletionConfirmation:
-      type: object
-      properties:
-        confirmationId: { type: string, minLength: 1, maxLength: 180 }
-      required: [confirmationId]
     HealthStatus:
       type: object
       properties:
@@ -486,7 +378,6 @@ components:
             - Revisions Required
             - Needs Jurisdiction Verification
             - Blocked — Safety Review Required
-            - On Hold - Safety Review Required
             - Needs Human Review — Data Inconsistency
         completenessScore:
           type: integer
@@ -569,11 +460,6 @@ components:
         safety:
           type: array
           items: { $ref: "#/components/schemas/SafetyDecision" }
-    FirePlanUploadInput:
-      type: object
-      properties:
-        objectPath: { type: string, minLength: 1 }
-      required: [objectPath]
     SafetyDecision:
       type: object
       properties:
@@ -581,7 +467,6 @@ components:
         by: { type: string }
         at: { type: string }
         document: { type: string }
-        role: { type: string, enum: [fire_marshal] }
       required: [note, by, at, document]
     RuleChecks:
       type: object
@@ -615,10 +500,6 @@ components:
       type: object
       properties:
         permitNumber: { type: string }
-        officialApplicant:
-          type: string
-          minLength: 1
-          description: Applicant explicitly named in the official public permit source; not a portal account or property-owner inference.
         projectType: { type: string }
         workDescription: { type: string }
         dwellingUnits: { type: integer, minimum: 1 }

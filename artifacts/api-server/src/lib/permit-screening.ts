@@ -1,7 +1,6 @@
 import { db, permitRuleConfigsTable, permitApplicationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { screenApplication, PLACEHOLDER_UNDERSERVED_CONFIG, CreatePermitApplicationResponse } from "@workspace/api-zod";
-import { buildPermitTimeline } from "./permit-timeline";
 
 export async function readRuleConfig() {
   const [config] = await db.select().from(permitRuleConfigsTable).where(eq(permitRuleConfigsTable.id, "underserved-areas"));
@@ -9,7 +8,7 @@ export async function readRuleConfig() {
 }
 export type PermitRow = typeof permitApplicationsTable.$inferSelect;
 export async function screenedResponse(row: PermitRow) {
-  const screened = CreatePermitApplicationResponse.parse(screenApplication({
+  return CreatePermitApplicationResponse.parse(screenApplication({
     ...row,
     submittedAt: row.submittedAt.toISOString(),
     claimed_affordable: row.priorityClaims ? row.claimed_affordable : row.affordableHousing,
@@ -17,11 +16,6 @@ export async function screenedResponse(row: PermitRow) {
     priorityClaims: row.priorityClaims ?? undefined,
     reviewDecisions: row.reviewDecisions ?? {},
   }, await readRuleConfig()));
-  // Old stored stages cannot imply progress beyond a newly enforced server hold.
-  if (screened.reviewStatus !== row.reviewStatus) {
-    screened.timeline = buildPermitTimeline(screened.reviewStatus, row.submittedAt, screened.recommendedRouting.includes("Fire Marshal"));
-  }
-  return screened;
 }
 export function toValues(application: typeof CreatePermitApplicationResponse._output) {
   const { ruleChecks: _checks, ...values } = application;

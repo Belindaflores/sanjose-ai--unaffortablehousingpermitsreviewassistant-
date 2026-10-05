@@ -5,12 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { SafetyDecisionRole } from './safetyDecisionRole';
 
 export interface SafetyDecision {
   note: string;
   by: string;
   at: string;
   document: string;
-  role?: SafetyDecisionRole;
 }

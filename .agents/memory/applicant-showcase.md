@@ -1,32 +1,12 @@
 ---
-name: Applicant content scope
-description: Applicant pages must show only the signed-in applicant's own content; the public housing showcase is retired from those pages.
+name: Authentic applicant showcase
+description: The audience showcase must use authentic housing-construction permits, never pools, without weakening private applicant ownership.
 ---
 
-Applicant home (dashboard), Applications, and Records must show only the signed-in applicant's own content. Do not reintroduce the public housing showcase on these pages without an explicit new request.
+Use authentic official city or County building-permit records for the applicant showcase, not fictional applications. Keep these public examples clearly distinguished from submissions owned by the signed-in applicant.
 
-**Why:** On 2026-10-04 the user explicitly reversed the earlier showcase request and asked to remove it from all three applicant pages, preserving fire/life-safety, priority-verification, classification, and everything else.
+The showcase must be **housing construction only**, such as apartment construction or ADUs. Never substitute pools or spas—even those located at apartments, mobile-home parks, or residential communities.
 
-**How to apply:** Remove only the applicant-side presentation. Keep the public source records, City-side behavior, ownership checks, and existing application features intact.
+**Why:** The user requested at least two authentic database-backed housing applications to showcase to their audience and explicitly corrected the choice of pool permits. They separately required that applicants only see their own private submissions.
 
-The user subsequently authorized copying the two matching-applicant ADU permits into normal private applications owned by their portal account, without special labels or a separate section.
-
-**Why:** Removing the display did not create account-owned submissions; the user now explicitly wants persistent owned records, not a restored public display.
-
-**How to apply:** Distinguish creating owned submissions from restoring the public display. The requested source applicant name is project metadata; assigning the user's account as owner does not claim that the user is the official applicant or builder named in that source.
-
-## Historical public-source constraints
-
-The earlier showcase used authentic official housing-construction records, never pools or spas. Its pair had to explicitly name the same official applicant in the source APPLICANT field, not an inferred property owner or contractor. These were read-only source snapshots, never privately owned portal submissions, and never grounds to fabricate uploaded plans, screening results, or official decisions.
-
-**Why:** The user previously corrected both non-housing examples and mixed-applicant examples. Removing their applicant presentation does not authorize modifying the underlying public data.
-
-**How to apply:** Preserve source integrity if public imports are maintained or reused elsewhere; do not interpret these historical constraints as permission to restore the applicant showcase.
-
-## City Worker public-record scope
-
-The City Worker Portal now shows a small shared public-record preview on Applications and Application Records, with matching detail links. The complete official dataset is reached through the official source link, not portal pagination. This does not expand the Applicant Portal's content scope.
-
-**Why:** On 2026-10-04 the user replaced the earlier full-catalog request with an explicit sample-preview specification: remove mixed prototype records and full-dataset pagination, retaining the complete source's total and official link.
-
-**How to apply:** Both worker lists and public detail screens must use one shared sample dataset. Never imply the full source total is loaded in the portal, invent review decisions, or label samples as private submissions. Keep applicant-owned data untouched and distinguish San José coverage from county-wide coverage.
+**How to apply:** Verify the source's housing classification and actual units, not just its business name. SCC Plan Check Progress is environmental-health data and does not establish housing-construction permits; use a genuine municipal building-permit source and disclose that provenance instead. Never invent applicant ownership, uploaded documents, or official review decisions.
