@@ -25,8 +25,8 @@ The earlier showcase used authentic official housing-construction records, never
 
 ## City Worker public-record scope
 
-The City Worker Portal must allow browsing the full official building-permit dataset, not just the two curated ADUs. This does not expand the Applicant Portal's content scope.
+The City Worker Portal now shows a small shared public-record preview on Applications and Application Records, with matching detail links. The complete official dataset is reached through the official source link, not portal pagination. This does not expand the Applicant Portal's content scope.
 
-**Why:** On 2026-10-04 the user clarified that the two-record count was a worker-portal issue and explicitly selected the full official building-permit dataset.
+**Why:** On 2026-10-04 the user replaced the earlier full-catalog request with an explicit sample-preview specification: remove mixed prototype records and full-dataset pagination, retaining the complete source's total and official link.
 
-**How to apply:** Keep the complete public catalog separate from account-owned applications. The same-applicant/two-housing-record restriction belongs to the earlier curated pair, not the full worker catalog. Do not describe San José's source as a county-wide dataset.
+**How to apply:** Both worker lists and public detail screens must use one shared sample dataset. Never imply the full source total is loaded in the portal, invent review decisions, or label samples as private submissions. Keep applicant-owned data untouched and distinguish San José coverage from county-wide coverage.

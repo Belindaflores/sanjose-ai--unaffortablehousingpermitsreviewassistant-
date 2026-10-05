@@ -1,0 +1,111 @@
+CURRENT PROBLEM:
+- The Applications tab currently displays fake records labeled “Prototype Submission,” such as Building Condos, Building Condos, and My Willow Street Addition.
+- The Application Records tab displays “17 of 17 portal application records” and pagination for 17,272 official records.
+- These two tabs are using unrelated datasets.
+
+MAKE THESE CHANGES:
+
+APPLICATIONS TAB
+
+1. Remove all “Prototype Submission” labels and remove the current fake prototype-only application records.
+
+2. Replace them with realistic sample records modeled after the City’s public building-permit data. These should look like actual public records, not student or demo submissions.
+
+3. Use realistic fields from the public dataset, including:
+   - Permit/application number
+   - Project or permit description
+   - Permit type
+   - Address
+   - Applicant or owner, if available
+   - Status
+   - Submission or issue date
+   - Last updated date
+   - Department/source
+
+4. The Applications tab must use the same shared records as the Application Records tab. Do not create a separate hardcoded dataset.
+
+5. Do not use names such as “Demo Applicant,” “Personal project,” “Prototype Submission,” or fake student-project language.
+
+6. Keep the existing application card layout and status indicators, but populate the cards with realistic public-record sample data.
+
+APPLICATION RECORDS TAB
+
+1. Keep this summary:
+   “17,272 total public records”
+
+2. Keep the “Open official dataset” button and make sure it links to the official public-data source.
+
+3. Remove all of the following:
+   - “17 of 17 portal application records”
+   - “Showing 1–25 of 17,272 records”
+   - “Per page 25 / 50 / 100”
+   - “Previous”
+   - “Next”
+   - “Last page”
+   - “Page 1”
+   - Any pagination controls for the 17,272 records
+
+4. Do not make the prototype pretend that all 17,272 public records are loaded into the application.
+
+5. Replace the current pagination/count text with:
+   “Public data source: 17,272 total records”
+   and below it:
+   “The portal displays a realistic preview of sample records. Open the official dataset to view all public records.”
+
+6. Add a section titled:
+   “Public Records Preview”
+
+7. Under that title, show only the same sample records used on the Applications tab. Add a small label:
+   “Sample records based on official public data”
+
+8. Do not call these records “Prototype Submissions.” Do not call them “official portal application records.” Clearly distinguish the sample preview from the complete official dataset.
+
+SHARED DATA REQUIREMENT
+
+Create one shared sample-record dataset and use it on both tabs.
+
+For example:
+
+const publicRecordSamples = [
+  {
+    id: "...",
+    projectName: "...",
+    permitType: "...",
+    address: "...",
+    applicant: "...",
+    status: "...",
+    submittedDate: "...",
+    updatedDate: "...",
+    department: "..."
+  }
+];
+
+The Applications tab and Application Records tab must both read from this same dataset so that:
+- The same records appear on both tabs
+- Record IDs match
+- Project names match
+- Addresses match
+- Statuses match
+- Dates match
+- Opening a record shows the same details from either tab
+
+DESIGN REQUIREMENTS
+
+Keep the existing City of San José-inspired design:
+- Navy #003B5C
+- Blue #0067A5
+- Gold #F5B335
+- White and light-gray backgrounds
+- Existing sidebar and navigation
+- Existing card/table styling
+- Accessible contrast and responsive layout
+
+Do not change the navigation labels:
+Overview, Applications, Application Records, Analytics, Help & guidance.
+
+After completing the update, verify that:
+1. No screen contains “Prototype Submission.”
+2. No screen contains “17 of 17 portal application records.”
+3. No screen contains pagination for 17,272 records.
+4. Applications and Application Records show the same sample records.
+5. The official dataset button still takes users to the complete public data.

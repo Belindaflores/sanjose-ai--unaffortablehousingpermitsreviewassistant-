@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { getListPermitApplicationsQueryKey, useCreatePermitApplication, useListPermitApplications, useUpdatePermitApplication, useRequestUploadUrl, useRequestStaffAccess } from '@workspace/api-client-react';
 import { PublicBuildingPermitOverview, PublicBuildingPermits } from './PublicBuildingPermits';
+import { PublicSampleApplications, PublicSampleRecords, PublicSampleDetail, PublicSampleDashboard } from './PublicRecordPages';
 import { checkJurisdiction, screenApplication, EVIDENCE_LABEL, OUTSIDE_COUNTY_MESSAGE, type PriorityClaims, type RuleChecks, type ReviewDecisions } from '@workspace/api-zod';
 import { PortalAuth, SignOutButton, usePortalProfile } from './PortalAuth';
 import { StaffChecksPanel, ClassificationCorrection, UnderservedConfigPanel } from './ReviewSafeguards';
@@ -483,11 +484,11 @@ function RouterView() {
   if (!role) return <><RoleChooser onSelect={chooseRole} /><SignOutButton /></>;
   return <AppShell role={role} onSwitch={switchRole}><Switch>
     <Route path="/"><Redirect to="/user-portal" /></Route>
-    <Route path="/user-portal">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard applications={workerApplications} />}</Route>
+    <Route path="/user-portal">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <><PublicSampleDashboard /><FooterDisclaimer /></>}</Route>
     <Route path="/new-application">{role === 'applicant' ? <NewApplication role={role} onAdd={add} /> : <Redirect to="/applications" />}</Route>
-    <Route path="/applications">{role === 'applicant' ? <><ApplicantApplicationsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <ApplicationsPage applications={workerApplications} />}</Route>
-    <Route path="/records">{role === 'applicant' ? <><ApplicantRecordsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <RecordsPage applications={workerApplications} />}</Route>
-    <Route path="/applications/:id">{role === 'applicant' ? <><ApplicantDetailPage application={visibleApplicantApplications.find(a => a.id === detailParams?.id)} onSaved={update} /><FooterDisclaimer /></> : <DetailPage applications={workerApplications} updateApp={update} />}</Route>
+    <Route path="/applications">{role === 'applicant' ? <><ApplicantApplicationsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <><PublicSampleApplications /><FooterDisclaimer /></>}</Route>
+    <Route path="/records">{role === 'applicant' ? <><ApplicantRecordsPage applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <><PublicSampleRecords /><FooterDisclaimer /></>}</Route>
+    <Route path="/applications/:id">{role === 'applicant' ? <><ApplicantDetailPage application={visibleApplicantApplications.find(a => a.id === detailParams?.id)} onSaved={update} /><FooterDisclaimer /></> : detailParams?.id.startsWith('public-') ? <><PublicSampleDetail id={detailParams.id} /><FooterDisclaimer /></> : <DetailPage applications={workerApplications} updateApp={update} />}</Route>
     <Route path="/analytics">{role === 'worker' ? <><WorkerAnalytics applications={workerApplications} /><AnalyticsPage applications={workerApplications} /></> : <NotFound />}</Route>
     <Route path="/help">{role === 'applicant' ? <><ApplicantHelpPage /><FooterDisclaimer /></> : <><WorkerGuidance /><UnderservedConfigPanel /><HelpPage onReset={reset} /></>}</Route>
     <Route component={NotFound} />

@@ -13,4 +13,4 @@ The City Worker dashboard Applications count is capped at 100 for display only; 
 
 **Why:** The user explicitly stated that all application data must remain intact and available for management.
 
-**How to apply:** Cap only the dashboard metric. Keep full queue browsing, source datasets, data fetching, and unrelated review statistics unchanged.
+**How to apply:** Cap only the dashboard metric; never delete or truncate stored applications to achieve it. The later worker sample-preview request intentionally limits public records displayed on those screens, independently of this metric cap.
