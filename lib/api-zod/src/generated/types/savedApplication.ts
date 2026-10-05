@@ -5,6 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { PresentationDocument } from './presentationDocument';
+import type { PresentationTimelineEvent } from './presentationTimelineEvent';
 import type { SavedApplicationStatus } from './savedApplicationStatus';
 
 export interface SavedApplication {
@@ -19,4 +21,9 @@ export interface SavedApplication {
   description: string;
   dateSaved: Date;
   lastUpdated: Date;
+  presentationOnly: boolean;
+  /** @nullable */
+  submittedAt: Date | null;
+  documents: PresentationDocument[];
+  timeline: PresentationTimelineEvent[];
 }

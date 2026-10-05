@@ -80,7 +80,7 @@ export function ApplicantDashboard({ applications }: ApplicationsProps) {
   const sorted = [...applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   const awaiting = applications.filter(a => a.reviewStatus === 'More Information Requested' || a.reviewStatus === 'Revisions Required').length;
   const inProgress = applications.filter(a => !['Approved', 'Denied', 'Revisions Required'].includes(a.reviewStatus)).length;
-  const savedInProgress = drafts.data?.filter(a => a.status === 'In progress').length ?? 0;
+  const savedInProgress = drafts.data?.filter(a => a.status === 'In progress' || a.status === 'Submitted — awaiting initial review').length ?? 0;
   const savedActionNeeded = drafts.data?.filter(a => a.status === 'Action needed').length ?? 0;
   return <main className="page applicant-page">
     <header className="ap-hero">
@@ -88,7 +88,7 @@ export function ApplicantDashboard({ applications }: ApplicationsProps) {
       <Link href="/new-application" className="ap-btn" data-testid="link-new-application-dashboard"><FilePlus2 aria-hidden="true" /> Start a new application</Link>
     </header>
     <section className="ap-summary" aria-label="Your application summary">
-      <div className="ap-summary-item" data-testid="summary-total-applications"><span>Saved applications</span><strong>{drafts.data?.length ?? 0}</strong><small>Continue your projects</small></div>
+      <div className="ap-summary-item" data-testid="summary-total-applications"><span>Your applications</span><strong>{(drafts.data?.length ?? 0) + applications.length}</strong><small>Saved and submitted work</small></div>
       <div className="ap-summary-item" data-testid="summary-needs-attention"><span>May need your attention</span><strong>{awaiting + savedActionNeeded}</strong><small>Items requiring your attention</small></div>
       <div className="ap-summary-item" data-testid="summary-in-progress"><span>In progress</span><strong>{inProgress + savedInProgress}</strong><small>Saved work or active reviews</small></div>
     </section>
@@ -123,10 +123,13 @@ export function ApplicantApplicationsPage({ applications }: ApplicationsProps) {
 }
 
 export function ApplicantRecordsPage({ applications }: ApplicationsProps) {
+  const privateRecords = useOwnedSavedApplications();
+  const presentationCount = privateRecords.data?.filter(record => record.presentationOnly).length ?? 0;
   const sorted = [...applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   return <main className="page applicant-page">
     <header className="ap-hero"><div className="ap-hero-copy"><p className="ap-kicker">Your records</p><h1 className="ap-heading">A record of every step.</h1><p className="ap-lede">Find your current and past submissions here. Open a project for its documents and status history.</p></div><Link href="/new-application" className="ap-btn secondary" data-testid="link-new-application-records"><FilePlus2 aria-hidden="true" /> New application</Link></header>
-    <section aria-labelledby="all-records-title"><div className="ap-section-heading"><h2 id="all-records-title">Your submitted projects ({applications.length})</h2></div>{sorted.length ? <div className="ap-record-list">{sorted.map(a => <RecordLink key={a.id} application={a} />)}</div> : <EmptyRecords />}</section>
+    <SavedApplicationsSection submittedOnly />
+    {(sorted.length > 0 || (!presentationCount && privateRecords.isSuccess)) && <section aria-labelledby="all-records-title"><div className="ap-section-heading"><h2 id="all-records-title">Your submitted projects ({applications.length})</h2></div>{sorted.length ? <div className="ap-record-list">{sorted.map(a => <RecordLink key={a.id} application={a} />)}</div> : <EmptyRecords />}</section>}
   </main>;
 }
 

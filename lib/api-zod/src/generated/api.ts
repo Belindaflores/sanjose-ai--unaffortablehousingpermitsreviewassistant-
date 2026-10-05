@@ -8,6 +8,10 @@
 import * as zod from 'zod';
 
 
+export const listSavedApplicationsResponseDocumentsItemFileSizeBytesMin = 0;
+
+
+
 export const ListSavedApplicationsResponseItem = zod.object({
   "id": zod.string(),
   "applicationNumber": zod.string(),
@@ -16,10 +20,30 @@ export const ListSavedApplicationsResponseItem = zod.object({
   "projectName": zod.string(),
   "projectAddress": zod.string(),
   "applicationType": zod.string(),
-  "status": zod.enum(['Draft', 'In progress', 'Action needed']),
+  "status": zod.enum(['Draft', 'In progress', 'Action needed', 'Submitted — awaiting initial review']),
   "description": zod.string(),
   "dateSaved": zod.coerce.date(),
-  "lastUpdated": zod.coerce.date()
+  "lastUpdated": zod.coerce.date(),
+  "presentationOnly": zod.boolean(),
+  "submittedAt": zod.coerce.date().nullable(),
+  "documents": zod.array(zod.object({
+  "id": zod.string(),
+  "documentName": zod.string(),
+  "fileName": zod.string(),
+  "category": zod.string(),
+  "required": zod.boolean(),
+  "uploadStatus": zod.enum(['Received']),
+  "uploadDate": zod.coerce.date(),
+  "fileType": zod.string(),
+  "fileSizeBytes": zod.number().int().min(listSavedApplicationsResponseDocumentsItemFileSizeBytesMin),
+  "synthetic": zod.literal(true)
+})),
+  "timeline": zod.array(zod.object({
+  "label": zod.string(),
+  "date": zod.coerce.date(),
+  "status": zod.enum(['done', 'current', 'upcoming']),
+  "documentsMilestone": zod.boolean()
+}))
 })
 export const ListSavedApplicationsResponse = zod.array(ListSavedApplicationsResponseItem)
 
@@ -45,6 +69,10 @@ export const UpdateSavedApplicationBody = zod.object({
   "description": zod.string().max(updateSavedApplicationBodyDescriptionMax)
 })
 
+export const updateSavedApplicationResponseDocumentsItemFileSizeBytesMin = 0;
+
+
+
 export const UpdateSavedApplicationResponse = zod.object({
   "id": zod.string(),
   "applicationNumber": zod.string(),
@@ -53,10 +81,30 @@ export const UpdateSavedApplicationResponse = zod.object({
   "projectName": zod.string(),
   "projectAddress": zod.string(),
   "applicationType": zod.string(),
-  "status": zod.enum(['Draft', 'In progress', 'Action needed']),
+  "status": zod.enum(['Draft', 'In progress', 'Action needed', 'Submitted — awaiting initial review']),
   "description": zod.string(),
   "dateSaved": zod.coerce.date(),
-  "lastUpdated": zod.coerce.date()
+  "lastUpdated": zod.coerce.date(),
+  "presentationOnly": zod.boolean(),
+  "submittedAt": zod.coerce.date().nullable(),
+  "documents": zod.array(zod.object({
+  "id": zod.string(),
+  "documentName": zod.string(),
+  "fileName": zod.string(),
+  "category": zod.string(),
+  "required": zod.boolean(),
+  "uploadStatus": zod.enum(['Received']),
+  "uploadDate": zod.coerce.date(),
+  "fileType": zod.string(),
+  "fileSizeBytes": zod.number().int().min(updateSavedApplicationResponseDocumentsItemFileSizeBytesMin),
+  "synthetic": zod.literal(true)
+})),
+  "timeline": zod.array(zod.object({
+  "label": zod.string(),
+  "date": zod.coerce.date(),
+  "status": zod.enum(['done', 'current', 'upcoming']),
+  "documentsMilestone": zod.boolean()
+}))
 })
 
 
