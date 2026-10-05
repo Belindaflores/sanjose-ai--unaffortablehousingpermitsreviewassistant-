@@ -1,0 +1,50 @@
+Update the Applicant Overview page so the two existing application cards appear as applications belonging to the signed-in account:
+
+alondracampos280@gmail.com
+
+Do not show an empty state saying “No applications submitted yet.” Instead, create two realistic account-specific application records and display them under:
+
+Title:
+“My applications”
+
+Subtitle:
+“View the applications associated with your account and review their current status.”
+
+Replace the current heading:
+“Public housing permit examples”
+
+Remove all wording that says:
+- Public housing permit examples
+- Authentic City housing permit
+- Read-only example
+- Public examples
+- Not submissions by your account
+- Prototype Submission
+- Student Prototype
+- Demo
+
+Convert the two existing permit cards into account applications. Keep their realistic project information, addresses, permit numbers, statuses, and dates, but associate both records with:
+
+applicantEmail: "alondracampos280@gmail.com"
+accountOwner: "Alondra Campos"
+
+Use the label:
+“APPLICATION SUBMITTED THROUGH YOUR ACCOUNT”
+
+The cards should display:
+- Project/application name
+- Permit or application number
+- Address
+- Application type
+- Current status
+- Submission date
+- Last updated date
+- View application button
+
+Make sure the application records are stored in the application data source and are not hardcoded only into the visual component. The signed-in user’s Overview page should filter and display records where applicantEmail equals the current user’s email.
+
+Also make these same two account applications appear on the Applications tab so the Overview and Applications tabs match exactly.
+
+Do not connect these two applicant applications to the public City permit dataset. Public records should remain separate and should only appear in the City Worker Portal’s Application Records section.
+
+Use professional wording and do not mention that these are examples, demos, prototypes, or sample records anywhere in the visible applicant interface.
