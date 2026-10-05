@@ -17,6 +17,35 @@ tags:
   - name: saved-applications
     description: Private saved drafts; never official submissions
 paths:
+  /portal-review-records:
+    get:
+      operationId: listPortalReviewRecords
+      tags: [county-public-records]
+      responses:
+        "200":
+          description: Staff-only synthetic portal preview records, separate from official data and applicant filings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalReviewWorkspace"
+  /portal-review-records/{id}:
+    get:
+      operationId: getPortalReviewRecord
+      tags: [county-public-records]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: A single staff-only synthetic preview record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalReviewRecord"
+        "404":
+          description: Preview record not found
   /saved-applications:
     get:
       operationId: listSavedApplications
@@ -290,6 +319,49 @@ paths:
                   $ref: "#/components/schemas/CountyPublicRecord"
 components:
   schemas:
+    PortalReviewWorkspace:
+      type: object
+      required: [records, officialCitySourceCount, officialCitySourceUrl, notice]
+      properties:
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/PortalReviewRecord" }
+        officialCitySourceCount: { type: integer }
+        officialCitySourceUrl: { type: string }
+        notice: { type: string }
+    PortalReviewRecord:
+      type: object
+      required: [id, permitNumber, recordCategory, projectName, address, city, state, zipCode, applicationType, housingType, totalHousingUnits, affordableHousingUnits, affordableHousing, housingCategory, workType, sourceStatus, issuedDate, finalDate, reviewStatus, submittedDate, dataSource, description, sourceUrl, priority, department, sourceType, isSynthetic, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        permitNumber: { type: string }
+        recordCategory: { type: string, enum: [City Housing Permits, County Public Data, Prototype Submissions] }
+        projectName: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        zipCode: { type: string }
+        applicationType: { type: string }
+        housingType: { type: string }
+        totalHousingUnits: { type: integer, minimum: 0 }
+        affordableHousingUnits: { type: integer, minimum: 0 }
+        affordableHousing: { type: boolean }
+        housingCategory: { type: string }
+        workType: { type: string }
+        sourceStatus: { type: string }
+        issuedDate: { type: [string, "null"] }
+        finalDate: { type: [string, "null"] }
+        submittedDate: { type: string }
+        reviewStatus: { type: string }
+        dataSource: { type: string, enum: [Synthetic] }
+        description: { type: string }
+        sourceUrl: { type: string }
+        priority: { type: string, enum: [Normal, High, Urgent] }
+        department: { type: string }
+        sourceType: { type: string }
+        isSynthetic: { type: boolean }
+        createdAt: { type: string }
+        updatedAt: { type: string }
     SavedApplication:
       type: object
       properties:

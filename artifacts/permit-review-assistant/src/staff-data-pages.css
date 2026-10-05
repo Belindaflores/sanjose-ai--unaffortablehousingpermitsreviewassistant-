@@ -1,0 +1,6 @@
+.staff-data-analytics .stack { grid-template-columns: minmax(0, 1fr); }
+.staff-data-analytics .stack > *, .staff-data-analytics .grid-3 > * { min-width: 0; }
+.staff-data-analytics .table-wrap { min-width: 0; width: 100%; max-width: 100%; }
+@media (max-width: 720px) {
+  .staff-data-analytics .grid-3 { grid-template-columns: minmax(0, 1fr); }
+}

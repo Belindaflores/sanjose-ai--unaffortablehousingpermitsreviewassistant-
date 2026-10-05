@@ -8,6 +8,93 @@
 import * as zod from 'zod';
 
 
+export const listPortalReviewRecordsResponseRecordsItemTotalHousingUnitsMin = 0;
+
+export const listPortalReviewRecordsResponseRecordsItemAffordableHousingUnitsMin = 0;
+
+
+
+export const ListPortalReviewRecordsResponse = zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.string(),
+  "permitNumber": zod.string(),
+  "recordCategory": zod.enum(['City Housing Permits', 'County Public Data', 'Prototype Submissions']),
+  "projectName": zod.string(),
+  "address": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "zipCode": zod.string(),
+  "applicationType": zod.string(),
+  "housingType": zod.string(),
+  "totalHousingUnits": zod.number().int().min(listPortalReviewRecordsResponseRecordsItemTotalHousingUnitsMin),
+  "affordableHousingUnits": zod.number().int().min(listPortalReviewRecordsResponseRecordsItemAffordableHousingUnitsMin),
+  "affordableHousing": zod.boolean(),
+  "housingCategory": zod.string(),
+  "workType": zod.string(),
+  "sourceStatus": zod.string(),
+  "issuedDate": zod.string().nullable(),
+  "finalDate": zod.string().nullable(),
+  "submittedDate": zod.string(),
+  "reviewStatus": zod.string(),
+  "dataSource": zod.enum(['Synthetic']),
+  "description": zod.string(),
+  "sourceUrl": zod.string(),
+  "priority": zod.enum(['Normal', 'High', 'Urgent']),
+  "department": zod.string(),
+  "sourceType": zod.string(),
+  "isSynthetic": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "officialCitySourceCount": zod.number().int(),
+  "officialCitySourceUrl": zod.string(),
+  "notice": zod.string()
+})
+
+
+export const GetPortalReviewRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getPortalReviewRecordResponseTotalHousingUnitsMin = 0;
+
+export const getPortalReviewRecordResponseAffordableHousingUnitsMin = 0;
+
+
+
+export const GetPortalReviewRecordResponse = zod.object({
+  "id": zod.string(),
+  "permitNumber": zod.string(),
+  "recordCategory": zod.enum(['City Housing Permits', 'County Public Data', 'Prototype Submissions']),
+  "projectName": zod.string(),
+  "address": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "zipCode": zod.string(),
+  "applicationType": zod.string(),
+  "housingType": zod.string(),
+  "totalHousingUnits": zod.number().int().min(getPortalReviewRecordResponseTotalHousingUnitsMin),
+  "affordableHousingUnits": zod.number().int().min(getPortalReviewRecordResponseAffordableHousingUnitsMin),
+  "affordableHousing": zod.boolean(),
+  "housingCategory": zod.string(),
+  "workType": zod.string(),
+  "sourceStatus": zod.string(),
+  "issuedDate": zod.string().nullable(),
+  "finalDate": zod.string().nullable(),
+  "submittedDate": zod.string(),
+  "reviewStatus": zod.string(),
+  "dataSource": zod.enum(['Synthetic']),
+  "description": zod.string(),
+  "sourceUrl": zod.string(),
+  "priority": zod.enum(['Normal', 'High', 'Urgent']),
+  "department": zod.string(),
+  "sourceType": zod.string(),
+  "isSynthetic": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
 
 
 

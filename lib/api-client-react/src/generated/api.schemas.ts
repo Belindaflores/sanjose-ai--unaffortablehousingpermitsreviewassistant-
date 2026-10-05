@@ -5,6 +5,74 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type PortalReviewRecordRecordCategory = typeof PortalReviewRecordRecordCategory[keyof typeof PortalReviewRecordRecordCategory];
+
+
+export const PortalReviewRecordRecordCategory = {
+  City_Housing_Permits: 'City Housing Permits',
+  County_Public_Data: 'County Public Data',
+  Prototype_Submissions: 'Prototype Submissions',
+} as const;
+
+export type PortalReviewRecordDataSource = typeof PortalReviewRecordDataSource[keyof typeof PortalReviewRecordDataSource];
+
+
+export const PortalReviewRecordDataSource = {
+  Synthetic: 'Synthetic',
+} as const;
+
+export type PortalReviewRecordPriority = typeof PortalReviewRecordPriority[keyof typeof PortalReviewRecordPriority];
+
+
+export const PortalReviewRecordPriority = {
+  Normal: 'Normal',
+  High: 'High',
+  Urgent: 'Urgent',
+} as const;
+
+export interface PortalReviewRecord {
+  id: string;
+  permitNumber: string;
+  recordCategory: PortalReviewRecordRecordCategory;
+  projectName: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  applicationType: string;
+  housingType: string;
+  /** @minimum 0 */
+  totalHousingUnits: number;
+  /** @minimum 0 */
+  affordableHousingUnits: number;
+  affordableHousing: boolean;
+  housingCategory: string;
+  workType: string;
+  sourceStatus: string;
+  /** @nullable */
+  issuedDate: string | null;
+  /** @nullable */
+  finalDate: string | null;
+  submittedDate: string;
+  reviewStatus: string;
+  dataSource: PortalReviewRecordDataSource;
+  description: string;
+  sourceUrl: string;
+  priority: PortalReviewRecordPriority;
+  department: string;
+  sourceType: string;
+  isSynthetic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PortalReviewWorkspace {
+  records: PortalReviewRecord[];
+  officialCitySourceCount: number;
+  officialCitySourceUrl: string;
+  notice: string;
+}
+
 export type SavedApplicationStatus = typeof SavedApplicationStatus[keyof typeof SavedApplicationStatus];
 
 

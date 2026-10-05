@@ -21,3 +21,4 @@ export * from "./permit-applications";
 export * from "./permit-safeguards";
 export * from "./county-public-records";
 export * from "./saved-application-drafts";
+export * from "./city-worker-application-records";
