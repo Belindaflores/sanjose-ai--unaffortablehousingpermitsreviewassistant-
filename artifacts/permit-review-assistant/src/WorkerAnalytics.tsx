@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import type { PermitApplication } from './App';
-import { RecordCategorySummary } from './RecordsWorkspace';
 import './worker-analytics.css';
 
 const DAY_MS = 86_400_000;
@@ -97,12 +96,6 @@ export function WorkerAnalytics({ applications }: { applications: PermitApplicat
         <p className="eyebrow">Staff performance · recorded data</p>
         <h2>Permit performance</h2>
         <p className="lead">Submission volume, recorded County decisions, and the current review mix. Figures use only the applications in this workspace.</p>
-      </div>
-
-      <div className="record-analytics-summary">
-        <h3>Application Records workspace</h3>
-        <p className="section-note">Category totals below describe synthetic portal previews, not the accepted applications measured in the performance charts.</p>
-        <RecordCategorySummary />
       </div>
 
       <div className="wa-grid">

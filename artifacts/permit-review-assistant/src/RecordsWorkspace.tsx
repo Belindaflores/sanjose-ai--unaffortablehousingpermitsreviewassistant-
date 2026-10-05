@@ -4,16 +4,11 @@ import { AlertCircle, ChevronRight, RefreshCcw, Search, X } from 'lucide-react';
 import { getGetPortalReviewRecordQueryKey, getListPortalReviewRecordsQueryKey, useGetPortalReviewRecord, useListPortalReviewRecords } from '@workspace/api-client-react';
 import type { PortalReviewRecord } from '@workspace/api-client-react';
 import { usePortalProfile } from './PortalAuth';
-import { EMPTY_FILTERS, RECORD_CATEGORIES, UNIT_RANGES, categoryQuery, countByCategory, filterRecords, pageNumbers, paginate, parseCategory, uniqueValues } from './records-model';
-import type { AffordableFilter, CategoryFilter, RecordCategory, RecordFilters, UnitRange } from './records-model';
+import { EMPTY_FILTERS, STAFF_CATEGORY_OPTIONS, UNIT_RANGES, categoryQuery, filterRecords, pageNumbers, paginate, parseStaffCategory, staffCategoryLabel, uniqueValues } from './records-model';
+import type { AffordableFilter, CategoryFilter, RecordFilters, UnitRange } from './records-model';
 import './records-workspace.css';
 
 const CITY_DESCRIPTION = 'City housing permit records prioritized for housing production, affordable housing review, and permit coordination in San José.';
-const CATEGORY_NOTES: Record<RecordCategory, string> = {
-  'City Housing Permits': CITY_DESCRIPTION,
-  'County Public Data': 'Synthetic County public-data style records, not actual imported official filings.',
-  'Prototype Submissions': 'Synthetic prototype submissions, not real applicants or actual filings.',
-};
 
 export function usePortalRecords() {
   const profile = usePortalProfile();
@@ -30,24 +25,11 @@ export function usePortalRecords() {
 const fmtDate = (v: string | null) => v ? new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${v.slice(0, 10)}T12:00:00Z`)) : 'Not available';
 const fmtCount = (n: number) => n.toLocaleString('en-US');
 
-export function RecordCategorySummary({ compact = true }: { compact?: boolean }) {
-  const q = usePortalRecords();
-  const summary = useMemo(() => q.data ? countByCategory(q.data.records) : null, [q.data]);
-  if (q.isLoading) return <section className="card card-body" role="status" aria-label="Loading record category summary" data-testid="summary-loading"><div className="record-skeleton" /></section>;
-  if (q.isError || !q.data || !summary) return <section className="card empty" role="alert" data-testid="summary-error"><AlertCircle size={26} /><h2>Record category counts are unavailable</h2><p>Counts are not shown until the portal records load.</p><button className="button outline" onClick={() => q.refetch()} disabled={q.isFetching} data-testid="button-retry-summary"><RefreshCcw /> Retry</button></section>;
-  return <section aria-label="Portal record categories" data-testid="record-category-summary">
-    <div className={`rw-summary${compact ? ' compact' : ''}`}>
-      {RECORD_CATEGORIES.map(c => <Link key={c} href={`/records?category=${encodeURIComponent(c)}`} className={`rw-card${c === 'City Housing Permits' ? ' city' : ''}`} data-testid={`link-summary-${c.toLowerCase().replace(/\s+/g, '-')}`}>
-        <span className="rw-card-label">{c}</span><span className="rw-card-count">{summary.counts[c]}</span><span className="rw-card-desc">records in the portal review workspace</span>
-      </Link>)}
-    </div>
-    <p className="section-note" style={{ marginTop: 10 }} data-testid="text-summary-total"><strong>{summary.total}</strong> synthetic portal records total, calculated from database rows in city_worker_application_records. The City source dataset holds {fmtCount(q.data.officialCitySourceCount)} official records; these previews are not official filings.</p>
-  </section>;
-}
-
 function FieldList({ r }: { r: PortalReviewRecord }) {
   const rows: [string, string][] = [
-    ['Record ID', r.id], ['Permit number', r.permitNumber], ['Record category', r.recordCategory], ['Project name', r.projectName],
+    ['Record ID', r.id], ['Permit number', r.permitNumber],
+    ...(staffCategoryLabel(r.recordCategory) ? [['Record category', staffCategoryLabel(r.recordCategory)!] as [string, string]] : []),
+    ['Project name', r.projectName],
     ['Address', r.address], ['City', r.city], ['State', r.state], ['ZIP code', r.zipCode], ['Application type', r.applicationType],
     ['Housing type', r.housingType], ['Total housing units', String(r.totalHousingUnits)], ['Affordable housing units', String(r.affordableHousingUnits)],
     ['Affordable housing', r.affordableHousing ? 'Yes' : 'No'], ['Housing category', r.housingCategory], ['Work type', r.workType],
@@ -111,15 +93,14 @@ export function RecordsWorkspace({ applicationsPage = false }: { applicationsPag
   const q = usePortalRecords();
   const search = useSearch();
   const [, navigate] = useLocation();
-  const [filters, setFilters] = useState<RecordFilters>(() => ({ ...EMPTY_FILTERS, category: parseCategory(new URLSearchParams(search).get('category')) }));
+  const [filters, setFilters] = useState<RecordFilters>(() => ({ ...EMPTY_FILTERS, category: parseStaffCategory(new URLSearchParams(search).get('category')) }));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [open, setOpen] = useState<PortalReviewRecord | null>(null);
-  const urlCategory = parseCategory(new URLSearchParams(search).get('category'));
+  const urlCategory = parseStaffCategory(new URLSearchParams(search).get('category'));
   useEffect(() => { setFilters(f => f.category === urlCategory ? f : { ...f, category: urlCategory }); setPage(1); }, [urlCategory]);
 
   const records = useMemo(() => q.data?.records ?? [], [q.data]);
-  const summary = useMemo(() => countByCategory(records), [records]);
   const filtered = useMemo(() => filterRecords(records, filters), [records, filters]);
   const view = paginate(filtered, page, pageSize);
   const opts = useMemo(() => ({
@@ -128,14 +109,13 @@ export function RecordsWorkspace({ applicationsPage = false }: { applicationsPag
   }), [records]);
   const set = <K extends keyof RecordFilters>(k: K, v: RecordFilters[K]) => {
     setFilters(f => ({ ...f, [k]: v })); setPage(1);
-    if (k === 'category') navigate(`/records${categoryQuery(search, v as CategoryFilter)}`, { replace: true });
+    if (k === 'category') navigate(`${applicationsPage ? '/applications' : '/records'}${categoryQuery(search, v as CategoryFilter)}`, { replace: true });
   };
   const clearFilters = () => {
     setFilters({ ...EMPTY_FILTERS }); setPage(1);
-    navigate(`/records${categoryQuery(search, 'All')}`, { replace: true });
+    navigate(`${applicationsPage ? '/applications' : '/records'}${categoryQuery(search, 'All')}`, { replace: true });
   };
   const isDefault = JSON.stringify(filters) === JSON.stringify(EMPTY_FILTERS);
-  const tabs: CategoryFilter[] = ['All', ...RECORD_CATEGORIES];
 
   const rowActions = (r: PortalReviewRecord, mobile = false) => applicationsPage
     ? <Link className="button outline" href={`/applications/${encodeURIComponent(r.id)}`} data-testid={`button-${mobile ? 'card-' : ''}view-${r.id}`} aria-label={`View details for ${r.projectName}`}>View details <ChevronRight /></Link>
@@ -147,20 +127,12 @@ export function RecordsWorkspace({ applicationsPage = false }: { applicationsPag
     {q.isLoading && <div className="card card-body" role="status" aria-label="Loading application records"><div className="record-skeleton" /><div className="record-skeleton" /><div className="record-skeleton" /></div>}
     {q.isError && <div className="card empty" role="alert" data-testid="error-records"><AlertCircle size={29} /><h2>Application records are unavailable</h2><p>The portal review records could not be loaded.</p><button className="button outline" onClick={() => q.refetch()} disabled={q.isFetching} data-testid="button-retry-records"><RefreshCcw /> Retry</button></div>}
     {q.data && <>
-      <div className="rw-summary" data-testid="record-category-cards">
-        {RECORD_CATEGORIES.map(c => <button key={c} type="button" className={`rw-card${c === 'City Housing Permits' ? ' city' : ''}${filters.category === c ? ' active' : ''}`} aria-pressed={filters.category === c} onClick={() => set('category', filters.category === c ? 'All' : c)} data-testid={`card-category-${c.toLowerCase().replace(/\s+/g, '-')}`}>
-          <span className="rw-card-label">{c}</span><span className="rw-card-count">{summary.counts[c]}</span><span className="rw-card-desc">{CATEGORY_NOTES[c]}</span>
-        </button>)}
-      </div>
-      <div className="rw-meta" data-testid="text-source-counts"><span><strong>{summary.total}</strong> records currently displayed in the portal review workspace (synthetic)</span><span><strong>{fmtCount(q.data.officialCitySourceCount)}</strong> records in the City source dataset</span><a href={q.data.officialCitySourceUrl} target="_blank" rel="noopener noreferrer">Open City source</a></div>
-      <p className="notice rw-note">{q.data.notice} The {summary.total} portal records are synthetic previews across all three categories, not actual imported official filings. The City source dataset is far larger than this workspace.</p>
+      {!applicationsPage && <div className="rw-meta" data-testid="text-source-counts"><span><strong>{fmtCount(q.data.officialCitySourceCount)}</strong> records in the City source dataset</span><a href={q.data.officialCitySourceUrl} target="_blank" rel="noopener noreferrer">Open City source</a></div>}
+      <p className="notice rw-note">{q.data.notice}</p>
       <section className="card" aria-label="Application records">
-        <div className="rw-tabs" role="tablist" aria-label="Record category">
-          {tabs.map(t => <button key={t} role="tab" aria-selected={filters.category === t} className="rw-tab" onClick={() => set('category', t)} data-testid={`tab-${t.toLowerCase().replace(/\s+/g, '-')}`}>{t === 'All' ? 'All records' : t}</button>)}
-        </div>
         <div className="rw-filters">
           <div className="search-wrap"><Search /><input className="input" value={filters.search} onChange={e => set('search', e.target.value)} placeholder="Search permit number, project, address, ZIP, application type, or category" aria-label="Search application records" data-testid="input-search-records" /></div>
-          <Sel label="Record category" value={filters.category} onChange={v => set('category', parseCategory(v))} options={[...RECORD_CATEGORIES]} testid="select-filter-category" />
+          {!applicationsPage && <Sel label="Record category" value={filters.category} onChange={v => set('category', parseStaffCategory(v))} options={[...STAFF_CATEGORY_OPTIONS]} testid="select-filter-category" />}
           <Sel label="Affordable housing" value={filters.affordable} onChange={v => set('affordable', v as AffordableFilter)} options={['Affordable', 'Not affordable']} testid="select-filter-affordable" />
           <Sel label="Housing type" value={filters.housingType} onChange={v => set('housingType', v)} options={opts.housingType} testid="select-filter-housing-type" />
           <Sel label="Application status" value={filters.reviewStatus} onChange={v => set('reviewStatus', v)} options={opts.reviewStatus} testid="select-filter-review-status" />
@@ -170,7 +142,7 @@ export function RecordsWorkspace({ applicationsPage = false }: { applicationsPag
           <Sel label="ZIP code" value={filters.zipCode} onChange={v => set('zipCode', v)} options={opts.zipCode} testid="select-filter-zip" />
         </div>
         <div className="rw-bar">
-          <span data-testid="text-record-count" role="status"><strong>{filtered.length}</strong> matching of {summary.total} records{view.items.length ? ` · showing ${view.from}-${view.to}` : ''}</span>
+          <span data-testid="text-record-count" role="status">{view.items.length ? `Showing ${view.from}–${view.to}` : 'No matching records'}</span>
           <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label>Per page <select className="select" value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} data-testid="select-page-size"><option value={10}>10</option><option value={20}>20</option></select></label>
             <button className="button outline" onClick={clearFilters} disabled={isDefault} data-testid="button-clear-filters">Clear filters</button>
@@ -180,7 +152,7 @@ export function RecordsWorkspace({ applicationsPage = false }: { applicationsPag
           <div className="table-wrap rw-table-wrap"><table className="rw-table" data-testid="table-records">
             <thead><tr><th>Project</th><th>Address</th><th className="num">Total units</th><th className="num">Affordable units</th><th>Housing category</th><th>Status</th><th>Issued</th><th>Details</th></tr></thead>
             <tbody>{view.items.map(r => <tr key={r.id} data-testid={`row-record-${r.id}`}>
-              <td><span className="table-title">{r.projectName}</span><span className="table-sub">{r.permitNumber}</span><span className="rw-cat">{r.recordCategory}</span>{badge(r)}</td>
+              <td><span className="table-title">{r.projectName}</span><span className="table-sub">{r.permitNumber}</span>{staffCategoryLabel(r.recordCategory) && <span className="rw-cat">{staffCategoryLabel(r.recordCategory)}</span>}{badge(r)}</td>
               <td>{r.address}</td>
               <td className="num">{r.totalHousingUnits}</td><td className="num">{r.affordableHousingUnits}</td>
               <td>{r.housingCategory}</td>
@@ -188,7 +160,7 @@ export function RecordsWorkspace({ applicationsPage = false }: { applicationsPag
               <td>{fmtDate(r.issuedDate)}</td><td>{rowActions(r)}</td></tr>)}</tbody>
           </table></div>
           <div className="rw-grid">{view.items.map(r => <article key={r.id} className="rw-item" data-testid={`card-record-${r.id}`}>
-            <div><span className="table-title">{r.projectName}</span><span className="table-sub">{r.permitNumber} · {r.recordCategory}</span>{badge(r)}</div>
+            <div><span className="table-title">{r.projectName}</span><span className="table-sub">{r.permitNumber}{staffCategoryLabel(r.recordCategory) ? ` · ${staffCategoryLabel(r.recordCategory)}` : ''}</span>{badge(r)}</div>
             <dl><div><dt>Address</dt><dd>{r.address}</dd></div><div><dt>Status</dt><dd>{r.reviewStatus}</dd></div><div><dt>Total units</dt><dd>{r.totalHousingUnits}</dd></div><div><dt>Affordable units</dt><dd>{r.affordableHousingUnits}</dd></div><div><dt>Category</dt><dd>{r.housingCategory}</dd></div><div><dt>Issued</dt><dd>{fmtDate(r.issuedDate)}</dd></div></dl>
             {rowActions(r, true)}</article>)}</div>
           <nav className="rw-pager" aria-label="Record pagination">

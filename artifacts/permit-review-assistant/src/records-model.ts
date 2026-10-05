@@ -2,6 +2,14 @@ import type { PortalReviewRecord } from '@workspace/api-client-react';
 
 export const RECORD_CATEGORIES = ['City Housing Permits', 'County Public Data', 'Prototype Submissions'] as const;
 export type RecordCategory = (typeof RECORD_CATEGORIES)[number];
+// Presentation choices only: hidden categories remain in the database and All/search results.
+export const STAFF_CATEGORY_OPTIONS = ['City Housing Permits', 'County Public Data'] as const;
+export function staffCategoryLabel(category: RecordCategory): string | null {
+  return (STAFF_CATEGORY_OPTIONS as readonly string[]).includes(category) ? category : null;
+}
+export function parseStaffCategory(value: string | null | undefined): CategoryFilter {
+  return (STAFF_CATEGORY_OPTIONS as readonly string[]).includes(value ?? '') ? value as RecordCategory : 'All';
+}
 export type CategoryFilter = 'All' | RecordCategory;
 export type UnitRange = 'All' | '0' | '1-4' | '5-19' | '20-49' | '50+';
 export type AffordableFilter = 'All' | 'Affordable' | 'Not affordable';

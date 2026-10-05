@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { PortalReviewRecord } from '@workspace/api-client-react';
-import { EMPTY_FILTERS, categoryQuery, countByCategory, filterRecords, matchesSearch, paginate, parseCategory, pageNumbers } from './records-model';
+import { EMPTY_FILTERS, STAFF_CATEGORY_OPTIONS, categoryQuery, countByCategory, filterRecords, matchesSearch, paginate, parseCategory, parseStaffCategory, staffCategoryLabel, pageNumbers } from './records-model';
 
 const base: PortalReviewRecord = {
   id: 'housing', permitNumber: 'SYN-HOUSING-001', recordCategory: 'City Housing Permits',
@@ -73,4 +73,15 @@ test('category navigation and clear filters keep reload URL consistent', () => {
   const cleared = categoryQuery(next, 'All');
   assert.equal(parseCategory(new URLSearchParams(cleared).get('category')), 'All');
   assert.equal(categoryQuery('?category=County+Public+Data&other=keep', 'All'), '?other=keep');
+});
+
+test('staff presentation hides the removed category label without excluding its records', () => {
+  assert.deepEqual(STAFF_CATEGORY_OPTIONS, ['City Housing Permits', 'County Public Data']);
+  assert.equal(staffCategoryLabel('Prototype Submissions'), null);
+  assert.equal(staffCategoryLabel('City Housing Permits'), 'City Housing Permits');
+  assert.equal(parseStaffCategory('Prototype Submissions'), 'All');
+  assert.equal(parseStaffCategory('County Public Data'), 'County Public Data');
+  const hiddenCategoryRecord = { ...base, recordCategory: 'Prototype Submissions' as const, projectName: 'Searchable demonstration housing' };
+  assert.deepEqual(filterRecords([hiddenCategoryRecord], EMPTY_FILTERS), [hiddenCategoryRecord]);
+  assert.deepEqual(filterRecords([hiddenCategoryRecord], { ...EMPTY_FILTERS, search: 'Searchable demonstration housing' }), [hiddenCategoryRecord]);
 });
