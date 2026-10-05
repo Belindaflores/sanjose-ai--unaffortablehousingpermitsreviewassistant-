@@ -36,16 +36,12 @@ type PermitStaffNote = {
 
 export const permitApplicationsTable = pgTable("permit_applications", {
   id: text("id").primaryKey(),
-  revision: integer("revision").notNull().default(0),
-  workspaceId: text("workspace_id").notNull().default("santa-clara-county"),
-  claimedPriorityCategories: jsonb("claimed_priority_categories").$type<string[]>().notNull().default([]),
-  auditHistory: jsonb("audit_history").$type<{ id: string; action: string; decision: string; reason: string; workerId: string; workerName: string; at: string; detail: string }[]>().notNull().default([]),
   ownerUserId: text("owner_user_id"),
   claimed_affordable: boolean("claimed_affordable").notNull().default(false),
   claimed_underserved: boolean("claimed_underserved").notNull().default(false),
   verification_status: text("verification_status").notNull().default("Unverified"),
-  priorityClaims: jsonb("priority_claims").$type<{ affordable: { status: "Unverified" | "Verified" | "Rejected"; note?: string; by?: string; at?: string }; underserved: { status: "Unverified" | "Verified" | "Rejected"; note?: string; by?: string; at?: string }; additional?: { category: string; status: "Unverified" | "Verified" | "Rejected"; note?: string; by?: string; at?: string }[] }>(),
-  reviewDecisions: jsonb("review_decisions").$type<{ jurisdiction?: { note: string; by: string; at: string }; classification?: { note: string; by: string; at: string }; safety?: { note: string; by: string; at: string; document: string }[] }>(),
+  priorityClaims: jsonb("priority_claims").$type<{ affordable: { status: "Unverified" | "Verified" | "Rejected"; note?: string; by?: string; at?: string }; underserved: { status: "Unverified" | "Verified" | "Rejected"; note?: string; by?: string; at?: string } }>(),
+  reviewDecisions: jsonb("review_decisions").$type<{ jurisdiction?: { note: string; by: string; at: string }; safety?: { note: string; by: string; at: string; document: string }[] }>(),
   requiredReviewers: jsonb("required_reviewers").$type<string[]>().notNull().default([]),
   censusTract: text("census_tract").notNull().default(""),
   dataSource: text("data_source").notNull().default("Prototype Submission"),

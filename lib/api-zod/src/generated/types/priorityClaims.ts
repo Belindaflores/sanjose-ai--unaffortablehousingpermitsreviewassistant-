@@ -6,10 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ClaimVerification } from './claimVerification';
-import type { PriorityClaimsAdditionalItem } from './priorityClaimsAdditionalItem';
 
 export interface PriorityClaims {
   affordable: ClaimVerification;
   underserved: ClaimVerification;
-  additional?: PriorityClaimsAdditionalItem[];
 }

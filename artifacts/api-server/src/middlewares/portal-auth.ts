@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 export type PortalUser = typeof portalUsersTable.$inferSelect;
 export const isStaff = (user: Pick<PortalUser, "role">) => user.role === "worker" || user.role === "fire_marshal";
-export const canViewApplication = (user: Pick<PortalUser, "id" | "role"> & { workspaceId?: string }, ownerUserId: string | null | undefined, workspaceId = "santa-clara-county") => isStaff(user) ? user.workspaceId === workspaceId : ownerUserId === user.id;
+export const canViewApplication = (user: Pick<PortalUser, "id" | "role">, ownerUserId: string | null | undefined) => isStaff(user) || ownerUserId === user.id;
 export const requirePortalUser: RequestHandler = async (req, res, next) => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ error: "Sign in to access permit records." }); return; }

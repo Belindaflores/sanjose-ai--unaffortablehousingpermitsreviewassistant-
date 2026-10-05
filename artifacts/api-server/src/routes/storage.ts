@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Readable } from "node:stream";
 import { eq } from "drizzle-orm";
-import { db, permitUploadsTable, portalUsersTable } from "@workspace/db";
+import { db, permitUploadsTable } from "@workspace/db";
 import { RequestUploadUrlBody, RequestUploadUrlResponse } from "@workspace/api-zod";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { requirePortalUser, isStaff } from "../middlewares/portal-auth";
@@ -31,10 +31,6 @@ router.get("/storage/objects/{*objectPath}", async (req, res): Promise<void> => 
   const objectPath = `/objects/${Array.isArray(segments) ? segments.join("/") : segments}`;
   const [upload] = await db.select().from(permitUploadsTable).where(eq(permitUploadsTable.objectPath, objectPath));
   if (!upload || (!isStaff(res.locals.portalUser) && upload.ownerUserId !== res.locals.portalUser.id)) { res.status(404).json({ error: "Document not found." }); return; }
-  if (isStaff(res.locals.portalUser)) {
-    const [owner] = await db.select({ workspaceId: portalUsersTable.workspaceId }).from(portalUsersTable).where(eq(portalUsersTable.id, upload.ownerUserId));
-    if (!owner || owner.workspaceId !== res.locals.portalUser.workspaceId) { res.status(404).json({ error: "Document not found." }); return; }
-  }
   try {
     const file = await storage.getObjectEntityFile(objectPath);
     const response = await storage.downloadObject(file, 0);

@@ -6,18 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ReviewPermitChecksBodyAction } from './reviewPermitChecksBodyAction';
+import type { ReviewPermitChecksBodyClaim } from './reviewPermitChecksBodyClaim';
 import type { ReviewPermitChecksBodyDecision } from './reviewPermitChecksBodyDecision';
 
 export type ReviewPermitChecksBody = {
   action: ReviewPermitChecksBodyAction;
-  claim?: string;
+  claim?: ReviewPermitChecksBodyClaim;
   decision?: ReviewPermitChecksBodyDecision;
   document?: string;
-  projectType?: string;
-  /** @minimum 0 */
-  housingUnits?: number;
-  description?: string;
-  permitType?: string;
   /**
      * @minLength 1
      * @maxLength 2000

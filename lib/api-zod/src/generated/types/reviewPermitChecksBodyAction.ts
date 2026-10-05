@@ -13,6 +13,4 @@ export const ReviewPermitChecksBodyAction = {
   claim: 'claim',
   safety: 'safety',
   jurisdiction: 'jurisdiction',
-  request_documentation: 'request_documentation',
-  conflict: 'conflict',
 } as const;
