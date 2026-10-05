@@ -20,10 +20,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BuildingPermitPage,
   CorrectPermitClassificationBody,
   CountyPublicRecord,
   FirePlanUploadInput,
   HealthStatus,
+  ListBuildingPermitRecordsParams,
   ListPermitApplicationsParams,
   PermitApplication,
   PermitDeletionConfirmation,
@@ -1191,6 +1193,91 @@ export const useUpdatePermitApplication = <TError = ErrorType<void>,
       > => {
       return useMutation(getUpdatePermitApplicationMutationOptions(options));
     }
+
+export const getListBuildingPermitRecordsUrl = (params?: ListBuildingPermitRecordsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/public-building-permits?${stringifiedParams}` : `/api/public-building-permits`
+}
+
+/**
+ * Read-only paginated public-source feed. Does not create or modify portal applications.
+ * @summary Browse the complete official San José Active Building Permits dataset
+ */
+export const listBuildingPermitRecords = async (params?: ListBuildingPermitRecordsParams, options?: Parameters<typeof customFetch>[1]): Promise<BuildingPermitPage> => {
+
+  return customFetch<BuildingPermitPage>(getListBuildingPermitRecordsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBuildingPermitRecordsQueryKey = (params?: ListBuildingPermitRecordsParams,) => {
+    return [
+    `/api/public-building-permits`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListBuildingPermitRecordsQueryOptions = <TData = Awaited<ReturnType<typeof listBuildingPermitRecords>>, TError = ErrorType<void>>(params?: ListBuildingPermitRecordsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBuildingPermitRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBuildingPermitRecordsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBuildingPermitRecords>>> = ({ signal }) => listBuildingPermitRecords(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBuildingPermitRecords>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBuildingPermitRecordsQueryResult = NonNullable<Awaited<ReturnType<typeof listBuildingPermitRecords>>>
+export type ListBuildingPermitRecordsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Browse the complete official San José Active Building Permits dataset
+ */
+
+export function useListBuildingPermitRecords<TData = Awaited<ReturnType<typeof listBuildingPermitRecords>>, TError = ErrorType<void>>(
+ params?: ListBuildingPermitRecordsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBuildingPermitRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBuildingPermitRecordsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListCountyPublicRecordsUrl = () => {
 

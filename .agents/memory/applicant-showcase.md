@@ -22,3 +22,11 @@ The earlier showcase used authentic official housing-construction records, never
 **Why:** The user previously corrected both non-housing examples and mixed-applicant examples. Removing their applicant presentation does not authorize modifying the underlying public data.
 
 **How to apply:** Preserve source integrity if public imports are maintained or reused elsewhere; do not interpret these historical constraints as permission to restore the applicant showcase.
+
+## City Worker public-record scope
+
+The City Worker Portal must allow browsing the full official building-permit dataset, not just the two curated ADUs. This does not expand the Applicant Portal's content scope.
+
+**Why:** On 2026-10-04 the user clarified that the two-record count was a worker-portal issue and explicitly selected the full official building-permit dataset.
+
+**How to apply:** Keep the complete public catalog separate from account-owned applications. The same-applicant/two-housing-record restriction belongs to the earlier curated pair, not the full worker catalog. Do not describe San José's source as a county-wide dataset.

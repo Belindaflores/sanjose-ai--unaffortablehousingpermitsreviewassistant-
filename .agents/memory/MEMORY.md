@@ -1,5 +1,6 @@
 - [Post-merge workflow ports](post-merge-workflow-ports.md) — a failed managed restart can leave an older server occupying the port while preview still responds.
 - [Permit geography](permit-geography.md) — the requested county-wide screen is a prototype geography boundary, not an official legal jurisdiction determination.
 - [Applicant content scope](applicant-showcase.md) — applicant home, Applications, and Records show only owned content; the public showcase was explicitly removed.
+- [Worker role scope](worker-role-scope.md) — workers manage existing applications; new submissions remain applicant-only, and the worker dashboard count cap is display-only.
 - [Fire safety policy](fire-safety-policy.md) — 20-unit safety threshold is prototype policy, not legal advice; ordinary staff access is not override authority.
 - [Historical preview errors](dev-preview-errors.md) — after codegen, verify live exports and cold-load before treating old browser errors as current failures.

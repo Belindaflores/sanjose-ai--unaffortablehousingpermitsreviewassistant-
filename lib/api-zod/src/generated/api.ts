@@ -965,6 +965,59 @@ export const UpdatePermitApplicationResponse = zod.object({
 
 
 /**
+ * Read-only paginated public-source feed. Does not create or modify portal applications.
+ * @summary Browse the complete official San José Active Building Permits dataset
+ */
+export const listBuildingPermitRecordsQueryPageDefault = 1;
+export const listBuildingPermitRecordsQueryPageMax = 100000;
+
+export const listBuildingPermitRecordsQueryPageSizeDefault = 25;
+export const listBuildingPermitRecordsQueryQDefault = ``;
+export const listBuildingPermitRecordsQueryQMax = 200;
+
+
+
+export const ListBuildingPermitRecordsQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).max(listBuildingPermitRecordsQueryPageMax).default(listBuildingPermitRecordsQueryPageDefault),
+  "pageSize": zod.union([zod.literal(25),zod.literal(50),zod.literal(100)]).default(listBuildingPermitRecordsQueryPageSizeDefault),
+  "q": zod.coerce.string().max(listBuildingPermitRecordsQueryQMax).default(listBuildingPermitRecordsQueryQDefault)
+})
+
+export const listBuildingPermitRecordsResponseTotalMin = 0;
+
+export const listBuildingPermitRecordsResponseDatasetTotalMin = 0;
+
+
+
+export const ListBuildingPermitRecordsResponse = zod.object({
+  "records": zod.array(zod.object({
+  "sourceId": zod.number().int(),
+  "permitNumber": zod.string().nullable(),
+  "projectName": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "applicant": zod.string().nullable(),
+  "permitType": zod.string().nullable(),
+  "projectType": zod.string().nullable(),
+  "workDescription": zod.string().nullable(),
+  "status": zod.string().nullable(),
+  "issuedDate": zod.string().nullable(),
+  "finalDate": zod.string().nullable(),
+  "dwellingUnits": zod.string().nullable(),
+  "valuation": zod.string().nullable()
+})),
+  "total": zod.number().int().min(listBuildingPermitRecordsResponseTotalMin),
+  "datasetTotal": zod.number().int().min(listBuildingPermitRecordsResponseDatasetTotalMin),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int(),
+  "nextPage": zod.number().int().nullable(),
+  "sourceName": zod.string(),
+  "datasetName": zod.string(),
+  "sourceUrl": zod.string().url(),
+  "fetchedAt": zod.coerce.date()
+})
+
+
+/**
  * Returns records imported from the County of Santa Clara Open Data SCC Plan Check Progress dataset.
  * @summary List imported County public plan-check records
  */

@@ -5,6 +5,50 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface BuildingPermitRecord {
+  sourceId: number;
+  /** @nullable */
+  permitNumber: string | null;
+  /** @nullable */
+  projectName: string | null;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  applicant: string | null;
+  /** @nullable */
+  permitType: string | null;
+  /** @nullable */
+  projectType: string | null;
+  /** @nullable */
+  workDescription: string | null;
+  /** @nullable */
+  status: string | null;
+  /** @nullable */
+  issuedDate: string | null;
+  /** @nullable */
+  finalDate: string | null;
+  /** @nullable */
+  dwellingUnits: string | null;
+  /** @nullable */
+  valuation: string | null;
+}
+
+export interface BuildingPermitPage {
+  records: BuildingPermitRecord[];
+  /** @minimum 0 */
+  total: number;
+  /** @minimum 0 */
+  datasetTotal: number;
+  page: number;
+  pageSize: number;
+  /** @nullable */
+  nextPage: number | null;
+  sourceName: string;
+  datasetName: string;
+  sourceUrl: string;
+  fetchedAt: string;
+}
+
 export interface PermitDeletionConfirmation {
   /**
      * @minLength 1
@@ -389,4 +433,26 @@ export type CorrectPermitClassificationBody = {
 export type ListPermitApplicationsParams = {
 applicantEmail?: string;
 };
+
+export type ListBuildingPermitRecordsParams = {
+/**
+ * @minimum 1
+ * @maximum 100000
+ */
+page?: number;
+pageSize?: ListBuildingPermitRecordsPageSize;
+/**
+ * @maxLength 200
+ */
+q?: string;
+};
+
+export type ListBuildingPermitRecordsPageSize = typeof ListBuildingPermitRecordsPageSize[keyof typeof ListBuildingPermitRecordsPageSize];
+
+
+export const ListBuildingPermitRecordsPageSize = {
+  NUMBER_25: 25,
+  NUMBER_50: 50,
+  NUMBER_100: 100,
+} as const;
 
