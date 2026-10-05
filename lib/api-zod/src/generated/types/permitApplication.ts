@@ -48,6 +48,7 @@ export interface PermitApplication {
   projectAddress: string;
   permitType: string;
   projectType: string;
+  housingCategory?: string;
   /** @minimum 0 */
   housingUnits: number;
   affordableHousing: boolean;

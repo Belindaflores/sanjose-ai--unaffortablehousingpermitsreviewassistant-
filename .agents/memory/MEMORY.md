@@ -1,5 +1,5 @@
 - [Post-merge workflow ports](post-merge-workflow-ports.md) — a failed managed restart can leave an older server occupying the port while preview still responds.
-- [Permit geography](permit-geography.md) — the requested county-wide screen is a prototype geography boundary, not an official legal jurisdiction determination.
+- [Permit geography](permit-geography.md) — accepted staff records are San José-only; housing category is distinct from verified priority; preserve owner records and prototype disclaimers.
 - [Public permit separation](applicant-showcase.md) — City records stay staff-only; private drafts and disclosed synthetic presentation submissions are not official permit filings.
 - [Date-only API boundaries](date-only-api-boundaries.md) — generated response validation coerces dates; normalize wire values and tolerate ISO timestamps in date-only views.
 - [Worker overview scope](worker-overview-scope.md) — staff header is for review; applicant submission creation stays available in the applicant portal.

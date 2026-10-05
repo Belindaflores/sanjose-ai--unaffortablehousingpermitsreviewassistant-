@@ -66,7 +66,7 @@ test("ambiguous address routes to human verification; street containing San Jose
   assert.equal(checkJurisdiction("Address pending").status, "Needs Verification");
   assert.equal(checkJurisdiction("123 San Jose Avenue, Oakland, CA 95112").status, "Outside County");
   assert.equal(checkJurisdiction("123 Main Street, San Jose, TX 95112").status, "Outside County");
-  assert.equal(checkJurisdiction("123 Main Street, Palo Alto, CA 94303").status, "Needs Verification");
+  assert.equal(checkJurisdiction("123 Main Street, Palo Alto, CA 94303").status, "Outside County");
   const result = screenApplication({ ...base, projectAddress: "Address pending" });
   assert.equal(result.reviewStatus, "Human jurisdiction review");
   assert.ok(result.requiredReviewers.includes("County Intake — Human Reviewer"));

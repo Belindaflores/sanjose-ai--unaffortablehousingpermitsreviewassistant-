@@ -28,7 +28,7 @@ export const isJurisdiction = (a: PermitApplication) => a.reviewStatus === 'Huma
 export const isConflict = (a: PermitApplication) => Boolean(a.ruleChecks?.classificationConflicts?.length || a.reviewStatus.startsWith('On Hold — Information') || openIssues(a, 'conflict').length || a.flags.includes(CONFLICT_FLAG));
 export const isPriorityPending = (a: PermitApplication) => claimItems(a).some(c => c.status === 'Unverified');
 const isMissingDocs = (a: PermitApplication) => a.aiStatus === 'Missing Information' || openIssues(a, 'documents').length > 0;
-const isHuman = (a: PermitApplication) => isSafety(a) || isJurisdiction(a) || isConflict(a) || Boolean(a.requiredReviewers?.length) || a.flags.some(f => /human review required/i.test(f));
+const isHuman = (a: PermitApplication) => isSafety(a) || isJurisdiction(a) || isConflict(a) || ['Human Review Required', 'Potential Issues Detected'].includes(a.reviewStatus) || Boolean(a.requiredReviewers?.length) || a.flags.some(f => /human review required/i.test(f));
 const rank = (a: PermitApplication) => isSafety(a) ? 0 : isJurisdiction(a) ? 1 : isConflict(a) ? 2 : isPriorityPending(a) ? 3 : 4;
 
 function sevClass(s: string) { return `sev sev-${s}`; }
@@ -53,10 +53,10 @@ export function StaffQueue({ applications }: { applications: PermitApplication[]
       case 'Information conflict': return isConflict(a);
       case 'Missing required documents': case 'Missing documents': return isMissingDocs(a);
       case 'Human review required': case 'Needs Human Review': return isHuman(a);
-      case 'Ready for review': return a.aiStatus === 'Ready for Human Review' && !isHuman(a);
+      case 'Ready for review': return a.reviewStatus === 'Ready for Review' && a.aiStatus === 'Ready for Human Review' && !isHuman(a);
       case 'New applications': return a.reviewStatus === 'New';
       case 'Potential issues': return a.aiStatus === 'Potential Issues Detected';
-      case 'Affordable housing': return a.priorityClaims?.affordable?.status === 'Verified';
+      case 'Affordable housing': return a.affordableHousing;
       case 'High priority': return a.priority !== 'Normal';
       case 'Additional agency review': return a.aiStatus === 'Additional Agency Review Required';
       default: return true;
@@ -65,7 +65,7 @@ export function StaffQueue({ applications }: { applications: PermitApplication[]
   return <section className="card" data-testid="staff-queue">
     <div className="filters"><input className="input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by project, applicant, or ID" aria-label="Search applications" data-testid="input-search-applications" />
       <select className="select" value={filter} onChange={e => setFilter(e.target.value)} aria-label="Filter applications" data-testid="select-queue-filter">{FILTERS.map(f => <option key={f}>{f}</option>)}</select></div>
-    <p className="section-note" style={{ padding: '0 20px' }}>Sorted: safety-critical, jurisdiction, information conflicts, priority verification, then ordinary review.</p>
+    <p className="section-note" style={{ padding: '0 20px' }} data-testid="staff-queue-count">Showing {rows.length} of {applications.length} accepted San José applications. Sorted: safety-critical, jurisdiction, information conflicts, priority verification, then ordinary review.</p>
     <div className="queue-list">{rows.map(a => {
       const open = openIssues(a)[0];
       const flagged = (a.issues ?? []).map(i => i.flaggedAt).filter(Boolean).sort()[0];
@@ -73,7 +73,7 @@ export function StaffQueue({ applications }: { applications: PermitApplication[]
       return <article key={a.id} className={`queue-item ${safety ? 'queue-critical' : ''}`} data-testid={`queue-item-${a.id}`}>
         <div className="queue-main"><strong>{a.projectName}</strong><span className="table-sub">{a.id} · {a.projectAddress}</span>
           <div className="queue-tags">{safety && <span className="sev sev-critical">Safety-critical</span>}{isJurisdiction(a) && <span className="sev sev-review">Jurisdiction review</span>}{isConflict(a) && <span className="sev sev-review">Information conflict</span>}{isPriorityPending(a) && <span className="sev sev-verification">Priority claim requires verification</span>}</div></div>
-        <dl className="queue-facts"><div><dt>Status</dt><dd>{a.reviewStatus}</dd></div><div><dt>Priority</dt><dd>{isPriorityPending(a) ? `${a.priority} (claim unverified)` : a.priority}</dd></div><div><dt>Required action</dt><dd>{open?.requiredAction ?? 'Standard review'}</dd></div><div><dt>Department</dt><dd>{open?.assignedDepartment ?? a.assignedDepartment}</dd></div><div><dt>Date flagged</dt><dd>{flagged ? fmt(flagged) : 'Not flagged'}</dd></div></dl>
+        <dl className="queue-facts"><div><dt>Project type</dt><dd>{a.projectType}</dd></div><div><dt>Affordable housing category</dt><dd>{a.housingCategory || 'Affordable housing-related project'}</dd></div><div><dt>Status</dt><dd>{a.reviewStatus}</dd></div><div><dt>Priority</dt><dd>{isPriorityPending(a) ? `${a.priority} (claim unverified)` : a.priority}</dd></div><div><dt>Required action</dt><dd>{open?.requiredAction ?? 'Standard staff review of complete application'}</dd></div><div><dt>Department</dt><dd>{open?.assignedDepartment ?? a.assignedDepartment}</dd></div><div><dt>Date flagged / submitted</dt><dd>{fmt(flagged || a.submittedAt)}</dd></div></dl>
         <Link href={`/applications/${a.id}`} className="button outline" data-testid={`link-view-details-${a.id}`}>View details</Link>
       </article>;
     })}</div>

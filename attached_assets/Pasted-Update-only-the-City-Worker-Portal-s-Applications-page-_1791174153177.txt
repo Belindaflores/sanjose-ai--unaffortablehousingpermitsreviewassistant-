@@ -1,0 +1,189 @@
+Update only the City Worker Portal’s Applications page and its staff application dataset.
+
+The current Applications page incorrectly displays records outside the City of San José, including:
+- 123 H Street, Oakland, CA
+- Other non-San José cities or ZIP codes
+- Duplicate records such as the same application appearing under different names
+
+Remove all out-of-jurisdiction and duplicate records from the City Worker Applications list.
+
+JURISDICTION RULE
+
+The City Worker Applications page may only display accepted applications where:
+
+- City is San José or San Jose
+- State is California
+- The ZIP code is an approved City of San José ZIP code
+- The full address passes the server-side jurisdiction validation
+
+Do not use ZIP code alone as the only validation. Validate both the city and ZIP code.
+
+Any application from Oakland, Berkeley, Fremont, Santa Clara, Milpitas, Campbell, or another city outside San José must not appear in the accepted Applications list.
+
+For an outside-jurisdiction address:
+
+- Do not display it in the City Worker Applications list.
+- Do not assign a priority score.
+- Do not place it in the normal review queue.
+- Do not label it Ready for Review.
+- Store it only in a rejected-attempt or jurisdiction-review log if needed.
+- Show the applicant the existing outside-jurisdiction message.
+
+Enforce this validation in backend code, not only in the frontend.
+
+APPLICATION DATASET
+
+Create exactly 10 unique City Worker application records based on realistic public-data patterns and affordable-housing-related projects.
+
+All 10 records must have:
+- A unique application number
+- A unique project name
+- A San José address
+- A valid San José ZIP code
+- A realistic project type
+- A realistic housing category
+- A status
+- A priority level
+- A required action
+- An assigned department
+- A date flagged or submitted
+- No duplicate records
+
+Use a variety of affordable-housing-related project types, including:
+
+- Affordable multifamily housing
+- Supportive housing
+- Mixed-income housing
+- Affordable housing rehabilitation
+- Senior affordable housing
+- Workforce housing
+- Permanent supportive housing
+- Affordable ADU or small-scale housing
+- Density-bonus housing
+- Family affordable housing
+
+Use realistic synthetic project information modeled after public City housing and building-permit data. Do not use real private applicant information.
+
+STATUS REQUIREMENT
+
+At least 3 of the 10 applications must have exactly this status:
+
+“Ready for Review”
+
+Those three records must:
+- Have a valid San José address
+- Have all required documents received
+- Have no unresolved safety-critical flags
+- Have no unresolved jurisdiction issues
+- Have no unresolved information conflicts
+- Be eligible for normal staff review
+
+The remaining 7 records should show a realistic variety of statuses and review conditions, such as:
+
+- On Hold — Safety Review Required
+- Missing Required Documents
+- Priority Claim Requires Verification
+- Human Review Required
+- Additional Agency Review
+- Potential Issues Detected
+- Under Initial Review
+
+Do not make every application safety-critical or place every record on hold.
+
+REQUIRED APPLICATION VARIETY
+
+Create a balanced staff review list, for example:
+
+- 3 Ready for Review
+- 1 On Hold — Safety Review Required
+- 1 Missing Required Documents
+- 1 Priority Claim Requires Verification
+- 1 Human Review Required
+- 1 Additional Agency Review
+- 1 Potential Issues Detected
+- 1 Under Initial Review
+
+All records must still be within the City of San José jurisdiction.
+
+FILTERS
+
+Keep the existing filters shown in the Applications page, including:
+
+- All applications
+- Safety-critical
+- Jurisdiction review
+- Priority claim verification
+- Information conflict
+- Missing required documents
+- Human review required
+- Ready for review
+- Needs Human Review
+- Safety-Critical
+- New applications
+- Missing documents
+- Potential issues
+- Affordable housing
+- High priority
+- Additional agency review
+
+Make sure the filters work from the shared application dataset.
+
+The “Ready for Review” filter must return at least 3 applications.
+
+The “Affordable housing” filter must return all 10 records because this staff list is focused on affordable-housing-related review.
+
+The “Jurisdiction review” filter should not show accepted applications. If jurisdiction-review records are retained for audit purposes, keep them separate from the normal Applications list.
+
+DISPLAY REQUIREMENTS
+
+Every application card should show:
+
+- Project name
+- Application number
+- Full San José address
+- Project type
+- Affordable housing category
+- Status
+- Priority
+- Required action
+- Assigned department
+- View details button
+
+Do not display:
+- Oakland applications
+- Non-San José ZIP codes
+- Duplicate records
+- Placeholder names such as “Big A”
+- Records with missing city or ZIP information
+- Accepted applications marked as jurisdiction review
+
+CITY WORKER DASHBOARD CONSISTENCY
+
+Use the same shared dataset for:
+
+- City Worker Applications
+- Overview metrics
+- Review queue
+- Analytics
+- Application details
+- Search
+- Filters
+
+Update all counts so they reflect exactly 10 displayed City Worker applications.
+
+The City Worker Overview should show:
+- Total applications: 10
+- Ready for review: at least 3
+- Affordable housing applications: 10
+- Out-of-jurisdiction accepted applications: 0
+
+After completing the update, test the following:
+
+1. Search for “Oakland” and confirm no accepted application appears.
+2. Search for “123 H Street” and confirm it does not appear in the normal Applications list.
+3. Select “Ready for Review” and confirm at least 3 records appear.
+4. Select “Affordable housing” and confirm all 10 records appear.
+5. Confirm all 10 records have unique application numbers.
+6. Confirm all 10 records have San José addresses and valid ZIP codes.
+7. Confirm Overview, Applications, Review Queue, Analytics, and Application Details show matching counts.
+8. Tell me which files and functions were changed.

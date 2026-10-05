@@ -1,6 +1,7 @@
-/** Deterministic prototype safeguards. These do not establish legal permit jurisdiction. */
-export const COUNTY_CITIES = ['Campbell', 'Cupertino', 'Gilroy', 'Los Altos', 'Los Altos Hills', 'Los Gatos', 'Milpitas', 'Monte Sereno', 'Morgan Hill', 'Mountain View', 'Palo Alto', 'San Jose', 'Santa Clara', 'Saratoga', 'Sunnyvale', 'Unincorporated Santa Clara County', 'Unincorporated County', 'San Martin', 'Coyote', 'Alviso', 'Stanford', 'Mount Hamilton', 'New Almaden', 'Redwood Estates', 'Holy City'];
-export const COUNTY_ZIPS = new Set(['94022', '94023', '94024', '94035', '94039', '94040', '94041', '94042', '94043', '94085', '94086', '94087', '94088', '94089', '94301', '94302', '94303', '94304', '94305', '94306', '94309', '95002', '95008', '95009', '95011', '95013', '95014', '95015', '95020', '95021', '95026', '95030', '95031', '95032', '95033', '95035', '95036', '95037', '95038', '95042', '95044', '95046', '95050', '95051', '95052', '95053', '95054', '95055', '95056', '95070', '95071', '95101', '95103', '95106', '95108', '95109', '95110', '95111', '95112', '95113', '95115', '95116', '95117', '95118', '95119', '95120', '95121', '95122', '95123', '95124', '95125', '95126', '95127', '95128', '95129', '95130', '95131', '95132', '95133', '95134', '95135', '95136', '95138', '95139', '95140', '95141', '95148', '95150', '95151', '95152', '95153', '95154', '95155', '95156', '95157', '95158', '95159', '95160', '95161', '95164', '95170', '95172', '95173', '95190', '95191', '95192', '95193', '95194', '95196']);
+/** Deterministic San José service-address screen, not parcel/GIS permitting authority. */
+export const COUNTY_CITIES = ['San Jose'];
+export const SAN_JOSE_ZIPS = new Set(['95002', '95110', '95111', '95112', '95113', '95116', '95117', '95118', '95119', '95120', '95121', '95122', '95123', '95124', '95125', '95126', '95127', '95128', '95129', '95130', '95131', '95132', '95133', '95134', '95135', '95136', '95138', '95139', '95148']);
+export const COUNTY_ZIPS = SAN_JOSE_ZIPS;
 export const OUTSIDE_COUNTY_MESSAGE = 'This address appears to be outside the service jurisdiction. This portal only accepts projects within the configured jurisdiction. Please contact the permitting office for the city or county where your project is located.';
 export const FIRE_UNIT_THRESHOLD = 20;
 export const FIRE_MISSING_FLAG = 'SAFETY-CRITICAL: Fire/Life-Safety Plan Missing';
@@ -26,19 +27,19 @@ export type ScreeningInput = {
   documents: { category?: string; label: string; required: boolean; received: boolean; objectPath?: string; fileName?: string }[];
 };
 export function checkJurisdiction(address: string): { status: RuleChecks['jurisdictionStatus']; city: string; zip: string } {
-  const normalized = address.replace(/\bSan José\b/gi, 'San Jose').trim();
+  const normalized = address.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
   const zip = normalized.match(/\b(\d{5})(?:-\d{4})?\b/)?.[1] ?? '';
   const parts = normalized.split(',').map(p => p.trim()).filter(p => p && !/^(?:USA|United States)$/i.test(p));
   const stateZip = /\b(?:[A-Z]{2}|California)\s+\d{5}(?:-\d{4})?\b.*$/i;
   const lastPart = parts[parts.length - 1] ?? '';
-  const locality = stateZip.test(lastPart) && !lastPart.replace(stateZip, '').trim() ? parts[parts.length - 2] ?? '' : lastPart.replace(stateZip, '').replace(/\b\d{5}(?:-\d{4})?\b.*$/, '').trim();
+  const locality = /^(?:[A-Z]{2}|California)$/i.test(lastPart) || (stateZip.test(lastPart) && !lastPart.replace(stateZip, '').trim()) ? parts[parts.length - 2] ?? '' : lastPart.replace(stateZip, '').replace(/\b\d{5}(?:-\d{4})?\b.*$/, '').trim();
   const explicitLocality = parts.length >= 2 && !/^\d+\s/.test(locality);
   const known = [...COUNTY_CITIES].sort((a, b) => b.length - a.length).find(c => explicitLocality ? c.toLowerCase() === locality.toLowerCase() : new RegExp(`(?:^|[ ,])${c}$`, 'i').test(locality));
   const city = known ?? (explicitLocality && !/^(?:TBD|Unknown|To be determined|Address pending|CA|California)$/i.test(locality) ? locality : '');
-  const state = normalized.match(/\b([A-Z]{2})\s+\d{5}\b/i)?.[1]?.toUpperCase();
-  if ((state && state !== 'CA') || (zip && !COUNTY_ZIPS.has(zip)) || (city && !COUNTY_CITIES.some(c => c.toLowerCase() === city.toLowerCase()))) return { status: 'Outside County', city, zip };
-  // Shared-border ZIPs and missing/partial address components always need human confirmation.
-  if (!known || !zip || !/^\d+\s+\S+/.test(normalized) || zip === '95033' || zip === '94303') return { status: 'Needs Verification', city, zip };
+  const state = (normalized.match(/\b([A-Z]{2}|California)\s+\d{5}(?:-\d{4})?\b/i)?.[1] ?? (/^(?:[A-Z]{2}|California)$/i.test(lastPart) ? lastPart : undefined))?.toUpperCase();
+  if ((state && state !== 'CA' && state !== 'CALIFORNIA') || (zip && !COUNTY_ZIPS.has(zip)) || (city && !COUNTY_CITIES.some(c => c.toLowerCase() === city.toLowerCase()))) return { status: 'Outside County', city, zip };
+  // Street, explicit city, California, and an approved ZIP are all required.
+  if (!known || !zip || !state || !/^\d+[A-Za-z]?(?:-\d+)?\s+[A-Za-z0-9][A-Za-z0-9 .'#/-]*[A-Za-z]/.test(normalized)) return { status: 'Needs Verification', city, zip };
   return { status: 'In County', city, zip };
 }
 const words: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
@@ -96,12 +97,12 @@ export function screenApplication<T extends ScreeningInput>(input: T, config: Ru
   const recommendedRouting = [...new Set([...(safety.length ? ['Fire Marshal Review — REQUIRED'] : []), ...(unresolvedJurisdiction ? ['Human jurisdiction review'] : []), ...(conflicts.length ? ['Human Review Required'] : []), ...(pending ? ['Priority claim requires verification'] : []), ...(input.housingUnits >= 20 || conflicts.length ? ['Planning'] : []), 'Building', ...(applicableSafety.length ? ['Fire Marshal'] : [])])];
   const requiredReviewers = [...new Set([...safety.map(r => r.reviewer), ...(unresolvedJurisdiction || conflicts.length ? ['County Intake — Human Reviewer'] : []), ...(pending ? ['Priority claim verifier'] : [])])];
   const blockers = ['On Hold — Safety Review Required', 'On Hold — Information Review Required', 'Human jurisdiction review', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency', 'Needs Jurisdiction Verification'];
-  const reviewStatus = safety.length ? blockers[0]! : unresolvedJurisdiction ? blockers[2]! : conflicts.length ? blockers[1]! : blockers.includes(input.reviewStatus ?? '') ? 'New' : input.reviewStatus ?? 'New';
+  const reviewStatus = safety.length ? blockers[0]! : unresolvedJurisdiction ? blockers[2]! : conflicts.length ? blockers[1]! : blockers.includes(input.reviewStatus ?? '') ? 'New' : input.reviewStatus === 'Ready for Review' && pending ? 'Priority Claim Requires Verification' : input.reviewStatus === 'Ready for Review' && score < 100 ? 'Missing Required Documents' : input.reviewStatus ?? 'New';
   const areaMatch = config.zips.includes(jurisdiction.zip) || Boolean(input.censusTract && config.censusTracts.includes(input.censusTract));
   const underservedMatch = `${config.placeholder ? 'PLACEHOLDER DATA — not an official designation. ' : ''}${areaMatch ? 'Area matches configured list; staff verification still required.' : 'No match in configured list; staff verification required.'}`;
   const jurisdictionReason = jurisdiction.status === 'Outside County' ? OUTSIDE_COUNTY_MESSAGE : jurisdiction.status === 'Needs Verification' ? 'Address is incomplete, ambiguous, or uses a shared-boundary ZIP; a human must confirm service jurisdiction.' : 'Address city and ZIP match the configured prototype jurisdiction.';
   const ruleChecks: RuleChecks = { jurisdictionStatus: jurisdiction.status, jurisdictionReason, classificationConflicts: conflicts, safetyCriticalFlags: safety.map(r => r.message), underservedMatch, completenessLabel: conflicts.length ? 'Incomplete — needs clarification' : missingSafety.length ? 'Incomplete — safety document missing' : unresolvedJurisdiction ? 'Incomplete — jurisdiction verification required' : score === 100 ? 'Document checklist complete — human review still required' : 'Incomplete — documents missing' };
-  const aiStatus = safety.length ? 'Additional Agency Review Required' as const : conflicts.length || unresolvedJurisdiction ? 'Potential Issues Detected' as const : score < 100 ? 'Missing Information' as const : 'Ready for Human Review' as const;
+  const aiStatus = safety.length || reviewStatus === 'Additional Agency Review' ? 'Additional Agency Review Required' as const : conflicts.length || unresolvedJurisdiction || ['Potential Issues Detected', 'Human Review Required'].includes(reviewStatus) ? 'Potential Issues Detected' as const : score < 100 ? 'Missing Information' as const : 'Ready for Human Review' as const;
   const assignedDepartment = safety.length ? 'Fire Marshal' : unresolvedJurisdiction || conflicts.length ? 'County Intake' : pending ? 'Housing Review' : input.assignedDepartment ?? 'Building';
   return { ...input, documents, assignedDepartment, claimedPriorityCategories: categories, affordableHousing: claimed_affordable, underservedCommunity: claimed_underserved, claimed_affordable, claimed_underserved, priorityClaims, verification_status, priority: (verification_status === 'Verified' && jurisdiction.status !== 'Outside County' && !safety.length && !conflicts.length && !unresolvedJurisdiction ? 'High' : 'Normal') as 'High' | 'Normal', completenessScore: score, flags, recommendedRouting, requiredReviewers, reviewStatus, aiStatus, ruleChecks, aiSummary: `${ruleChecks.completenessLabel}. ${flags.join(' ')} ${conflicts.join(' ')} AI recommendations are advisory only. Authorized staff make all final decisions.` };
 }

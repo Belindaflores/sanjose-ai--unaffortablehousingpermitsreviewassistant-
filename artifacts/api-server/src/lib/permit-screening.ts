@@ -26,6 +26,14 @@ export async function screenedResponse(row: PermitRow) {
   if (screened.ruleChecks?.classificationConflicts.length) add("conflict", "review", screened.ruleChecks.classificationConflicts.join("; "), "Resolve conflict and record corrected fields and reason", "County Intake");
   if (screened.flags.includes("Priority claim requires verification")) add("priority", "verification", "Priority claim requires verification", "Verify claim, request supporting documentation, or reject claim", "Housing Review");
   if (screened.documents.some(d => d.required && !d.received)) add("documents", "review", screened.documents.filter(d => d.required && !d.received).map(d => d.label).join("; "), "Request missing required documents", "Building");
+  const staffReviews: Record<string, [string, string]> = {
+    "Human Review Required": ["Supportive-housing operating and affordability terms need a staff assessment.", "Review supportive-housing operating plan and affordability covenants"],
+    "Additional Agency Review": ["Small-scale housing requires coordinated planning and utility review.", "Coordinate Planning and utility agency review"],
+    "Potential Issues Detected": ["Density-bonus incentives and zoning standards need staff interpretation.", "Review density-bonus request and zoning compatibility"],
+    "Under Initial Review": ["The family housing proposal is in initial staff assessment.", "Complete initial completeness and planning assessment"],
+  };
+  const staffReview = staffReviews[screened.reviewStatus];
+  if (staffReview) add("information", "review", staffReview[0], staffReview[1], screened.assignedDepartment);
   for (const event of (row.auditHistory ?? []).slice().reverse().filter(e => ["safety", "jurisdiction", "conflict", "claim"].includes(e.action))) {
     const type = event.action === "claim" ? "priority" : event.action as PermitIssue["type"];
     if (!issues.some(i => i.type === type)) add(type, "resolved", event.reason, event.detail, type === "safety" ? "Fire Marshal" : type === "priority" ? "Housing Review" : "County Intake", "Cleared or resolved");
@@ -51,7 +59,7 @@ export function responseForViewer(application: Awaited<ReturnType<typeof screene
 export function toValues(application: typeof CreatePermitApplicationResponse._output) {
   const { ruleChecks: _checks, issues: _issues, ...values } = application;
   return {
-    ...values, dataSource: "Prototype Submission",
+    ...values, dataSource: application.dataSource ?? "Prototype Submission",
     submittedAt: new Date(application.submittedAt),
     documents: application.documents.map(d => ({ ...d, receivedAt: d.receivedAt ? new Date(d.receivedAt).toISOString() : undefined })),
     notes: application.notes.map(n => ({ ...n, createdAt: new Date(n.createdAt).toISOString() })),

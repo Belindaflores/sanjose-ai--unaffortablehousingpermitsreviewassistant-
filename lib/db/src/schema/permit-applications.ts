@@ -38,6 +38,8 @@ export const permitApplicationsTable = pgTable("permit_applications", {
   id: text("id").primaryKey(),
   revision: integer("revision").notNull().default(0),
   workspaceId: text("workspace_id").notNull().default("santa-clara-county"),
+  staffVisible: boolean("staff_visible").notNull().default(true),
+  housingCategory: text("housing_category").notNull().default(""),
   claimedPriorityCategories: jsonb("claimed_priority_categories").$type<string[]>().notNull().default([]),
   auditHistory: jsonb("audit_history").$type<{ id: string; action: string; decision: string; reason: string; workerId: string; workerName: string; at: string; detail: string }[]>().notNull().default([]),
   ownerUserId: text("owner_user_id"),

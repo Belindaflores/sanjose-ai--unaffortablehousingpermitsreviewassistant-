@@ -439,6 +439,8 @@ components:
           type: string
         projectType:
           type: string
+        housingCategory:
+          type: string
         housingUnits:
           type: integer
           minimum: 0
@@ -486,6 +488,12 @@ components:
             - On Hold — Safety Review Required
             - On Hold — Information Review Required
             - Human jurisdiction review
+            - Missing Required Documents
+            - Priority Claim Requires Verification
+            - Human Review Required
+            - Additional Agency Review
+            - Potential Issues Detected
+            - Under Initial Review
         completenessScore:
           type: integer
           minimum: 0

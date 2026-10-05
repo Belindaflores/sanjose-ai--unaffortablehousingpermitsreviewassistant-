@@ -3,10 +3,11 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db, permitApplicationsTable, permitRejectedAttemptsTable } from "@workspace/db";
 import { CreatePermitApplicationBody, CreatePermitApplicationResponse, ListPermitApplicationsQueryParams, ListPermitApplicationsResponse, UpdatePermitApplicationBody, UpdatePermitApplicationParams, UpdatePermitApplicationResponse, ReviewPermitChecksBody, CorrectPermitClassificationBody, checkJurisdiction, OUTSIDE_COUNTY_MESSAGE, screenApplication, EVIDENCE_LABEL, SAFETY_CRITICAL_DOCS, classificationConflicts } from "@workspace/api-zod";
-import { requirePortalUser, requireStaff, isStaff, canViewApplication } from "../middlewares/portal-auth";
+import { requirePortalUser, requireStaff, isStaff } from "../middlewares/portal-auth";
 import { readRuleConfig, screenedResponse, responseForViewer, toValues } from "../lib/permit-screening";
 import { validateUploadedDocument } from "./storage";
 import { buildPermitTimeline } from "../lib/permit-timeline";
+import { acceptedStaffApplications, canAccessPermit } from "../lib/accepted-staff-applications";
 
 const router = Router();
 router.use("/permit-applications", requirePortalUser);
@@ -16,7 +17,8 @@ router.get("/permit-applications", async (req, res): Promise<void> => {
   const user = res.locals.portalUser;
   // Applicant-supplied email filters can never broaden ownership.
   const rows = await db.select().from(permitApplicationsTable).where(isStaff(user) ? and(eq(permitApplicationsTable.workspaceId, user.workspaceId), parsed.data.applicantEmail ? eq(permitApplicationsTable.email, parsed.data.applicantEmail) : undefined) : eq(permitApplicationsTable.ownerUserId, user.id)).orderBy(desc(permitApplicationsTable.submittedAt));
-  const applications = await Promise.all(rows.filter(row => checkJurisdiction(row.projectAddress).status !== "Outside County").map(screenedResponse));
+  const visible = isStaff(user) ? acceptedStaffApplications(rows) : rows;
+  const applications = await Promise.all(visible.map(screenedResponse));
   res.json(ListPermitApplicationsResponse.parse(applications.map(app => responseForViewer(app, user))));
 });
 router.post("/permit-applications", async (req, res): Promise<void> => {
@@ -29,6 +31,11 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
     req.log.warn({ userId: user.id, rejectionId: req.id }, "Jurisdiction attempt rejected; not added to permit queue");
     res.status(422).json({ error: OUTSIDE_COUNTY_MESSAGE }); return;
   }
+  if (jurisdiction.status === "Needs Verification") {
+    const reason = "Human jurisdiction review — provide a full San José street address, California state, and an approved San José ZIP code before acceptance.";
+    await db.insert(permitRejectedAttemptsTable).values({ id: randomUUID(), userId: user.id, projectAddress: parsed.data.projectAddress, reason });
+    res.status(422).json({ error: reason }); return;
+  }
   const claimedAffordable = parsed.data.claimed_affordable ?? parsed.data.affordableHousing;
   try {
     for (const document of parsed.data.documents.filter(d => d.received)) {
@@ -38,10 +45,9 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
     }
   } catch (error) { res.status(422).json({ error: error instanceof Error ? error.message : "A document upload could not be verified." }); return; }
   if (claimedAffordable && !parsed.data.documents.some(d => d.label === EVIDENCE_LABEL)) parsed.data.documents.push({ category: "Priority evidence", label: EVIDENCE_LABEL, required: true, received: false });
-  if (jurisdiction.status === "Needs Verification") await db.insert(permitRejectedAttemptsTable).values({ id: randomUUID(), userId: user.id, projectAddress: parsed.data.projectAddress, reason: "Human jurisdiction review — incomplete, ambiguous, or shared-boundary address; not accepted for normal intake." });
   const now = new Date();
   const screened = CreatePermitApplicationResponse.parse(screenApplication({
-    ...parsed.data, id: `SCC-${now.getFullYear()}-${randomUUID()}`, ownerUserId: user.id, workspaceId: user.workspaceId,
+    ...parsed.data, dataSource: "Prototype Submission", id: `SCC-${now.getFullYear()}-${randomUUID()}`, ownerUserId: user.id, workspaceId: user.workspaceId,
     email: isStaff(user) ? parsed.data.email : user.email,
     applicantName: isStaff(user) ? parsed.data.applicantName : user.name,
     submittedAt: now, reviewStatus: "New", assignedDepartment: "Building", notes: [], reviewDecisions: {},
@@ -58,7 +64,7 @@ router.patch("/permit-applications/:id", requirePortalUser, requireStaff, async 
   const body = UpdatePermitApplicationBody.safeParse(req.body);
   if (!params.success || !body.success) { res.status(400).json({ error: "Invalid application update." }); return; }
   const [row] = await db.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, params.data.id));
-  if (!row || !canViewApplication(res.locals.portalUser, row.ownerUserId, row.workspaceId)) { res.status(404).json({ error: "Saved permit application not found" }); return; }
+   if (!row || !canAccessPermit(res.locals.portalUser, row)) { res.status(404).json({ error: "Saved permit application not found" }); return; }
   const existing = await screenedResponse(row);
   const additions = body.data.notes.filter(n => !row.notes.some(old => old.id === n.id)).map(n => ({ ...n, author: res.locals.portalUser.id, createdAt: new Date() }));
   const next = screenApplication({ ...existing, reviewStatus: body.data.reviewStatus, assignedDepartment: body.data.assignedDepartment, notes: [...additions, ...existing.notes] }, await readRuleConfig());
@@ -74,7 +80,7 @@ router.post("/permit-applications/:id/review-checks", requirePortalUser, require
   const id = typeof req.params.id === "string" ? req.params.id : "";
   if (!body.success || !body.data.note.trim() || !id) { res.status(400).json({ error: "A review action and a non-empty staff note are required." }); return; }
   const [row] = await db.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, id));
-  if (!row || !canViewApplication(res.locals.portalUser, row.ownerUserId, row.workspaceId)) { res.status(404).json({ error: "Application not found." }); return; }
+   if (!row || !canAccessPermit(res.locals.portalUser, row)) { res.status(404).json({ error: "Application not found." }); return; }
   const application = await screenedResponse(row);
   const audit = { note: body.data.note.trim(), by: res.locals.portalUser.id, at: new Date().toISOString() };
   if (body.data.action === "claim" || body.data.action === "request_documentation") {
@@ -116,7 +122,7 @@ router.patch("/permit-applications/:id/classification", requirePortalUser, async
   const id = typeof req.params.id === "string" ? req.params.id : "";
   if (!parsed.success) { res.status(400).json({ error: "Valid project type, units, and description are required." }); return; }
   const [row] = await db.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, id));
-  if (!row || !canViewApplication(res.locals.portalUser, row.ownerUserId, row.workspaceId)) { res.status(404).json({ error: "Application not found." }); return; }
+   if (!row || !canAccessPermit(res.locals.portalUser, row)) { res.status(404).json({ error: "Application not found." }); return; }
   const original = await screenedResponse(row);
   if (!isStaff(res.locals.portalUser) && (!original.ruleChecks?.classificationConflicts.length || ["Approved", "Denied"].includes(row.reviewStatus))) {
     res.status(403).json({ error: "Applicants may correct only pending classification conflicts, not finalized or otherwise reviewed records." }); return;

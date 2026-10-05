@@ -193,6 +193,12 @@ export const PermitApplicationReviewStatus = {
   'On_Hold_—_Safety_Review_Required': 'On Hold — Safety Review Required',
   'On_Hold_—_Information_Review_Required': 'On Hold — Information Review Required',
   Human_jurisdiction_review: 'Human jurisdiction review',
+  Missing_Required_Documents: 'Missing Required Documents',
+  Priority_Claim_Requires_Verification: 'Priority Claim Requires Verification',
+  Human_Review_Required: 'Human Review Required',
+  Additional_Agency_Review: 'Additional Agency Review',
+  Potential_Issues_Detected: 'Potential Issues Detected',
+  Under_Initial_Review: 'Under Initial Review',
 } as const;
 
 export interface PermitAuditEvent {
@@ -345,6 +351,7 @@ export interface PermitApplication {
   projectAddress: string;
   permitType: string;
   projectType: string;
+  housingCategory?: string;
   /** @minimum 0 */
   housingUnits: number;
   affordableHousing: boolean;
