@@ -190,7 +190,54 @@ export const PermitApplicationReviewStatus = {
   Needs_Jurisdiction_Verification: 'Needs Jurisdiction Verification',
   'Blocked_—_Safety_Review_Required': 'Blocked — Safety Review Required',
   'Needs_Human_Review_—_Data_Inconsistency': 'Needs Human Review — Data Inconsistency',
+  'On_Hold_—_Safety_Review_Required': 'On Hold — Safety Review Required',
+  'On_Hold_—_Information_Review_Required': 'On Hold — Information Review Required',
+  Human_jurisdiction_review: 'Human jurisdiction review',
 } as const;
+
+export interface PermitAuditEvent {
+  id: string;
+  action: string;
+  decision: string;
+  reason: string;
+  workerId: string;
+  workerName: string;
+  at: string;
+  detail: string;
+}
+
+export type PermitIssueType = typeof PermitIssueType[keyof typeof PermitIssueType];
+
+
+export const PermitIssueType = {
+  safety: 'safety',
+  jurisdiction: 'jurisdiction',
+  conflict: 'conflict',
+  priority: 'priority',
+  documents: 'documents',
+  information: 'information',
+} as const;
+
+export type PermitIssueSeverity = typeof PermitIssueSeverity[keyof typeof PermitIssueSeverity];
+
+
+export const PermitIssueSeverity = {
+  critical: 'critical',
+  review: 'review',
+  verification: 'verification',
+  informational: 'informational',
+  resolved: 'resolved',
+} as const;
+
+export interface PermitIssue {
+  type: PermitIssueType;
+  severity: PermitIssueSeverity;
+  reason: string;
+  requiredAction: string;
+  assignedDepartment: string;
+  status: string;
+  flaggedAt: string;
+}
 
 export type ClaimVerificationStatus = typeof ClaimVerificationStatus[keyof typeof ClaimVerificationStatus];
 
@@ -208,9 +255,27 @@ export interface ClaimVerification {
   at?: string;
 }
 
+export type PriorityClaimsAdditionalItemStatus = typeof PriorityClaimsAdditionalItemStatus[keyof typeof PriorityClaimsAdditionalItemStatus];
+
+
+export const PriorityClaimsAdditionalItemStatus = {
+  Unverified: 'Unverified',
+  Verified: 'Verified',
+  Rejected: 'Rejected',
+} as const;
+
+export type PriorityClaimsAdditionalItem = {
+  category: string;
+  status: PriorityClaimsAdditionalItemStatus;
+  note?: string;
+  by?: string;
+  at?: string;
+};
+
 export interface PriorityClaims {
   affordable: ClaimVerification;
   underserved: ClaimVerification;
+  additional?: PriorityClaimsAdditionalItem[];
 }
 
 export interface AuditDecision {
@@ -229,6 +294,7 @@ export interface SafetyDecision {
 
 export interface ReviewDecisions {
   jurisdiction?: AuditDecision;
+  classification?: AuditDecision;
   safety?: SafetyDecision[];
 }
 
@@ -247,6 +313,7 @@ export interface RuleChecks {
   safetyCriticalFlags: string[];
   underservedMatch: string;
   completenessLabel: string;
+  jurisdictionReason?: string;
 }
 
 export interface PermitApplication {
@@ -255,6 +322,15 @@ export interface PermitApplication {
   ownerUserId?: string | null;
   claimed_affordable?: boolean;
   claimed_underserved?: boolean;
+  /**
+     * @maxItems 10
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
+  claimedPriorityCategories?: string[];
+  workspaceId?: string;
+  auditHistory?: PermitAuditEvent[];
+  issues?: PermitIssue[];
   censusTract?: string;
   verification_status?: PermitApplicationVerificationStatus;
   priorityClaims?: PriorityClaims;
@@ -308,6 +384,7 @@ export interface PortalUser {
   name: string;
   role: PortalUserRole;
   staffAccessRequested: boolean;
+  workspaceId?: string;
 }
 
 export interface PermitRuleConfig {
@@ -413,14 +490,8 @@ export const ReviewPermitChecksBodyAction = {
   claim: 'claim',
   safety: 'safety',
   jurisdiction: 'jurisdiction',
-} as const;
-
-export type ReviewPermitChecksBodyClaim = typeof ReviewPermitChecksBodyClaim[keyof typeof ReviewPermitChecksBodyClaim];
-
-
-export const ReviewPermitChecksBodyClaim = {
-  affordable: 'affordable',
-  underserved: 'underserved',
+  request_documentation: 'request_documentation',
+  conflict: 'conflict',
 } as const;
 
 export type ReviewPermitChecksBodyDecision = typeof ReviewPermitChecksBodyDecision[keyof typeof ReviewPermitChecksBodyDecision];
@@ -433,9 +504,14 @@ export const ReviewPermitChecksBodyDecision = {
 
 export type ReviewPermitChecksBody = {
   action: ReviewPermitChecksBodyAction;
-  claim?: ReviewPermitChecksBodyClaim;
+  claim?: string;
   decision?: ReviewPermitChecksBodyDecision;
   document?: string;
+  projectType?: string;
+  /** @minimum 0 */
+  housingUnits?: number;
+  description?: string;
+  permitType?: string;
   /**
      * @minLength 1
      * @maxLength 2000

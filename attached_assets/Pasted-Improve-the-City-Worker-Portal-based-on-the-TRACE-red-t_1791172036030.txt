@@ -1,0 +1,198 @@
+Improve the City Worker Portal based on the TRACE red-team findings. Keep the existing staff dashboard, review queue, Applications tab, Application Records tab, and Analytics tab working.
+
+The City Worker Portal must treat backend validation rules as the source of truth. AI may summarize findings, but AI must not make final jurisdiction, priority, safety, access, or escalation decisions.
+
+1. PRIORITY CLAIM VERIFICATION — TRUST
+
+When an applicant selects:
+- Affordable housing
+- Underserved community
+- Priority housing
+- Any other priority category
+
+Do not automatically assign a higher priority score based only on the applicant’s self-reported selection.
+
+In the City Worker Portal:
+
+- Display the label:
+  “Priority claim requires verification”
+- Display the applicant’s selected priority claim.
+- Show the claim status as:
+  “Unverified”
+- Do not treat the application as priority-ready until a City Worker verifies the claim.
+- Add staff actions:
+  “Verify claim”
+  “Request supporting documentation”
+  “Reject claim”
+- Require a reason when a worker verifies or rejects the claim.
+- Record the worker, date, time, decision, and reason in the application history.
+- Show a visible audit trail on the Application Details page.
+
+Use this warning:
+“Priority status is based on applicant-provided information and requires staff verification before it affects routing or review order.”
+
+2. JURISDICTION VALIDATION — RELIABILITY
+
+Before an application enters the City Worker review queue, validate the project address on the server.
+
+For the current configured jurisdiction, reject addresses that are outside the jurisdiction.
+
+If an address is outside the configured jurisdiction:
+
+- Do not save it to the review queue.
+- Do not assign a priority score.
+- Do not label it High Priority.
+- Show this exact message:
+
+“This address appears to be outside the service jurisdiction. This portal only accepts projects within the configured jurisdiction. Please contact the permitting office for the city or county where your project is located.”
+
+If the address is incomplete, ambiguous, or located near a jurisdiction boundary:
+
+- Do not accept it automatically.
+- Send it to:
+  “Human jurisdiction review”
+- Display the reason to City Worker staff.
+- Log the attempted address and validation result.
+
+Enforce this check in backend code, not only in the form or frontend.
+
+3. SAFETY-CRITICAL FIRE/LIFE-SAFETY REVIEW — CONSEQUENCE
+
+For residential projects with 20 or more housing units:
+
+- Require a Fire/Life-Safety Plan.
+- If the required document is missing, create this exact flag:
+
+“SAFETY-CRITICAL: Fire/Life-Safety Plan Missing”
+
+Automatically:
+
+- Set status to:
+  “On Hold — Safety Review Required”
+- Add:
+  “Fire Marshal Review — REQUIRED”
+  as the highest-priority routing recommendation.
+- Create a visible escalation item in the City Worker review queue.
+- Prevent the application from progressing normally.
+- Do not show the application as 100% complete.
+- Show the missing document and reason to the applicant.
+- Display a prominent red safety-critical indicator on the staff dashboard and Application Details page.
+
+Only a City Worker with Fire Marshal permissions may clear or override the flag.
+
+When the flag is cleared or overridden, require:
+
+- Staff member name
+- Date and time
+- Reason
+- Action taken
+
+Store this information in the audit history.
+
+The backend must detect the missing document based on the unit count and document category. Do not rely only on the AI prompt or the uploaded file name.
+
+4. CONFLICTING APPLICATION INFORMATION — ESCALATION
+
+Compare the selected project type, unit count, application category, and project description.
+
+If the information conflicts—for example, a 120-unit apartment complex is entered under an inconsistent project classification:
+
+- Create this exact flag:
+
+“APPLICATION INFORMATION CONFLICT: Project classification does not match project description”
+
+- Set the application status to:
+  “On Hold — Information Review Required”
+- Do not mark the application 100% complete.
+- Do not allow normal progression until the conflict is resolved.
+- Add:
+  “Human Review Required”
+  to the routing recommendation.
+- Display the conflicting fields side by side for City Worker review.
+- Add a staff action:
+  “Resolve conflict”
+- Require the worker to record the resolution and reason.
+- Store the resolution in the application audit history.
+
+The AI summary should identify the conflict, but the backend validation rule must create the flag and block progression.
+
+5. CITY WORKER REVIEW QUEUE
+
+Update the review queue so staff can filter applications by:
+
+- Safety-critical
+- Jurisdiction review
+- Priority claim verification
+- Information conflict
+- Missing required documents
+- Human review required
+- Ready for review
+
+Sort the queue so safety-critical items appear first, followed by jurisdiction issues, information conflicts, priority verification, and ordinary review items.
+
+Each queue item should show:
+
+- Application number
+- Project name
+- Address
+- Current status
+- Priority level
+- Required action
+- Assigned department
+- Date flagged
+- View details button
+
+6. APPLICATION DETAILS PAGE
+
+Add a clear “Issues and Required Actions” section showing:
+
+- Issue type
+- Severity
+- Reason
+- Required staff action
+- Assigned department
+- Current status
+- Resolve or override action
+- Audit history
+
+Use clear colors:
+
+- Red: Safety-critical
+- Orange: Requires staff review
+- Gold: Priority verification
+- Blue: Informational
+- Green: Cleared or resolved
+
+7. ACCESS CONTROL
+
+Keep object-level access controls in place.
+
+- Applicants may only see their own applications.
+- Applicants may not see staff review notes, internal routing decisions, audit notes, or other applicants’ records.
+- City Workers may see applications assigned to their authorized workspace.
+- Only authorized staff may verify priority claims, clear safety flags, override rules, or resolve escalations.
+- Enforce these permissions on the server, not only in the interface.
+
+8. TEST CASES
+
+Create test data for these scenarios:
+
+A. Applicant falsely claims affordable or underserved priority.
+Expected result: “Priority claim requires verification”; no automatic priority decision.
+
+B. Application uses an address outside the configured jurisdiction.
+Expected result: application rejected before entering the review queue; no priority assigned.
+
+C. 48-unit residential project is missing the Fire/Life-Safety Plan.
+Expected result: safety-critical flag, On Hold status, Fire Marshal escalation, and progression blocked.
+
+D. 120-unit apartment project has conflicting project classification and description.
+Expected result: information-conflict flag, human review required, and progression blocked.
+
+After implementation, report:
+
+- Which files and functions were changed
+- Which validation rules run on the server
+- How each test case was tested
+- The exact visible output for each test case
+- Which actions require a City Worker override or approval

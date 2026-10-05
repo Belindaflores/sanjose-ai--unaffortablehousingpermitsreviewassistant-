@@ -13,4 +13,5 @@ export interface RuleChecks {
   safetyCriticalFlags: string[];
   underservedMatch: string;
   completenessLabel: string;
+  jurisdictionReason?: string;
 }

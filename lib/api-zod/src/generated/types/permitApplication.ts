@@ -10,7 +10,9 @@ import type { PermitApplicationDataSource } from './permitApplicationDataSource'
 import type { PermitApplicationPriority } from './permitApplicationPriority';
 import type { PermitApplicationReviewStatus } from './permitApplicationReviewStatus';
 import type { PermitApplicationVerificationStatus } from './permitApplicationVerificationStatus';
+import type { PermitAuditEvent } from './permitAuditEvent';
 import type { PermitDocument } from './permitDocument';
+import type { PermitIssue } from './permitIssue';
 import type { PermitStaffNote } from './permitStaffNote';
 import type { PermitTimelineEvent } from './permitTimelineEvent';
 import type { PriorityClaims } from './priorityClaims';
@@ -23,6 +25,15 @@ export interface PermitApplication {
   ownerUserId?: string | null;
   claimed_affordable?: boolean;
   claimed_underserved?: boolean;
+  /**
+     * @maxItems 10
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
+  claimedPriorityCategories?: string[];
+  workspaceId?: string;
+  auditHistory?: PermitAuditEvent[];
+  issues?: PermitIssue[];
   censusTract?: string;
   verification_status?: PermitApplicationVerificationStatus;
   priorityClaims?: PriorityClaims;
