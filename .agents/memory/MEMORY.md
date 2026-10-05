@@ -1,3 +1,4 @@
 - [Post-merge workflow ports](post-merge-workflow-ports.md) — a failed managed restart can leave an older server occupying the port while preview still responds.
 - [Permit geography](permit-geography.md) — the requested county-wide screen is a prototype geography boundary, not an official legal jurisdiction determination.
-- [Public permit separation](applicant-showcase.md) — public City records stay staff-only; account-owned saved drafts are separate from submitted permits.
+- [Public permit separation](applicant-showcase.md) — City records stay staff-only; private drafts and disclosed synthetic presentation submissions are not official permit filings.
+- [Date-only API boundaries](date-only-api-boundaries.md) — generated response validation coerces dates; normalize wire values and tolerate ISO timestamps in date-only views.

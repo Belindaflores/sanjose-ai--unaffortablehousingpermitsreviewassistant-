@@ -296,11 +296,43 @@ components:
         projectName: { type: string }
         projectAddress: { type: string }
         applicationType: { type: string }
-        status: { type: string, enum: [Draft, In progress, Action needed] }
+        status: { type: string, enum: [Draft, In progress, Action needed, Submitted — awaiting initial review] }
         description: { type: string }
         dateSaved: { type: string, format: date-time }
         lastUpdated: { type: string, format: date-time }
-      required: [id, applicationNumber, applicantEmail, accountOwner, projectName, projectAddress, applicationType, status, description, dateSaved, lastUpdated]
+        isPresentationSubmission: { type: boolean }
+        submittedAt: { type: [string, "null"], format: date-time }
+        documents:
+          type: array
+          items: { $ref: "#/components/schemas/PresentationDocument" }
+        timeline:
+          type: array
+          items: { $ref: "#/components/schemas/PresentationTimelineEvent" }
+      required: [id, applicationNumber, applicantEmail, accountOwner, projectName, projectAddress, applicationType, status, description, dateSaved, lastUpdated, isPresentationSubmission, submittedAt, documents, timeline]
+    PresentationDocument:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        fileName: { type: string }
+        category: { type: string }
+        required: { type: boolean }
+        uploadStatus: { type: string, enum: [Received] }
+        uploadedAt: { type: string, format: date-time }
+        fileType: { type: string, enum: [application/pdf] }
+        sizeBytes: { type: integer, minimum: 1 }
+        synthetic: { type: boolean }
+      required: [id, name, fileName, category, required, uploadStatus, uploadedAt, fileType, sizeBytes, synthetic]
+    PresentationTimelineEvent:
+      type: object
+      properties:
+        label: { type: string }
+        date: { type: string, format: date }
+        status: { type: string, enum: [complete, current, upcoming] }
+        documentIds:
+          type: array
+          items: { type: string }
+      required: [label, date, status, documentIds]
     SavedApplicationChanges:
       type: object
       properties:
