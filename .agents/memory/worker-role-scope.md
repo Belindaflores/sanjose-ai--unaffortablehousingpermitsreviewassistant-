@@ -9,8 +9,8 @@ City Workers view/manage existing applications and must not see submission entry
 
 **How to apply:** Review all worker entry points, not just the dashboard button, while preserving applicant navigation and submission behavior.
 
-The City Worker dashboard Applications count is capped at 100 for display only; smaller totals show their actual value. Do not cap, truncate, delete, or modify underlying data to achieve that display.
+The City Worker dashboard Applications count, including the official Active Building Permits overview card, is capped at 100 for display only; smaller totals show their actual value. Do not cap, truncate, delete, or modify underlying data to achieve that display.
 
-**Why:** The user explicitly stated that all application data must remain intact and available for management.
+**Why:** The user explicitly stated that all application data must remain intact and available for management, then clarified that still seeing 17,272 on the official-source dashboard card did not satisfy the requested display cap.
 
-**How to apply:** Cap only the dashboard metric. Keep full queue browsing, source datasets, data fetching, and unrelated review statistics unchanged.
+**How to apply:** Cap the dashboard counts, not just the private-submission metric. Keep full queue browsing, Records-page source totals, source datasets, data fetching, and unrelated review statistics unchanged.

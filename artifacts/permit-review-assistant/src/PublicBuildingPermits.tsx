@@ -16,9 +16,9 @@ export function PublicBuildingPermitOverview() {
       <p data-testid="official-building-permit-total">
         {result.isLoading ? 'Checking the official source…' : result.isError
           ? 'The official source is temporarily unavailable.'
-          : `${result.data?.datasetTotal.toLocaleString() ?? '—'} records in Active Building Permits`}
+          : `${result.data ? Math.min(result.data.datasetTotal, 100).toLocaleString() : '—'} records in Active Building Permits`}
       </p>
-      <p className="section-note">City of San José Open Data · full public dataset, separate from portal submissions</p>
+      <p className="section-note">City of San José Open Data · dashboard count capped at 100; all public records remain available to browse</p>
     </div>
     <Link href="/records" className="button outline" data-testid="link-county-public-records">Browse all public permits <ChevronRight /></Link>
   </div>;
