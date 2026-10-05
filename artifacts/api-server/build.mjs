@@ -18,7 +18,6 @@ async function buildAll() {
     entryPoints: [
       path.resolve(artifactDir, "src/index.ts"),
       path.resolve(artifactDir, "src/scripts/import-county-public-records.ts"),
-      path.resolve(artifactDir, "src/scripts/seed-city-worker-records.ts"),
     ],
     platform: "node",
     bundle: true,

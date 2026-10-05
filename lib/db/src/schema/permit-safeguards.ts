@@ -6,7 +6,6 @@ export const portalUsersTable = pgTable("portal_users", {
   email: text("email").notNull(),
   name: text("name").notNull(),
   role: text("role").notNull().default("applicant"),
-  workspaceId: text("workspace_id").notNull().default("santa-clara-county"),
   staffAccessRequested: boolean("staff_access_requested").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

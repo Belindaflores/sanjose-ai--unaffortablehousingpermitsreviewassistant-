@@ -15,27 +15,4 @@
 .saved-detail label { display: grid; gap: 6px; font-weight: 650; color: #153d53; }
 .saved-detail .input { width: 100%; box-sizing: border-box; padding: 12px; }
 .saved-detail textarea.input { resize: vertical; }
-@media (max-width: 780px) { .saved-card-grid, .saved-facts { grid-template-columns: 1fr; } .saved-card-heading { flex-wrap: wrap; } }.pres-section { margin-top: 18px; scroll-margin-top: 90px; }
-.pres-doc-list { list-style: none; margin: 14px 0; padding: 0; }
-.pres-doc { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 8px; border-top: 1px solid #e2ebf0; }
-.pres-doc-actions { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
-.pres-doc.linked { background: #f1f8fb; }
-.pres-doc strong { display: block; color: #153d53; font-size: 14px; }
-.pres-doc small { display: block; color: #607581; font-size: 12px; overflow-wrap: anywhere; }
-.pres-doc button { background: none; border: 0; cursor: pointer; }
-.pres-linked { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; }
-.pres-linked button { background: none; border: 0; cursor: pointer; padding: 0; }
-.ap-timeline .pres-linked li { display: block; padding-bottom: 6px; }
-.ap-timeline .pres-linked li::before { content: none; }
-.doc-dialog { background: #fff; width: min(560px, calc(100vw - 32px)); max-width: 560px; max-height: calc(100dvh - 32px); overflow-y: auto; }
-.doc-dialog-facts { margin: 8px 0; }
-.doc-disclosure { display: flex; gap: 8px; margin: 0; padding: 12px; background: #eef6f9; border-radius: 6px; font-size: 13px; color: #22576d; }
-.doc-disclosure svg { flex: none; margin-top: 2px; }
-.saved-detail.wide { max-width: none; }
-.submitted-card .saved-card-heading { flex-direction: column; gap: 4px; }
-.submitted-card .saved-status { white-space: normal; }
-@media (max-width: 640px) {
-  .pres-doc { grid-template-columns: 20px minmax(0, 1fr); }
-  .pres-doc-actions { grid-column: 2; justify-self: start; }
-  .pres-doc-actions button { min-height: 44px; padding: 4px 0; }
-}
+@media (max-width: 780px) { .saved-card-grid, .saved-facts { grid-template-columns: 1fr; } .saved-card-heading { flex-wrap: wrap; } }

@@ -8,7 +8,6 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "import-county-public-records": "pnpm run build && node --enable-source-maps ./dist/scripts/import-county-public-records.mjs",
-    "seed-city-worker-records": "pnpm run build && node --enable-source-maps ./dist/scripts/seed-city-worker-records.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test src/tests/*.test.ts"
   },

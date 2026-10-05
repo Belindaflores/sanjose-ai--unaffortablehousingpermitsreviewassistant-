@@ -6,7 +6,6 @@ import savedApplicationsRouter from "./saved-applications";
 import portalUserRouter from "./portal-user";
 import permitRuleConfigRouter from "./permit-rule-config";
 import storageRouter from "./storage";
-import portalReviewRecordsRouter from "./portal-review-records";
 
 const router: IRouter = Router();
 
@@ -16,7 +15,6 @@ router.use(permitRuleConfigRouter);
 router.use(storageRouter);
 router.use(permitApplicationsRouter);
 router.use(countyPublicRecordsRouter);
-router.use(portalReviewRecordsRouter);
 router.use(savedApplicationsRouter);
 
 export default router;

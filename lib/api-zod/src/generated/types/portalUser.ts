@@ -13,5 +13,4 @@ export interface PortalUser {
   name: string;
   role: PortalUserRole;
   staffAccessRequested: boolean;
-  workspaceId?: string;
 }

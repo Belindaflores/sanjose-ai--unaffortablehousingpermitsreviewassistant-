@@ -10,6 +10,5 @@ import type { SafetyDecision } from './safetyDecision';
 
 export interface ReviewDecisions {
   jurisdiction?: AuditDecision;
-  classification?: AuditDecision;
   safety?: SafetyDecision[];
 }

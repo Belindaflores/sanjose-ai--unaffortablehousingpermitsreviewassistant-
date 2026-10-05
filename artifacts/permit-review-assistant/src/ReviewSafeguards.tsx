@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCorrectPermitClassification, useGetPermitRuleConfig, useUpdatePermitRuleConfig, type PermitApplication as ApiApplication } from '@workspace/api-client-react';
+import { useCorrectPermitClassification, useGetPermitRuleConfig, useReviewPermitChecks, useUpdatePermitRuleConfig, type PermitApplication as ApiApplication } from '@workspace/api-client-react';
 import type { PermitApplication } from './App';
 
 export function ClassificationCorrection({ application: app, onSaved }: { application: PermitApplication; onSaved: (app: ApiApplication) => void }) {
@@ -9,12 +9,38 @@ export function ClassificationCorrection({ application: app, onSaved }: { applic
   const [description, setDescription] = useState(app.description);
   const [error, setError] = useState('');
   if (!app.ruleChecks?.classificationConflicts.length) return null;
-  return <section className="card card-body rule-panel" data-testid="classification-correction"><h2>Propose a classification correction</h2><p className="rule-alert">Project classification conflict — human review required. Your correction is a proposal. The application stays on hold until County staff review and resolve the conflict.</p><ul>{app.ruleChecks.classificationConflicts.map(c => <li key={c}>{c}</li>)}</ul><form onSubmit={async e => { e.preventDefault(); setError(''); try { onSaved(await correct.mutateAsync({ id: app.id, data: { projectType: type, housingUnits: Number(units), description } })); } catch { setError('The correction could not be saved. Check the values and try again.'); } }}>
+  return <section className="card card-body rule-panel" data-testid="classification-correction"><h2>Confirm or correct project classification</h2><p className="rule-alert">Project classification conflict — human review required. Confirm or correct the project type, unit count, and description before it can move forward.</p><ul>{app.ruleChecks.classificationConflicts.map(c => <li key={c}>{c}</li>)}</ul><form onSubmit={async e => { e.preventDefault(); setError(''); try { onSaved(await correct.mutateAsync({ id: app.id, data: { projectType: type, housingUnits: Number(units), description } })); } catch { setError('The correction could not be saved. Check the values and try again.'); } }}>
     <label>Project type<select className="select" value={type} onChange={e => setType(e.target.value)}><option>Single-family residential</option><option>Accessory dwelling unit</option><option>Addition</option><option>Small multifamily housing</option><option>Multifamily housing</option><option>Commercial</option><option>Senior residential care</option></select></label>
     <label>Housing units<input className="input" type="number" min="0" step="1" required value={units} onChange={e => setUnits(e.target.value)} /></label>
     <label>Project description<textarea className="textarea" required value={description} onChange={e => setDescription(e.target.value)} /></label>
-    {error && <p role="alert">{error}</p>}<button className="button teal" disabled={correct.isPending}>Submit proposed correction</button>
+    {error && <p role="alert">{error}</p>}<button className="button teal" disabled={correct.isPending}>Save correction and recheck</button>
   </form></section>;
+}
+export function StaffChecksPanel({ application: app, onSaved }: { application: PermitApplication; onSaved: (app: ApiApplication) => void }) {
+  const review = useReviewPermitChecks();
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
+  const submit = async (action: 'claim' | 'safety' | 'jurisdiction', extra: { claim?: 'affordable' | 'underserved'; decision?: 'Verified' | 'Rejected'; document?: string } = {}) => {
+    if (!note.trim()) { setError('A staff note is required for every verification or resolution.'); return; }
+    setError('');
+    try { const saved = await review.mutateAsync({ id: app.id, data: { action, note: note.trim(), ...extra } }); onSaved(saved); setNote(''); }
+    catch (e) { setError(e instanceof Error ? e.message : 'The staff decision could not be saved.'); }
+  };
+  return <section className="card card-body rule-panel" data-testid="staff-checks-panel"><h2>Verify priority claims</h2><p>Claims do not raise priority until staff verify them. Every decision records your signed-in user ID, note, and timestamp.</p>
+    {app.documents.filter(d => d.objectPath).map(d => <p key={d.objectPath}><a href={`/api/storage${d.objectPath}`} target="_blank" rel="noopener noreferrer">Download {d.label}: {d.fileName}</a></p>)}
+    <label>Required verification / resolution note<textarea className="textarea" value={note} onChange={e => setNote(e.target.value)} data-testid="textarea-verification-note" /></label>
+    {(['affordable', 'underserved'] as const).map(claim => {
+      const claimed = claim === 'affordable' ? app.claimed_affordable ?? app.affordableHousing : app.claimed_underserved ?? app.underservedCommunity;
+      if (!claimed) return null;
+      const decision = app.priorityClaims?.[claim];
+      return <div className="claim-row" key={claim}><strong>Applicant-claimed: {claim === 'affordable' ? 'Affordable housing project' : 'Located in an underserved community'}</strong><p>{decision?.status ?? 'Unverified'}{decision?.by && ` · ${decision.by} · ${decision.at}`}</p>{decision?.note && <p>{decision.note}</p>}{claim === 'underserved' && <p>{app.ruleChecks?.underservedMatch}</p>}<div className="actions"><button className="button teal" disabled={review.isPending || !note.trim()} onClick={() => submit('claim', { claim, decision: 'Verified' })} data-testid={`verify-${claim}`}>Verify</button><button className="button danger" disabled={review.isPending || !note.trim()} onClick={() => submit('claim', { claim, decision: 'Rejected' })} data-testid={`reject-${claim}`}>Reject</button></div></div>;
+    })}
+    {!app.affordableHousing && !app.underservedCommunity && <p>No applicant priority claims.</p>}
+    {app.ruleChecks?.jurisdictionStatus === 'Needs Verification' && !app.reviewDecisions?.jurisdiction && <div className="claim-row"><h3>Jurisdiction verification</h3><p>Confirm this project is within the prototype's Santa Clara County geography before intake proceeds.</p><button className="button teal" disabled={review.isPending || !note.trim()} onClick={() => submit('jurisdiction')}>Confirm County jurisdiction</button></div>}
+    {app.ruleChecks?.safetyCriticalFlags.length ? <div className="claim-row safety-critical"><h3>Required safety review</h3><p>Fire Marshal or City Worker must document the resolution. A waiver does not mark a missing document complete.</p><button className="button danger" disabled={review.isPending || !note.trim()} onClick={() => submit('safety', { document: 'Fire and life safety plan' })} data-testid="resolve-fire-safety">Record fire/life-safety resolution</button></div> : null}
+    {app.reviewDecisions?.safety?.map((d, index) => <p key={index}>Safety resolution: {d.document} — {d.note} · {d.by} · {d.at}</p>)}
+    {error && <p className="rule-alert" role="alert">{error}</p>}
+  </section>;
 }
 export function UnderservedConfigPanel() {
   const config = useGetPermitRuleConfig();
