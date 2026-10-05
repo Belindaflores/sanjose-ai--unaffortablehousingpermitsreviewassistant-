@@ -55,7 +55,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - Unit regression checks: `pnpm --filter @workspace/api-server test`.
 - To provision a staff account after it signs in, run `pnpm --filter @workspace/api-server exec tsx src/scripts/set-portal-role.ts <Clerk user ID> worker` from an authorized administrative shell. Use `fire_marshal` for Fire Marshal staff or `applicant` to revoke staff access. The worker-access screen shows the current account ID.
 - Underserved area configuration is editable by staff under Help & guidance. Initial values are clearly labelled placeholders and never automatically verify claims.
-- Applicant pages showcase two authentic housing-construction permits from City of San José Active Building Permits (apartments and an ADU), never pool or spa permits. These are read-only public examples, not privately owned submissions; don't invent documents, applicant identity, or screening results.
+- The two authentic City of San José housing-construction permit records (apartments and an ADU) appear only in the City Worker Portal's Application Records, separately from County environmental-health data and privately owned applicant submissions. Applicant Overview, Applications, and Records display only the signed-in user's own applications; don't invent applicant ownership, documents, or screening results for public records.
 - To import/refresh the two housing examples from the official City API: `pnpm --filter @workspace/api-server exec tsx src/scripts/import-housing-showcase.ts`. The import rejects non-housing records and preserves the original source dates and unit counts.
 
 ## Pointers
