@@ -1,9 +1,13 @@
 ---
 name: Authentic applicant showcase
-description: Public City housing records belong only in the credential-protected worker records view, never in applicant-owned submissions.
+description: Applicant presentations, staff review examples, and retained public datasets have separate scopes.
 ---
 
-Keep public City housing-permit records separate in the credential-protected City Worker Application Records view; never relabel them as applicant-owned submissions.
+Keep public City housing-permit records separate from applicant-owned submissions and the staff review queue. The user now wants staff Application Records to mirror Applications, not display imported City or County datasets. Retain those datasets in the database and API; never relabel them as applicant submissions.
+
+**Why:** Application Records is intended to be a searchable view of the same staff review queue, not a public permit inventory. The user explicitly authorized excluding the legacy applicant-only demo examples from staff and merging newly appended staff seeds into cached queues without overwriting existing records or notes.
+
+**How to apply:** Keep applicant presentations out of staff totals. When targeting a staff demo count, use the saved submissions actually returned by the existing API and geography checks, not a raw database row count. Do not edit saved addresses or relax the jurisdiction rules to meet a requested total.
 
 The user explicitly authorized one synthetic submitted account presentation (Opal ADU) and one saved draft (Meridian apartments). The submitted presentation is not an official City filing, public record, or staff review item. Its historical dates are supplied presentation data, not a verified submission history.
 
