@@ -1,0 +1,40 @@
+TASK: On the City Worker Portal application detail page (the page that opens when a staff member clicks an application in the Applications tab), make each RECEIVED document in the "Submitted documents" card clickable. Clicking it opens a sample PDF for that document type in a new browser tab. This is a small, contained addition. Do not redesign or restructure anything.
+
+PART 1 - CREATE 7 SAMPLE PDFs
+Create these static PDF files in the permit-review-assistant app's public folder, in a new folder named sample-documents:
+- architectural-plans.pdf
+- structural-plans.pdf
+- site-plan-and-survey.pdf
+- fire-and-life-safety-plan.pdf
+- title-24-energy-forms.pdf
+- owner-authorization.pdf
+- planning-zoning-forms.pdf
+
+Content requirements:
+- 1 to 2 pages each, professional-looking, and realistic for that document type (for example: title block and sheet index with a simple schematic floor plan for architectural plans; structural notes and a load/framing table for structural plans; parcel boundary schematic with a setbacks and lot coverage table for the site plan; egress, sprinkler, alarm and fire access notes for the fire and life safety plan; an energy compliance summary table for Title 24; an agent authorization letter with signature lines for owner authorization; zoning district, setbacks, FAR and parking summary for planning/zoning).
+- All seven should describe the same fictional project ("Sample Residential Project", a fictional Santa Clara County address) so they feel like one plan set.
+- Every page must show a clear banner: "SAMPLE DOCUMENT - SYNTHETIC DATA FOR EDUCATIONAL DEMONSTRATION - NOT AN OFFICIAL COUNTY RECORD".
+- All names, firms, license numbers, parcel numbers, and signatures must be obviously fictional. No real people, real companies, or real license numbers.
+- Generate the PDFs with a one-time script using tools already available in the environment. Do NOT add any new dependency to the app's package.json or runtime code, and do not add a PDF library to the app itself. Only the finished PDF files should be added to the app.
+
+PART 2 - MAKE THE DOCUMENT ROWS CLICKABLE
+- Location: only the "Submitted documents" card inside DetailPage in artifacts/permit-review-assistant/src/App.tsx, and one small CSS rule if needed.
+- Map each document to its PDF by its label (not by its file name): Architectural plans, Structural plans, Site plan and survey, Fire and life safety plan, Title 24 energy forms, Owner authorization, Planning / zoning forms.
+- For a document that is received, has no objectPath (seeded demo examples), and matches one of the 7 labels: make the document name in the row a link that opens the matching sample PDF in a new tab, using the app's base URL so it works in the preview and when published (for example `${import.meta.env.BASE_URL}sample-documents/<file>.pdf`). Use target="_blank" and rel="noopener noreferrer".
+- Keep the row layout, spacing, category and file name text, and the green "Received" badge exactly as they are. The only visual change is that the document name looks like a link (teal text, underline on hover, pointer cursor). Add one small new CSS class for this rather than editing any existing class.
+- Add an aria-label such as "Open sample Architectural plans (opens in new tab)" and a data-testid like link-document-architectural-plans.
+- Documents that are Missing: leave exactly as they are, not clickable.
+- Documents that already have an objectPath (real uploaded files from prototype submissions): leave exactly as they are. Do not touch upload logic.
+- The priority claim evidence document, or any document label not in the list of 7: leave as is.
+
+WHAT MUST NOT CHANGE (critical)
+- Do NOT change the layout, styling, or structure of any page, and do not edit any existing CSS class.
+- Do NOT change any rules or logic: screening, completeness scoring, jurisdiction check, safety flags, required reviewers, filters, search, human review actions, notes, escalation, analytics, or Application Records.
+- Do NOT change seedApplications() or any application data.
+- Do NOT touch the Applicant Portal (ApplicantPortal.tsx) or the New Application form.
+- Do NOT change the API, database schema, or dependencies.
+
+WHEN DONE
+- Confirm that on a seeded application with all documents received, each of the 7 rows opens the correct PDF in a new tab, in both the Replit preview and the published URL, and that the URL returns a real PDF and not the app's index page.
+- Confirm that a document marked Missing is not clickable and that the detail page layout looks identical apart from the link styling.
+- Tell me exactly which files you created and edited. If anything else would need to change to make this work, stop and ask me first.
