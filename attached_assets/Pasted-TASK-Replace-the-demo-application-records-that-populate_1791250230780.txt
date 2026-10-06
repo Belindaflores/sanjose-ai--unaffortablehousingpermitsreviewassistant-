@@ -1,0 +1,22 @@
+TASK: Replace the demo application records that populate the City Worker Portal's Applications tab with new synthetic records. This is a DATA-ONLY change.
+
+WHAT TO CHANGE
+- Only the seeded demo application data (the hardcoded example applications that fill the staff queue, currently 9 records with IDs like SCC-2025-1048xx).
+- Build the new records from the housing permit records already in our database (the City Housing Permits data), in the unaffordable housing category: mostly market-rate or high-cost residential projects such as multifamily buildings, small multifamily infill, ADUs, additions, and single-family builds in Santa Clara County.
+- Use real-looking project types, unit counts, addresses, and estimated costs that are consistent with those database records. Do not copy real owner or applicant names or contact details. All applicant names, company names, and emails must be fictional (use example.com emails).
+- Keep the same number of records (9), and mix the screening outcomes the way the current set does: some complete, some missing documents, some with fire/safety flags, one large development, and a range of review statuses including Approved and Revisions Required.
+- Every new record must keep the same fields, types, and shape as the existing ones, use IDs in the same format that are unique, and be marked as Synthetic in the data source field.
+- All addresses must be inside Santa Clara County so they pass the existing jurisdiction check. No Oakland or other out-of-county addresses.
+- Documents, flags, AI summaries, recommended routing, and timelines must be consistent with each record, produced the same way the current seed records produce them.
+
+WHAT MUST NOT CHANGE (critical)
+- Do NOT change the layout, styling, CSS, components, page structure, navigation, or any page's design. Do not redesign, rebuild, restructure, rename, or reorganize anything.
+- Do NOT change any rules or logic: jurisdiction check, completeness scoring, screening, required reviewers, safety-critical and classification-conflict flags, priority-claim verification, fire marshal requirements, filters, search, status badges, human review actions, notes, escalation, analytics, or the Application Records page.
+- Do NOT touch the Applicant Portal behavior. Two of the seeded records are reused as the applicant's demo applications (DEMO-APP-001 and DEMO-APP-002), so make sure those still work and still show for the demo applicant.
+- Do NOT delete or edit any applications that are already saved in the database, including ones my team submitted. Only replace the hardcoded seed data.
+- Do NOT reuse the previously removed submission IDs.
+- Do NOT change the API, database schema, or any dependencies.
+
+WHEN DONE
+- Confirm the Applications tab, filters, search, row clicks into the detail page, the Overview metrics, and the Analytics page all still load and work with no errors.
+- Tell me exactly which file(s) and which function(s) you edited. If anything else would need to change to make this work, stop and ask me first instead of changing it.
