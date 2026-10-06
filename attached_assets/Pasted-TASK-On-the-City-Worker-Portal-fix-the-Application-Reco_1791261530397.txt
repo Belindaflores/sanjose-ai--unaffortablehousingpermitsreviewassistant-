@@ -1,0 +1,31 @@
+TASK: On the City Worker Portal, fix the "Application Records" page so it shows exactly the same applications as the "Applications" tab, plus 6 new synthetic applications, for a total of 20 records listed in a single column. Make ONLY the changes below. Do not redesign, rebuild, or restructure anything.
+
+CHANGE 1 - STOP SHOWING PUBLIC DATA ON THE RECORDS PAGE (RecordsPage in artifacts/permit-review-assistant/src/App.tsx)
+- Remove the "City Housing Permits" section, including the statement "N imported here · 17,272 records in the City source dataset".
+- Remove the "County Public Data" section (the 100 County records).
+- Remove the "Public source" attribution card (SCC Plan Check Progress), and the loading and error cards that belong only to the County public records. Remove the County public records query call from this page, and any imports that become unused.
+- Update the count line next to the search bar so it reads only "X of Y records", with no "· N City housing · N County public" part.
+- Keep the source dropdown in the same place with the same styling, but change its options to: All, Synthetic examples, Prototype Submissions. "Synthetic examples" shows the records currently labeled "Synthetic example"; "Prototype Submissions" shows the saved database submissions.
+- Update only the text of the page description under the title so it no longer mentions City housing permits or County environmental-health records. Suggested text: "Searchable record of every permit application in the review queue, including synthetic examples and prototype submissions."
+- Do NOT delete or modify any City or County data in the database or API. They just stop appearing on this page.
+- Keep the record cards exactly as they are now (same fields, same design, same click-through to the application detail page), the saved-records loading and error notices, the search box, the empty states, and the "Prototype Submissions" section heading.
+- The page must list the same set of applications that the Applications tab shows. Build the list from the same merged application list that the Applications tab uses (the `applications` prop already passed to RecordsPage) so the two tabs always match. Keep the existing sort order (newest first).
+
+CHANGE 2 - ADD 6 NEW SYNTHETIC APPLICATIONS
+- Append 6 new records to the END of seedApplications() in the same file, after the current nine. Do not reorder or edit the existing nine, because seedApplicantApplications() reuses two of them by position.
+- The Applications queue currently shows the 9 seeded records plus the applications saved in the database (expected 5). Add 6 so the total across both tabs is exactly 20. If the current total is not 14, add whatever number gets the total to exactly 20 and tell me.
+- Use the same approach as the existing nine: unaffordable-housing category (market-rate or high-cost residential projects such as multifamily, small multifamily infill, ADUs, additions, single-family builds), addresses, unit counts, and valuations that reference the housing records and City Active Building Permits data already used for the seeds, in Santa Clara County only. All people, companies, and emails must be fictional (example.com emails). No priority claims (affordableHousing false, underservedCommunity false), same as the existing nine.
+- IDs continue the sequence: SCC-2026-205910 to SCC-2026-205915. dataSource must be 'Synthetic'. Use the same fields and shape as the existing seeds, and build documents with the existing baseDocuments() helper and the timelines with timelineFor().
+- Use a different review stage for each so the demo looks varied, for example: New, In County Intake, Fire Review, Ready for Review, Denied (with a fictional note explaining the denial), and Building Review. Make flags, AI status, completeness score, recommended routing, and summaries consistent with the existing rules, for example a multifamily project missing its fire and life safety plan must carry the same Safety-Critical flag and Blocked status the existing seeds use. Spread the submitted dates out so none are duplicates.
+- Update only the sentence in the Help page's Demo data card that says "nine seeded examples" so it states the correct new number. Do not change anything else on that page.
+
+WHAT MUST NOT CHANGE (critical)
+- Do NOT change the layout, styling, CSS, components, navigation, or design of any page. Do not touch any existing CSS class.
+- Do NOT change any rules or logic: jurisdiction check, completeness scoring, screening, safety flags, required reviewers, filters, search, human review actions, notes, escalation, analytics calculations, or the application detail page.
+- Do NOT change the Applicant Portal, the New Application form, or the 5 saved applications in the database. Do NOT delete or edit any saved or draft database records.
+- Do NOT change the API, database schema, or dependencies.
+
+WHEN DONE
+- Confirm that the Applications tab and the Application Records tab show the identical 20 applications, with the Records tab listing them in one column and no City or County public records.
+- Confirm that search, the new source dropdown, row clicks to the detail page, the Overview metrics, and the Analytics page all load without errors.
+- Tell me exactly which files and functions you edited. If anything else would need to change to make this work, stop and ask me first.
