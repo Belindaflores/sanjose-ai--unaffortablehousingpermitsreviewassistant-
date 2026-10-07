@@ -1,0 +1,102 @@
+I already have an existing San José permit application web app. Do NOT rebuild or remove the existing functionality.
+
+The app currently:
+
+allows applicants/builders to submit permit applications
+displays uploaded/submitted documents
+identifies missing documents
+flags documents that require staff review
+identifies affordable/unaffordable housing projects and places them at HIGH PRIORITY on the City staff dashboard
+I want to add a new feature called “AI Intake Analysis.”
+
+The AI Intake Analysis should run immediately after an applicant submits an application and documents.
+
+PURPOSE:
+The AI should extract structured information from the submitted application and uploaded documents before the application reaches a City staff reviewer.
+
+The AI should attempt to extract:
+
+Project information
+Project address
+APN
+Project name
+Applicant/developer name
+Applicant contact information
+Project type
+New construction vs remodel/addition
+Number of proposed residential units
+Number of affordable/restricted units
+Percentage of units that are affordable
+Number of buildings
+Number of stories
+Proposed square footage
+Parking spaces
+Whether the applicant identifies the project as affordable housing
+Whether the applicant identifies SB 35, AB 2162, SB 330, Density Bonus, or another streamlined housing process
+Document information
+For every uploaded document, extract:
+document filename
+document type
+project address shown in document
+APN shown in document
+project name shown in document
+date of document
+applicant/developer name if available
+number of pages
+whether the document appears readable
+whether the document appears to belong to the submitted project
+Create an “AI Intake Summary” displayed to City staff.
+Example:
+
+AI INTAKE SUMMARY
+
+Project:
+123 Main Street
+
+APN:
+123-45-678
+
+Project Type:
+Multifamily New Construction
+
+Units:
+120
+
+Affordable Units:
+120
+
+Affordable Housing:
+YES — 100%
+
+Potential Housing Process:
+Potential SB 35 / streamlined housing project
+
+Documents Detected:
+17
+
+Required Documents Expected:
+18
+
+Missing:
+1
+
+Potential Document Mismatch:
+1
+
+Needs Staff Verification:
+2
+
+IMPORTANT:
+The AI must NOT make a final legal determination that a project qualifies for SB 35 or any other legal/program status. Use language such as “Potentially qualifies,” “AI identified as potentially eligible,” or “Staff verification required.”
+
+Every AI extraction should display its confidence level:
+HIGH / MEDIUM / LOW.
+
+For example:
+Affordable units: 120 — HIGH confidence
+APN: 123-45-678 — HIGH confidence
+SB 35 eligibility: POTENTIAL — MEDIUM confidence
+
+Add a “View AI Evidence” button next to each extracted field. When clicked, show the document name and page number where the AI found the information, if available.
+
+Do not allow the AI to silently invent information. If information cannot be found, display “Not found in submitted documents.”
