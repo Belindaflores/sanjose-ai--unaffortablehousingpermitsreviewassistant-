@@ -1,0 +1,197 @@
+Update my existing Santa Clara County Permit Review Assistant prototype.
+
+Do NOT rebuild the app from scratch. Keep the current layout, database, navigation, AI pre-screening logic, application records, analytics, styling, and all existing working features unless a change is specifically requested below.
+
+I need two fixes.
+
+### 1. Fix Project Address Jurisdiction Validation
+
+Current problem:
+
+The Project Address validation correctly rejects addresses clearly outside Santa Clara County, which I want to keep.
+
+However, it is incorrectly flagging valid addresses in cities within Santa Clara County, such as San Jose, as outside Santa Clara County jurisdiction.
+
+Update the address validation logic.
+
+The prototype should accept addresses located anywhere geographically within Santa Clara County, including cities such as:
+
+- San Jose
+- Santa Clara
+- Sunnyvale
+- Mountain View
+- Cupertino
+- Milpitas
+- Campbell
+- Los Gatos
+- Saratoga
+- Morgan Hill
+- Gilroy
+- Palo Alto
+- Los Altos
+- Los Altos Hills
+- Monte Sereno
+
+For this student prototype, treat an address located within Santa Clara County as valid for submission.
+
+Do NOT attempt to distinguish between incorporated city permitting jurisdiction and unincorporated County permitting jurisdiction at this stage.
+
+The goal of this prototype validation is only:
+
+- Accept addresses within Santa Clara County
+- Reject addresses clearly outside Santa Clara County
+
+Examples:
+
+VALID:
+"123 Main St, San Jose, CA"
+"500 El Camino Real, Santa Clara, CA"
+"100 Castro St, Mountain View, CA"
+"7500 Stevens Creek Blvd, Cupertino, CA"
+
+INVALID:
+"123 H Street, Oakland, CA"
+"100 Market St, San Francisco, CA"
+"200 Broadway, Sacramento, CA"
+
+If the address is outside Santa Clara County, show a clear message such as:
+
+"This project address appears to be outside Santa Clara County. Please verify the project location before submitting."
+
+Do not create a Santa Clara County application record when an address is clearly outside Santa Clara County.
+
+If the address is inside Santa Clara County, allow the user to continue normally.
+
+Do not rely on an overly strict text match that rejects valid Santa Clara County cities.
+
+### 2. Remove Real File Uploads From Required Documents
+
+Current problem:
+
+The permit application currently has required document/attachment controls that open the user's computer file picker and allow actual files to be uploaded.
+
+Remove all real file-upload functionality from this prototype.
+
+This is a student prototype and should NOT upload or store actual files.
+
+Replace each required document upload control with a simple interactive prototype toggle/button.
+
+Required document categories should remain visible, including:
+
+- Architectural plans
+- Structural plans
+- Site plan and survey
+- Fire and life safety plan
+- Title 24 energy forms
+- Owner authorization
+
+For each document, use a simple status button or checkbox.
+
+Default state:
+
+"Missing"
+
+When the user clicks it:
+
+"Submitted"
+
+If clicked again, it may return to:
+
+"Missing"
+
+The control should NOT:
+
+- open the operating system file picker
+- upload a file
+- request a file path
+- store a document
+- require a real attachment
+
+The controls are only simulating whether a document was submitted.
+
+### 3. Allow Application Submission Regardless of Missing Documents
+
+The user must still be able to submit the permit application even if some or all document buttons remain marked "Missing."
+
+Do NOT block submission because required documents are missing.
+
+Instead, after submission, use the existing pre-screening logic to:
+
+- calculate completeness
+- list missing documents
+- show flags
+- generate the pre-screening status
+- recommend routing
+
+Example:
+
+If Architectural Plans and Structural Plans are marked "Submitted" but Fire and Life Safety Plan is marked "Missing," the application should still submit successfully.
+
+The result page should then show the missing Fire and Life Safety Plan as part of the AI/rule-based pre-screening output.
+
+This is intentional because the prototype is supposed to demonstrate how the system detects incomplete applications.
+
+### 4. Preserve Database Behavior
+
+Continue storing the document statuses in the database as simple values such as:
+
+- submitted
+- missing
+
+Do not store actual files.
+
+Existing application records and database data should remain intact.
+
+### 5. Preserve Everything Else
+
+Do not change:
+
+- the visual design
+- County Worker Portal
+- role switching
+- application queue
+- application records
+- analytics
+- priority logic
+- AI/rule-based pre-screening
+- routing logic
+- human-review disclaimer
+- persistent database
+- existing navigation
+
+Only fix the address validation and simulated document submission behavior described above.
+
+### 6. Test Before Finishing
+
+Verify these cases:
+
+Test A:
+Project Address:
+"123 Main St, San Jose, CA"
+
+Expected:
+Accepted as within Santa Clara County.
+
+Test B:
+Project Address:
+"123 H Street, Oakland, CA"
+
+Expected:
+Rejected as outside Santa Clara County.
+
+Test C:
+Leave every document status as "Missing" and submit.
+
+Expected:
+Application is accepted, saved, and pre-screening reports the missing documents.
+
+Test D:
+Mark three documents "Submitted" and leave three "Missing."
+
+Expected:
+Application is accepted and the pre-screening result accurately reflects the three missing documents.
+
+Test E:
+Clicking any document control should never open a file browser.
+
+Fix any errors found during these tests before considering the update complete.

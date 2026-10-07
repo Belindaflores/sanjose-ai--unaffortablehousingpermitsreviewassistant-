@@ -2,6 +2,7 @@
 export const COUNTY_CITIES = ['Campbell', 'Cupertino', 'Gilroy', 'Los Altos', 'Los Altos Hills', 'Los Gatos', 'Milpitas', 'Monte Sereno', 'Morgan Hill', 'Mountain View', 'Palo Alto', 'San Jose', 'Santa Clara', 'Saratoga', 'Sunnyvale', 'Unincorporated Santa Clara County', 'Unincorporated County', 'San Martin', 'Coyote', 'Alviso', 'Stanford', 'Mount Hamilton', 'New Almaden', 'Redwood Estates', 'Holy City'];
 export const COUNTY_ZIPS = new Set(['94022', '94023', '94024', '94035', '94039', '94040', '94041', '94042', '94043', '94085', '94086', '94087', '94088', '94089', '94301', '94302', '94303', '94304', '94305', '94306', '94309', '95002', '95008', '95009', '95011', '95013', '95014', '95015', '95020', '95021', '95026', '95030', '95031', '95032', '95033', '95035', '95036', '95037', '95038', '95042', '95044', '95046', '95050', '95051', '95052', '95053', '95054', '95055', '95056', '95070', '95071', '95101', '95103', '95106', '95108', '95109', '95110', '95111', '95112', '95113', '95115', '95116', '95117', '95118', '95119', '95120', '95121', '95122', '95123', '95124', '95125', '95126', '95127', '95128', '95129', '95130', '95131', '95132', '95133', '95134', '95135', '95136', '95138', '95139', '95140', '95141', '95148', '95150', '95151', '95152', '95153', '95154', '95155', '95156', '95157', '95158', '95159', '95160', '95161', '95164', '95170', '95172', '95173', '95190', '95191', '95192', '95193', '95194', '95196']);
 export const OUTSIDE_COUNTY_MESSAGE = 'This address appears to be outside Santa Clara County. This portal only accepts projects within County jurisdiction. Please contact the permitting office for the city or county where your project is located.';
+const COUNTIES_OUTSIDE_COVERAGE = ['Oakland', 'San Francisco', 'Sacramento', 'Fremont', 'Berkeley', 'Richmond', 'Hayward', 'Dublin', 'Pleasanton', 'Livermore', 'Concord', 'Walnut Creek', 'Antioch', 'Brentwood', 'Stockton', 'Modesto', 'Fresno', 'Los Angeles', 'San Diego', 'San Bernardino', 'Riverside', 'Santa Cruz', 'Watsonville', 'Monterey', 'Salinas', 'Marin', 'Napa', 'Vallejo', 'Santa Rosa', 'Chico', 'Eureka'];
 export const FIRE_UNIT_THRESHOLD = 5;
 export const EVIDENCE_LABEL = 'Affordable housing supporting evidence';
 export const SAFETY_CRITICAL_DOCS = [{ label: 'Fire and life safety plan', reviewer: 'Fire Marshal', message: 'Missing fire/life-safety plan — Fire Marshal review required.', applies: (input: ScreeningInput) => /multi[- ]?family/i.test(input.projectType) || input.housingUnits >= FIRE_UNIT_THRESHOLD || descriptionUnitCounts(input.description).some(n => n >= FIRE_UNIT_THRESHOLD) || /\b(?:multifamily|multi-family|apartment complex)\b/i.test(input.description) }];
@@ -23,18 +24,33 @@ export type ScreeningInput = {
 export function checkJurisdiction(address: string): { status: RuleChecks['jurisdictionStatus']; city: string; zip: string } {
   const normalized = address.replace(/\bSan José\b/gi, 'San Jose').trim();
   const zip = normalized.match(/\b(\d{5})(?:-\d{4})?\b/)?.[1] ?? '';
-  const parts = normalized.split(',').map(p => p.trim()).filter(p => p && !/^(?:USA|United States)$/i.test(p));
-  const stateZip = /\b(?:[A-Z]{2}|California)\s+\d{5}(?:-\d{4})?\b.*$/i;
-  const lastPart = parts[parts.length - 1] ?? '';
-  const locality = stateZip.test(lastPart) && !lastPart.replace(stateZip, '').trim() ? parts[parts.length - 2] ?? '' : lastPart.replace(stateZip, '').replace(/\b\d{5}(?:-\d{4})?\b.*$/, '').trim();
-  const explicitLocality = parts.length >= 2 && !/^\d+\s/.test(locality);
-  const known = [...COUNTY_CITIES].sort((a, b) => b.length - a.length).find(c => explicitLocality ? c.toLowerCase() === locality.toLowerCase() : new RegExp(`(?:^|[ ,])${c}$`, 'i').test(locality));
-  const city = known ?? (explicitLocality && !/^(?:TBD|Unknown|To be determined|Address pending)$/i.test(locality) ? locality : '');
-  const state = normalized.match(/\b([A-Z]{2})\s+\d{5}\b/i)?.[1]?.toUpperCase();
-  if ((state && state !== 'CA') || (zip && !COUNTY_ZIPS.has(zip)) || (city && !COUNTY_CITIES.some(c => c.toLowerCase() === city.toLowerCase()))) return { status: 'Outside County', city, zip };
-  // Shared-border ZIPs and missing/partial address components always need human confirmation.
-  if (!known || !zip || !/^\d+\s+\S+/.test(normalized) || zip === '95033' || zip === '94303') return { status: 'Needs Verification', city, zip };
-  return { status: 'In County', city, zip };
+  const trailingState = normalized.match(/(?:^|[,\s])(California|[A-Z]{2})(?:\s+\d{5}(?:-\d{4})?)?\s*$/i);
+  const state = trailingState?.[1]?.toUpperCase() === 'CALIFORNIA' ? 'CA' : trailingState?.[1]?.toUpperCase();
+  const withoutStateOrZip = normalized
+    .replace(/\s+\d{5}(?:-\d{4})?\s*$/, '')
+    .replace(/(?:^|[,\s])(?:California|[A-Z]{2})\s*$/i, '')
+    .trim().replace(/,+\s*$/, '');
+  const commaParts = withoutStateOrZip.split(',').map(part => part.trim()).filter(Boolean);
+  const localityText = commaParts.at(-1) ?? '';
+  const matchCity = (cities: readonly string[], source: string) => [...cities]
+    .sort((a, b) => b.length - a.length)
+    .find(candidate => new RegExp(`(?:^|[\\s,])${candidate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i').test(source));
+  const known = matchCity(COUNTY_CITIES, localityText);
+  const outsideCity = matchCity(COUNTIES_OUTSIDE_COVERAGE, localityText);
+  const city = known ?? outsideCity ?? '';
+  const completeStreet = /^\s*\d+\s+\S+/.test(normalized);
+
+  if (state && state !== 'CA') return { status: 'Outside County', city, zip };
+  if (zip && !COUNTY_ZIPS.has(zip)) return { status: 'Outside County', city, zip };
+  if (outsideCity && !known) return { status: 'Outside County', city, zip };
+  if (known && !completeStreet) return { status: 'Needs Verification', city: known, zip };
+  if (known) {
+    // A recognized County city is sufficient for this prototype when no ZIP
+    // was entered; shared-border ZIPs remain eligible but need staff review.
+    return { status: zip === '95033' || zip === '94303' ? 'Needs Verification' : 'In County', city: known, zip };
+  }
+  if (zip && COUNTY_ZIPS.has(zip)) return { status: 'Needs Verification', city: '', zip };
+  return { status: 'Needs Verification', city: '', zip };
 }
 const words: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
 export function descriptionUnitCounts(description: string): number[] {
