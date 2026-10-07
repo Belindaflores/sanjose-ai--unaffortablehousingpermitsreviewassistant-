@@ -179,28 +179,16 @@ paths:
   /storage/uploads/request-url:
     post:
       operationId: requestUploadUrl
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name: { type: string, minLength: 1, maxLength: 200 }
-                size: { type: integer, minimum: 1, maximum: 10485760 }
-                contentType: { type: string, enum: [application/pdf, image/png, image/jpeg] }
-              required: [name, size, contentType]
       responses:
-        "200":
-          description: Private direct-to-storage upload URL
+        "410":
+          description: Actual file uploads are disabled; use the simulated document-status toggles
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  uploadURL: { type: string }
-                  objectPath: { type: string }
-                required: [uploadURL, objectPath]
+                  error: { type: string }
+                required: [error]
   /storage/objects/{objectPath}:
     get:
       operationId: downloadPermitDocument

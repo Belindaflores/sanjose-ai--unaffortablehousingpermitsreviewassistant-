@@ -28,8 +28,7 @@ import type {
   PermitApplication,
   PermitRuleConfig,
   PortalUser,
-  RequestUploadUrl200,
-  RequestUploadUrlBody,
+  RequestUploadUrl410,
   ReviewPermitChecksBody,
   SavedApplication,
   SavedApplicationChanges,
@@ -834,28 +833,14 @@ export const getRequestUploadUrlUrl = () => {
   return `/api/storage/uploads/request-url`
 }
 
-export const requestUploadUrl = async (requestUploadUrlBody: RequestUploadUrlBody, options?: Parameters<typeof customFetch>[1]): Promise<RequestUploadUrl200> => {
+export const requestUploadUrl = async ( options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customFetch<RequestUploadUrl200>(getRequestUploadUrlUrl(),
+  return customFetch<unknown>(getRequestUploadUrlUrl(),
   {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(requestUploadUrlBody)
+    method: 'POST'
+
+
   }
 );}
 
@@ -865,9 +850,9 @@ return customFetch<RequestUploadUrl200>(getRequestUploadUrlUrl(),
 
 export const getRequestUploadUrlMutationKey = () => ['requestUploadUrl'] as const;
 
-export const getRequestUploadUrlMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext> => {
+export const getRequestUploadUrlMutationOptions = <TError = ErrorType<RequestUploadUrl410>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,void, TContext> => {
 
 const mutationKey = getRequestUploadUrlMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -879,10 +864,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestUploadUrl>>, RequestUploadUrlMutationVariables> = (props) => {
-          const {data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestUploadUrl>>, void> = () => {
 
-          return  requestUploadUrl(data,requestOptions)
+
+          return  requestUploadUrl(requestOptions)
         }
 
 
@@ -893,16 +878,16 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type RequestUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestUploadUrl>>>
-    export type RequestUploadUrlMutationBody = BodyType<RequestUploadUrlBody>
-    export type RequestUploadUrlMutationError = ErrorType<unknown>
-    export type RequestUploadUrlMutationVariables = {data: BodyType<RequestUploadUrlBody>}
 
-    export const useRequestUploadUrl = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+    export type RequestUploadUrlMutationError = ErrorType<RequestUploadUrl410>
+
+
+    export const useRequestUploadUrl = <TError = ErrorType<RequestUploadUrl410>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof requestUploadUrl>>,
         TError,
-        RequestUploadUrlMutationVariables,
+        void,
         TContext
       > => {
       return useMutation(getRequestUploadUrlMutationOptions(options));

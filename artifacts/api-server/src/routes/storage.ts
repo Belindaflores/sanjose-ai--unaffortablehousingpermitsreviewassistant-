@@ -2,7 +2,6 @@ import { Router } from "express";
 import { Readable } from "node:stream";
 import { eq } from "drizzle-orm";
 import { db, permitUploadsTable } from "@workspace/db";
-import { RequestUploadUrlBody, RequestUploadUrlResponse } from "@workspace/api-zod";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { requirePortalUser, isStaff } from "../middlewares/portal-auth";
 
@@ -18,13 +17,8 @@ export async function validateUploadedDocument(objectPath: string, ownerUserId: 
 }
 const router = Router();
 router.use("/storage", requirePortalUser);
-router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
-  const parsed = RequestUploadUrlBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: "Choose a PDF, PNG, or JPEG file between 1 byte and 10 MB." }); return; }
-  const uploadURL = await storage.getObjectEntityUploadURL();
-  const objectPath = storage.normalizeObjectEntityPath(uploadURL);
-  await db.insert(permitUploadsTable).values({ ...parsed.data, objectPath, ownerUserId: res.locals.portalUser.id });
-  res.json(RequestUploadUrlResponse.parse({ uploadURL, objectPath }));
+router.post("/storage/uploads/request-url", (_req, res): void => {
+  res.status(410).json({ error: "File uploads are disabled. Document statuses are simulated in this prototype." });
 });
 router.get("/storage/objects/{*objectPath}", async (req, res): Promise<void> => {
   const segments = req.params.objectPath;

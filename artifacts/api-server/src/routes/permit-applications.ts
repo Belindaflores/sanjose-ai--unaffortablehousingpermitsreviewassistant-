@@ -2,10 +2,9 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { db, permitApplicationsTable, permitRejectedAttemptsTable } from "@workspace/db";
-import { CreatePermitApplicationBody, CreatePermitApplicationResponse, ListPermitApplicationsQueryParams, ListPermitApplicationsResponse, UpdatePermitApplicationBody, UpdatePermitApplicationParams, UpdatePermitApplicationResponse, ReviewPermitChecksBody, CorrectPermitClassificationBody, checkJurisdiction, OUTSIDE_COUNTY_MESSAGE, screenApplication, EVIDENCE_LABEL, SAFETY_CRITICAL_DOCS } from "@workspace/api-zod";
+import { CreatePermitApplicationBody, CreatePermitApplicationResponse, ListPermitApplicationsQueryParams, ListPermitApplicationsResponse, UpdatePermitApplicationBody, UpdatePermitApplicationParams, UpdatePermitApplicationResponse, ReviewPermitChecksBody, CorrectPermitClassificationBody, checkJurisdiction, OUTSIDE_COUNTY_MESSAGE, screenApplication, SAFETY_CRITICAL_DOCS, simulatedDocumentStatuses } from "@workspace/api-zod";
 import { requirePortalUser, requireStaff, isStaff, canViewApplication } from "../middlewares/portal-auth";
 import { readRuleConfig, screenedResponse, toValues } from "../lib/permit-screening";
-import { validateUploadedDocument } from "./storage";
 import { buildPermitTimeline } from "../lib/permit-timeline";
 
 const router = Router();
@@ -29,18 +28,12 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
     res.status(422).json({ error: OUTSIDE_COUNTY_MESSAGE }); return;
   }
   const claimedAffordable = parsed.data.claimed_affordable ?? parsed.data.affordableHousing;
-  const evidence = parsed.data.documents.find(d => d.label === EVIDENCE_LABEL && d.received && d.objectPath);
-  if (claimedAffordable && !evidence) { res.status(422).json({ error: "Upload supporting evidence for the applicant-claimed affordable housing project." }); return; }
-  try {
-    for (const document of parsed.data.documents.filter(d => d.received)) {
-      if (!document.objectPath) throw new Error("Received documents must have a completed upload.");
-      const upload = await validateUploadedDocument(document.objectPath, user.id);
-      document.fileName = upload.name;
-    }
-  } catch (error) { res.status(422).json({ error: error instanceof Error ? error.message : "A document upload could not be verified." }); return; }
+  // New permit submissions retain only the simulated status fields. Ignore any
+  // legacy client-supplied filenames or object paths; this flow stores no files.
+  const documents = simulatedDocumentStatuses(parsed.data.documents);
   const now = new Date();
   const screened = CreatePermitApplicationResponse.parse(screenApplication({
-    ...parsed.data, id: `SCC-${now.getFullYear()}-${randomUUID()}`, ownerUserId: user.id,
+    ...parsed.data, documents, id: `SCC-${now.getFullYear()}-${randomUUID()}`, ownerUserId: user.id,
     email: isStaff(user) ? parsed.data.email : user.email,
     applicantName: isStaff(user) ? parsed.data.applicantName : user.name,
     submittedAt: now, reviewStatus: "New", notes: [], reviewDecisions: {},
@@ -76,7 +69,6 @@ router.post("/permit-applications/:id/review-checks", requirePortalUser, require
   if (body.data.action === "claim") {
     const { claim, decision } = body.data;
     if (!claim || !decision || !(claim === "affordable" ? application.claimed_affordable : application.claimed_underserved)) { res.status(400).json({ error: "Select an active claim and Verified or Rejected." }); return; }
-    if (claim === "affordable" && decision === "Verified" && !application.documents.some(d => d.label === EVIDENCE_LABEL && d.received && d.objectPath)) { res.status(422).json({ error: "Affordable housing evidence must be uploaded before verification." }); return; }
     application.priorityClaims![claim] = { status: decision, ...audit };
   } else if (body.data.action === "safety") {
     if (!body.data.document || !SAFETY_CRITICAL_DOCS.some(r => r.label === body.data.document)) { res.status(400).json({ error: "Select a configured safety-critical document." }); return; }

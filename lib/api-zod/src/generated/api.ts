@@ -205,22 +205,7 @@ export const UpdatePermitRuleConfigResponse = zod.object({
 })
 
 
-export const requestUploadUrlBodyNameMax = 200;
-
-export const requestUploadUrlBodySizeMax = 10485760;
-
-
-
-export const RequestUploadUrlBody = zod.object({
-  "name": zod.string().min(1).max(requestUploadUrlBodyNameMax),
-  "size": zod.number().int().min(1).max(requestUploadUrlBodySizeMax),
-  "contentType": zod.enum(['application/pdf', 'image/png', 'image/jpeg'])
-})
-
-export const RequestUploadUrlResponse = zod.object({
-  "uploadURL": zod.string(),
-  "objectPath": zod.string()
-})
+export const RequestUploadUrlResponse = zod.void()
 
 
 export const DownloadPermitDocumentParams = zod.object({

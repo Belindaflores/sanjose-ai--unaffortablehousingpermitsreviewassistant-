@@ -3,6 +3,8 @@ export const COUNTY_CITIES = ['Campbell', 'Cupertino', 'Gilroy', 'Los Altos', 'L
 export const COUNTY_ZIPS = new Set(['94022', '94023', '94024', '94035', '94039', '94040', '94041', '94042', '94043', '94085', '94086', '94087', '94088', '94089', '94301', '94302', '94303', '94304', '94305', '94306', '94309', '95002', '95008', '95009', '95011', '95013', '95014', '95015', '95020', '95021', '95026', '95030', '95031', '95032', '95033', '95035', '95036', '95037', '95038', '95042', '95044', '95046', '95050', '95051', '95052', '95053', '95054', '95055', '95056', '95070', '95071', '95101', '95103', '95106', '95108', '95109', '95110', '95111', '95112', '95113', '95115', '95116', '95117', '95118', '95119', '95120', '95121', '95122', '95123', '95124', '95125', '95126', '95127', '95128', '95129', '95130', '95131', '95132', '95133', '95134', '95135', '95136', '95138', '95139', '95140', '95141', '95148', '95150', '95151', '95152', '95153', '95154', '95155', '95156', '95157', '95158', '95159', '95160', '95161', '95164', '95170', '95172', '95173', '95190', '95191', '95192', '95193', '95194', '95196']);
 export const OUTSIDE_COUNTY_MESSAGE = 'This address appears to be outside Santa Clara County. This portal only accepts projects within County jurisdiction. Please contact the permitting office for the city or county where your project is located.';
 const COUNTIES_OUTSIDE_COVERAGE = ['Oakland', 'San Francisco', 'Sacramento', 'Fremont', 'Berkeley', 'Richmond', 'Hayward', 'Dublin', 'Pleasanton', 'Livermore', 'Concord', 'Walnut Creek', 'Antioch', 'Brentwood', 'Stockton', 'Modesto', 'Fresno', 'Los Angeles', 'San Diego', 'San Bernardino', 'Riverside', 'Santa Cruz', 'Watsonville', 'Monterey', 'Salinas', 'Marin', 'Napa', 'Vallejo', 'Santa Rosa', 'Chico', 'Eureka'];
+const STATE_CODES = new Set('AL AK AZ AR CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC'.split(' '));
+const STATE_NAMES = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming', 'District of Columbia'];
 export const FIRE_UNIT_THRESHOLD = 5;
 export const EVIDENCE_LABEL = 'Affordable housing supporting evidence';
 export const SAFETY_CRITICAL_DOCS = [{ label: 'Fire and life safety plan', reviewer: 'Fire Marshal', message: 'Missing fire/life-safety plan — Fire Marshal review required.', applies: (input: ScreeningInput) => /multi[- ]?family/i.test(input.projectType) || input.housingUnits >= FIRE_UNIT_THRESHOLD || descriptionUnitCounts(input.description).some(n => n >= FIRE_UNIT_THRESHOLD) || /\b(?:multifamily|multi-family|apartment complex)\b/i.test(input.description) }];
@@ -21,14 +23,22 @@ export type ScreeningInput = {
   reviewDecisions?: ReviewDecisions; reviewStatus?: string;
   documents: { label: string; required: boolean; received: boolean; objectPath?: string; fileName?: string }[];
 };
+export function simulatedDocumentStatuses(documents: readonly {
+  category: string; label: string; required: boolean; received: boolean;
+  objectPath?: string; fileName?: string; receivedAt?: string | Date | null;
+}[]) {
+  return documents.map(({ category, label, required, received }) => ({ category, label, required, received }));
+}
 export function checkJurisdiction(address: string): { status: RuleChecks['jurisdictionStatus']; city: string; zip: string } {
   const normalized = address.replace(/\bSan José\b/gi, 'San Jose').trim();
   const zip = normalized.match(/\b(\d{5})(?:-\d{4})?\b/)?.[1] ?? '';
-  const trailingState = normalized.match(/(?:^|[,\s])(California|[A-Z]{2})(?:\s+\d{5}(?:-\d{4})?)?\s*$/i);
-  const state = trailingState?.[1]?.toUpperCase() === 'CALIFORNIA' ? 'CA' : trailingState?.[1]?.toUpperCase();
+  const statePattern = [...STATE_NAMES, 'CA', ...STATE_CODES].sort((a, b) => b.length - a.length).join('|');
+  const trailingState = normalized.match(new RegExp(`(?:^|[,\\s])(${statePattern})(?:\\s+\\d{5}(?:-\\d{4})?)?\\s*$`, 'i'));
+  const stateToken = trailingState?.[1]?.toUpperCase();
+  const state = stateToken === 'CALIFORNIA' ? 'CA' : stateToken;
   const withoutStateOrZip = normalized
     .replace(/\s+\d{5}(?:-\d{4})?\s*$/, '')
-    .replace(/(?:^|[,\s])(?:California|[A-Z]{2})\s*$/i, '')
+    .replace(new RegExp(`(?:^|[,\\s])(?:${statePattern})\\s*$`, 'i'), '')
     .trim().replace(/,+\s*$/, '');
   const commaParts = withoutStateOrZip.split(',').map(part => part.trim()).filter(Boolean);
   const localityText = commaParts.at(-1) ?? '';

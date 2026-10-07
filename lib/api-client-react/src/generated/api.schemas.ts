@@ -396,32 +396,8 @@ export type SelectPortalRoleBody = {
   role: SelectPortalRoleBodyRole;
 };
 
-export type RequestUploadUrlBodyContentType = typeof RequestUploadUrlBodyContentType[keyof typeof RequestUploadUrlBodyContentType];
-
-
-export const RequestUploadUrlBodyContentType = {
-  'application/pdf': 'application/pdf',
-  'image/png': 'image/png',
-  'image/jpeg': 'image/jpeg',
-} as const;
-
-export type RequestUploadUrlBody = {
-  /**
-     * @minLength 1
-     * @maxLength 200
-     */
-  name: string;
-  /**
-     * @minimum 1
-     * @maximum 10485760
-     */
-  size: number;
-  contentType: RequestUploadUrlBodyContentType;
-};
-
-export type RequestUploadUrl200 = {
-  uploadURL: string;
-  objectPath: string;
+export type RequestUploadUrl410 = {
+  error: string;
 };
 
 export type ReviewPermitChecksBodyAction = typeof ReviewPermitChecksBodyAction[keyof typeof ReviewPermitChecksBodyAction];

@@ -22,7 +22,9 @@ export function toValues(application: typeof CreatePermitApplicationResponse._ou
   return {
     ...values, dataSource: "Prototype Submission",
     submittedAt: new Date(application.submittedAt),
-    documents: application.documents.map(d => ({ ...d, receivedAt: d.receivedAt ? new Date(d.receivedAt).toISOString() : undefined })),
+    documents: application.documents.map(({ receivedAt, ...document }) =>
+      receivedAt ? { ...document, receivedAt: new Date(receivedAt).toISOString() } : document,
+    ),
     notes: application.notes.map(n => ({ ...n, createdAt: new Date(n.createdAt).toISOString() })),
     requiredReviewers: application.requiredReviewers ?? [],
     claimed_affordable: application.claimed_affordable ?? application.affordableHousing,

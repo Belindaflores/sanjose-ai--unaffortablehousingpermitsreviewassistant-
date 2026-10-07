@@ -513,7 +513,6 @@ tbody tr:hover { background: #edf5fa; }
 .record-search { margin-bottom: 17px; border-radius: 4px; }
 .record-search .search-wrap { max-width: 580px; }
 .doc-upload { position: relative; cursor: pointer; overflow: hidden; flex: none; }
-.doc-upload input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .doc-upload:focus-within { outline: 3px solid #f5b335; outline-offset: 3px; }
 .sample-document-link { color: #087f83; text-decoration: none; cursor: pointer; }
 .sample-document-link:hover { text-decoration: underline; }

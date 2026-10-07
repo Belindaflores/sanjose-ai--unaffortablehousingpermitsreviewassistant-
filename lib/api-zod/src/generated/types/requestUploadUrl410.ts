@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type RequestUploadUrl200 = {
-  uploadURL: string;
-  objectPath: string;
+export type RequestUploadUrl410 = {
+  error: string;
 };
