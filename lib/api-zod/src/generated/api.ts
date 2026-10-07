@@ -8,6 +8,24 @@
 import * as zod from 'zod';
 
 
+export const GetAppAccessSessionResponse = zod.object({
+  "unlocked": zod.boolean(),
+  "configured": zod.boolean()
+})
+
+
+export const unlockAppAccessBodyPasscodeRegExp = new RegExp('^[0-9]{4}$');
+
+
+export const UnlockAppAccessBody = zod.object({
+  "passcode": zod.string().regex(unlockAppAccessBodyPasscodeRegExp)
+})
+
+export const UnlockAppAccessResponse = zod.object({
+  "unlocked": zod.boolean()
+})
+
+
 export const listSavedApplicationsResponseDocumentsItemFileSizeMin = 0;
 
 

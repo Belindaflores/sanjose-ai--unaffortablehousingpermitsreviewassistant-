@@ -7,6 +7,7 @@ import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
 import { pool } from "@workspace/db";
+import { apiAccessGate } from "@workspace/app-access";
 
 const app: Express = express();
 
@@ -38,6 +39,8 @@ app.use(
     },
   }),
 );
+// Enforce app access before Clerk proxying, JSON parsing, or any data routes.
+app.use(apiAccessGate);
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors());
 app.use(express.json());

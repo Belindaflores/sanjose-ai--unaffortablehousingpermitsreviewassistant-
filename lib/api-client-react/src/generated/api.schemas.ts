@@ -370,6 +370,20 @@ export interface CountyPublicRecord {
   serviceCompleteDate: string | null;
 }
 
+export type GetAppAccessSession200 = {
+  unlocked: boolean;
+  configured: boolean;
+};
+
+export type UnlockAppAccessBody = {
+  /** @pattern ^[0-9]{4}$ */
+  passcode: string;
+};
+
+export type UnlockAppAccess200 = {
+  unlocked: boolean;
+};
+
 export type RequestUploadUrlBodyContentType = typeof RequestUploadUrlBodyContentType[keyof typeof RequestUploadUrlBodyContentType];
 
 

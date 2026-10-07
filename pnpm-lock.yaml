@@ -183,6 +183,9 @@ importers:
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
+      '@workspace/app-access':
+        specifier: workspace:*
+        version: link:../../lib/app-access
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
@@ -423,6 +426,10 @@ importers:
         version: 3.25.76
 
   artifacts/permit-review-assistant:
+    dependencies:
+      '@workspace/app-access':
+        specifier: workspace:*
+        version: link:../../lib/app-access
     devDependencies:
       '@clerk/react':
         specifier: ^6.17.5
@@ -640,6 +647,8 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.76
+
+  lib/app-access: {}
 
   lib/db:
     dependencies:

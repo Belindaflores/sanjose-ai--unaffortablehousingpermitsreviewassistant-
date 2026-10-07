@@ -7,6 +7,8 @@ info:
 servers:
   - url: /api
     description: Base API path
+security:
+  - AppPasscode: []
 tags:
   - name: health
     description: Health operations
@@ -17,6 +19,54 @@ tags:
   - name: saved-applications
     description: Private saved drafts; never official submissions
 paths:
+  /app-access/session:
+    get:
+      security: []
+      operationId: getAppAccessSession
+      responses:
+        "200":
+          description: Browser-session app access status, without any secret values
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [unlocked, configured]
+                properties:
+                  unlocked: { type: boolean }
+                  configured: { type: boolean }
+  /app-access/unlock:
+    post:
+      security: []
+      operationId: unlockAppAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [passcode]
+              properties:
+                passcode: { type: string, pattern: '^[0-9]{4}$' }
+      responses:
+        "200":
+          description: Sets an HttpOnly browser-session access cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [unlocked]
+                properties:
+                  unlocked: { type: boolean }
+        "400":
+          description: Passcode must contain exactly four numeric digits
+        "401":
+          description: Incorrect passcode
+        "403":
+          description: Cross-origin or non-JSON request rejected
+        "429":
+          description: Too many failed attempts
+        "503":
+          description: Secret is missing or invalid; access remains locked
   /saved-applications:
     get:
       operationId: listSavedApplications
@@ -187,6 +237,7 @@ paths:
                 $ref: "#/components/schemas/PermitApplication"
   /healthz:
     get:
+      security: []
       operationId: healthCheck
       tags: [health]
       summary: Health check
@@ -285,6 +336,12 @@ paths:
                 items:
                   $ref: "#/components/schemas/CountyPublicRecord"
 components:
+  securitySchemes:
+    AppPasscode:
+      type: apiKey
+      in: cookie
+      name: scc_app_access
+      description: Signed HttpOnly browser-session cookie obtained by entering APP_PASSCODE. Existing account and role checks still apply.
   schemas:
     SavedApplication:
       type: object

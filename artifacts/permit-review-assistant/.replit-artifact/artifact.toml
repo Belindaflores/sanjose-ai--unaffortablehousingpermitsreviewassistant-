@@ -8,20 +8,23 @@ router = "path"
 
 [[services]]
 name = "web"
-paths = [ "/" ]
+paths = ["/"]
 localPort = 21915
 
 [services.development]
 run = "pnpm --filter @workspace/permit-review-assistant run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/permit-review-assistant", "run", "build" ]
-serve = "static"
-publicDir = "artifacts/permit-review-assistant/dist/public"
+build = ["pnpm", "--filter", "@workspace/permit-review-assistant", "run", "build"]
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.run]
+args = ["node", "artifacts/permit-review-assistant/server.mjs"]
+
+[services.production.run.env]
+NODE_ENV = "production"
+
+[services.production.health.startup]
+path = "/healthz"
 
 [services.env]
 PORT = "21915"

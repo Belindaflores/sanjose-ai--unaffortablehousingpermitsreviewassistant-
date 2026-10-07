@@ -2,6 +2,7 @@ import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
+import { webAccessGate } from '@workspace/app-access';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
@@ -30,6 +31,15 @@ if (!basePath) {
 export default defineConfig({
   base: basePath,
   plugins: [
+    {
+      name: 'server-passcode-gate',
+      configureServer(server) {
+        server.middlewares.use(webAccessGate);
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use(webAccessGate);
+      },
+    },
     react(),
     tailwindcss({ optimize: false }),
     runtimeErrorOverlay(),
