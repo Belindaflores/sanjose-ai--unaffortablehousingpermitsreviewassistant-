@@ -3,9 +3,6 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
-import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
 import { pool } from "@workspace/db";
 import { apiAccessGate } from "@workspace/app-access";
 
@@ -39,15 +36,11 @@ app.use(
     },
   }),
 );
-// Enforce app access before Clerk proxying, JSON parsing, or any data routes.
+// Enforce app access before JSON parsing or any data routes.
 app.use(apiAccessGate);
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(clerkMiddleware((req) => ({
-  publishableKey: publishableKeyFromHost(getClerkProxyHost(req) ?? "", process.env.CLERK_PUBLISHABLE_KEY),
-})));
 
 app.use("/api", router);
 

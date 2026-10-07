@@ -124,6 +124,28 @@ export const UpdateSavedApplicationResponse = zod.object({
 })
 
 
+/**
+ * @summary Select a prototype portal after unlocking with the app passcode
+ */
+export const SelectPortalRoleBody = zod.object({
+  "role": zod.enum(['applicant', 'worker'])
+})
+
+export const SelectPortalRoleResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string(),
+  "role": zod.enum(['applicant', 'worker', 'fire_marshal']),
+  "staffAccessRequested": zod.boolean()
+})
+
+
+/**
+ * @summary Clear the selected portal without clearing the app passcode session
+ */
+export const ExitPortalResponse = zod.void()
+
+
 export const GetPortalUserResponse = zod.object({
   "id": zod.string(),
   "email": zod.string(),

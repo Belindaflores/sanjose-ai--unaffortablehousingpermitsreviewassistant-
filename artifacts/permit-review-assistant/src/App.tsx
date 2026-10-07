@@ -3,15 +3,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Link, Route, Switch, Redirect, useLocation, useRoute, Router as WouterRouter } from 'wouter';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
-import { getListPermitApplicationsQueryKey, useCreatePermitApplication, useListPermitApplications, useUpdatePermitApplication, useRequestUploadUrl, useRequestStaffAccess } from '@workspace/api-client-react';
+import { getListPermitApplicationsQueryKey, useCreatePermitApplication, useListPermitApplications, useUpdatePermitApplication, useRequestUploadUrl } from '@workspace/api-client-react';
 import { checkJurisdiction, screenApplication, EVIDENCE_LABEL, OUTSIDE_COUNTY_MESSAGE, type PriorityClaims, type RuleChecks, type ReviewDecisions } from '@workspace/api-zod';
 import { PortalAuth, SignOutButton } from './PortalAuth';
-import { usePortalProfile } from './PortalProfile';
+import { usePortalProfile, usePortalSession } from './PortalProfile';
 import { StaffChecksPanel, ClassificationCorrection, UnderservedConfigPanel } from './ReviewSafeguards';
 import './safeguards.css';
 import { ErrorBoundary } from '@/components/error-boundary';
 import NotFound from '@/pages/not-found';
-import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, ApplicantHelpPage, ApplicantRecordsPage, RoleChooser } from './ApplicantPortal';
+import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, ApplicantHelpPage, ApplicantRecordsPage } from './ApplicantPortal';
 import { SavedApplicationPage } from './SavedApplications';
 import { WorkerAnalytics } from './WorkerAnalytics';
 import {
@@ -476,17 +476,10 @@ function HelpPage({ onReset }: { onReset: () => void }) { const [reset, setReset
 
 function RouterView() {
   const profile = usePortalProfile();
-  const hasStaffAccess = profile.role === 'worker' || profile.role === 'fire_marshal';
-  const requestAccess = useRequestStaffAccess();
+  const { leavePortal } = usePortalSession();
   const [applications, setApplications] = useState<PermitApplication[]>(readApplications);
   const [applicantApplications, setApplicantApplications] = useState<PermitApplication[]>(readApplicantApplications);
-  const [role, setRole] = useState<PortalRole | null>(() => hasStaffAccess ? readRole() ?? 'worker' : 'applicant');
-  const [showWorkerLogin, setShowWorkerLogin] = useState(() => readRole() === 'worker' && !hasStaffAccess);
-  useEffect(() => {
-    if (hasStaffAccess && showWorkerLogin) {
-      sessionStorage.setItem(ROLE_KEY, 'worker'); setShowWorkerLogin(false); setRole('worker');
-    }
-  }, [hasStaffAccess, showWorkerLogin]);
+  const role: PortalRole = profile.role === 'applicant' ? 'applicant' : 'worker';
   const [, setLocation] = useLocation();
   const [, detailParams] = useRoute('/applications/:id');
   const [, draftParams] = useRoute('/saved-applications/:id');
@@ -536,13 +529,7 @@ function RouterView() {
     void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() });
   };
   const reset = () => setApplications(seedApplications());
-  const chooseRole = (selected: PortalRole) => {
-    if (selected === 'worker' && !hasStaffAccess) { setShowWorkerLogin(true); return; }
-    sessionStorage.setItem(ROLE_KEY, selected); queryClient.removeQueries({ queryKey: getListPermitApplicationsQueryKey() }); setLocation('/'); setRole(selected);
-  };
-  const switchRole = () => { sessionStorage.removeItem(ROLE_KEY); queryClient.removeQueries({ queryKey: getListPermitApplicationsQueryKey() }); setLocation('/'); setRole(null); setShowWorkerLogin(false); };
-  if (showWorkerLogin || role === 'worker' && !hasStaffAccess) return <main className="page"><h1>City Worker access required</h1><p>Your authenticated account has applicant access. An administrator must assign City Worker or Fire Marshal permissions before you can view staff records or verify claims.</p><p>Your account ID: <code>{profile.id}</code></p><button className="button teal" disabled={requestAccess.isPending} onClick={() => requestAccess.mutate()}>{requestAccess.isSuccess || profile.staffAccessRequested ? 'Staff access requested' : 'Request staff access'}</button>{requestAccess.isError && <p role="alert">The access request could not be saved.</p>}<button className="button outline" onClick={() => { sessionStorage.setItem(ROLE_KEY, 'applicant'); setShowWorkerLogin(false); setRole('applicant'); }}>Continue as applicant</button><SignOutButton /></main>;
-  if (!role) return <><RoleChooser onSelect={chooseRole} /><SignOutButton /></>;
+  const switchRole = () => { void leavePortal(); };
   return <AppShell role={role} onSwitch={switchRole}><Switch>
     <Route path="/"><Redirect to="/user-portal" /></Route>
     <Route path="/user-portal">{role === 'applicant' ? <><ApplicantDashboard applications={visibleApplicantApplications} /><FooterDisclaimer /></> : <Dashboard applications={workerApplications} />}</Route>

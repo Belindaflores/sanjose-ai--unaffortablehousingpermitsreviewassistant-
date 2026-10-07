@@ -1,10 +1,10 @@
 ---
 name: Passcode access scope
-description: The shared classroom passcode is an additional app-wide gate, not a replacement for account authorization.
+description: The shared classroom passcode guards the entire prototype; both portals now open without individual email authentication.
 ---
 
-Require exactly four numeric digits from the server-only APP_PASSCODE secret before exposing any permit portal pages, app files, sample documents, or data APIs. Keep existing Clerk identity and role restrictions after unlocking.
+Require exactly four numeric digits from the server-only APP_PASSCODE secret before exposing any permit portal pages, app files, sample documents, or data APIs. After unlocking, users choose either prototype role directly, without email authentication.
 
-**Why:** The user said the professor requires a four-digit passcode, specifically requested server enforcement for all parts of the app, and asked that existing permit review functionality stay unchanged. A client-only overlay or public static frontend would leave direct file access unprotected.
+**Why:** The user said the professor requires a four-digit passcode and explicitly requested server enforcement. The user subsequently confirmed passcode-only access for both roles after being told that anyone with the passcode could choose City Worker and access staff records and actions. This supersedes the earlier requirement to retain individual account authentication.
 
-**How to apply:** Preserve server guarding for the web service in both preview and production, not just API middleware. Do not switch production back to public static serving or inject the passcode into browser bundles. Use a browser-session cookie rather than localStorage; keep secrets out of logs and test outputs. Four digits provide only a shared access gate, so retain throttling and the existing per-account permissions.
+**How to apply:** Preserve server guarding for the web service in both preview and production, not just API middleware. Do not switch production back to public static serving or inject the passcode into browser bundles. Use browser-session cookies rather than localStorage; keep secrets out of logs and test outputs. Retain throttling and enforce the selected role on the server. Applicant and worker are shared prototype presentations, not verified individual identities. Keep existing records and account-owned presentation data intact; do not interpret this change as permission to delete or reassign them.

@@ -102,12 +102,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SavedApplication"
+  /portal-session:
+    post:
+      operationId: selectPortalRole
+      summary: Select a prototype portal after unlocking with the app passcode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role: { type: string, enum: [applicant, worker] }
+              required: [role]
+      responses:
+        "200":
+          description: Selected shared prototype portal profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalUser"
+        "401":
+          description: The app passcode is required
+        "403":
+          description: Cross-origin requests are not allowed
+    delete:
+      operationId: exitPortal
+      summary: Clear the selected portal without clearing the app passcode session
+      responses:
+        "204":
+          description: Portal selection cleared
   /portal-user:
     get:
       operationId: getPortalUser
       responses:
         "200":
-          description: Authenticated portal profile. Roles are assigned by an administrator.
+          description: Profile for the server-signed portal selection after passcode entry
           content:
             application/json:
               schema:

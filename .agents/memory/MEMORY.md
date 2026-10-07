@@ -2,4 +2,4 @@
 - [Permit geography](permit-geography.md) — the requested county-wide screen is a prototype geography boundary, not an official legal jurisdiction determination.
 - [Public permit separation](applicant-showcase.md) — synthetic account presentations and drafts stay separate from public City records and official filings.
 - [Development database resets](development-db-resets.md) — an administrative connection reset can stop the API while the frontend still serves; it is not a credential failure.
-- [Passcode scope](passcode-scope.md) — four-digit server gate protects pages, files, and APIs; preserve account authorization and guarded production serving.
+- [Passcode scope](passcode-scope.md) — four-digit server gate protects pages, files, and APIs; both prototype roles use confirmed passcode-only access.

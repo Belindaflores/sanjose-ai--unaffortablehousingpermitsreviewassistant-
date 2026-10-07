@@ -384,6 +384,18 @@ export type UnlockAppAccess200 = {
   unlocked: boolean;
 };
 
+export type SelectPortalRoleBodyRole = typeof SelectPortalRoleBodyRole[keyof typeof SelectPortalRoleBodyRole];
+
+
+export const SelectPortalRoleBodyRole = {
+  applicant: 'applicant',
+  worker: 'worker',
+} as const;
+
+export type SelectPortalRoleBody = {
+  role: SelectPortalRoleBodyRole;
+};
+
 export type RequestUploadUrlBodyContentType = typeof RequestUploadUrlBodyContentType[keyof typeof RequestUploadUrlBodyContentType];
 
 
