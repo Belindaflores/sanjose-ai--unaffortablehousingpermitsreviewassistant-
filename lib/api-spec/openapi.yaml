@@ -176,47 +176,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PermitRuleConfig"
-  /permit-requirements/catalog:
-    get:
-      operationId: getPermitRequirementsCatalog
-      responses:
-        "200":
-          description: Structured reference requirements
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/PermitRequirementDefinition" }
-  /permit-applications/{id}/requirements:
-    get:
-      operationId: getPermitRequirementsEvaluation
-      parameters:
-        - { name: id, in: path, required: true, schema: { type: string } }
-      responses:
-        "200":
-          description: Current requirements and potential SB 35 screening
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/PermitRequirementsEvaluation" }
-        "404": { description: Application not found }
-  /permit-applications/{id}/requirement-documents:
-    patch:
-      operationId: updatePermitRequirementDocument
-      parameters:
-        - { name: id, in: path, required: true, schema: { type: string } }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/PermitRequirementDocumentUpdate" }
-      responses:
-        "200":
-          description: Application with updated simulated checklist and requirements
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/PermitApplication" }
-        "403": { description: Staff access required }
-        "404": { description: Application or requirement not found }
   /permit-applications/{id}/intake-analysis:
     post:
       operationId: analyzePermitIntake
@@ -577,97 +536,6 @@ components:
         potentialDocumentMismatches: { type: ["integer", "null"] }
         needsStaffVerification: { type: integer }
       required: [status, mode, analyzedAt, model, error, fields, documents, actualDocumentsAnalyzed, checklistSubmitted, requiredDocumentsExpected, missingRequired, potentialDocumentMismatches, needsStaffVerification]
-    PermitRequirementSource:
-      type: object
-      properties:
-        title: { type: string }
-        url: { type: string }
-        section: { type: string }
-      required: [title, url, section]
-    PermitRequirementCondition:
-      type: object
-      properties:
-        all:
-          type: array
-          items: { type: string }
-        description: { type: string }
-      required: [all, description]
-    PermitRequirementDefinition:
-      type: object
-      properties:
-        requirement_id: { type: string }
-        requirement_name: { type: string }
-        project_types:
-          type: array
-          items: { type: string }
-        applicable_when: { $ref: "#/components/schemas/PermitRequirementCondition" }
-        required_document: { type: string }
-        document_aliases:
-          type: array
-          items: { type: string }
-        validation_type: { type: string, enum: [document-content] }
-        source: { $ref: "#/components/schemas/PermitRequirementSource" }
-        group: { type: string, enum: [Multifamily, Affordable housing / SB 35] }
-      required: [requirement_id, requirement_name, project_types, applicable_when, required_document, document_aliases, validation_type, source, group]
-    PermitRequirementResult:
-      allOf:
-        - $ref: "#/components/schemas/PermitRequirementDefinition"
-        - type: object
-          properties:
-            status: { type: string, enum: [PASS, MISSING, REVIEW, NOT_APPLICABLE] }
-            applicability: { type: string, enum: [APPLIES, UNKNOWN, DOES_NOT_APPLY] }
-            explanation: { type: string }
-            evidence:
-              type: array
-              items: { $ref: "#/components/schemas/IntakeEvidence" }
-            matched_documents:
-              type: array
-              items: { type: string }
-          required: [status, applicability, explanation, evidence, matched_documents]
-    PotentialSb35Criterion:
-      type: object
-      properties:
-        id: { type: string }
-        label: { type: string }
-        status: { type: string, enum: [OBSERVED, ISSUE, UNKNOWN] }
-        explanation: { type: string }
-        evidence:
-          type: array
-          items: { $ref: "#/components/schemas/IntakeEvidence" }
-        source: { $ref: "#/components/schemas/PermitRequirementSource" }
-      required: [id, label, status, explanation, evidence, source]
-    PotentialSb35Screening:
-      type: object
-      properties:
-        status: { type: string, enum: [POTENTIAL, ISSUE, NOT_REQUESTED] }
-        message: { type: string }
-        disclaimer: { type: string }
-        criteria:
-          type: array
-          items: { $ref: "#/components/schemas/PotentialSb35Criterion" }
-      required: [status, message, disclaimer, criteria]
-    PermitRequirementsEvaluation:
-      type: object
-      properties:
-        mode: { type: string, enum: [simulation-only] }
-        ruleset_version: { type: string }
-        project_category: { type: string }
-        category_explanation: { type: string }
-        jurisdiction_scope: { type: string }
-        disclaimer: { type: string }
-        intake_status: { type: string, enum: [completed, failed, not-run] }
-        evaluated_at: { type: string }
-        requirements:
-          type: array
-          items: { $ref: "#/components/schemas/PermitRequirementResult" }
-        sb35_screening: { $ref: "#/components/schemas/PotentialSb35Screening" }
-      required: [mode, ruleset_version, project_category, category_explanation, jurisdiction_scope, disclaimer, intake_status, evaluated_at, requirements, sb35_screening]
-    PermitRequirementDocumentUpdate:
-      type: object
-      properties:
-        requirement_id: { type: string }
-        received: { type: boolean }
-      required: [requirement_id, received]
     PermitApplication:
       type: object
       properties:
@@ -764,8 +632,6 @@ components:
           anyOf:
             - $ref: "#/components/schemas/IntakeAnalysis"
             - type: "null"
-        requirementsEvaluation:
-          $ref: "#/components/schemas/PermitRequirementsEvaluation"
         recommendedRouting:
           type: array
           items:

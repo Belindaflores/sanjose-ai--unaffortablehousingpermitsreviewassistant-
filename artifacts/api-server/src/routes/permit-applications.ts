@@ -5,8 +5,7 @@ import { db, permitApplicationsTable, permitRejectedAttemptsTable } from "@works
 import { CreatePermitApplicationBody, CreatePermitApplicationResponse, ListPermitApplicationsQueryParams, ListPermitApplicationsResponse, UpdatePermitApplicationBody, UpdatePermitApplicationParams, UpdatePermitApplicationResponse, ReviewPermitChecksBody, CorrectPermitClassificationBody, checkJurisdiction, OUTSIDE_COUNTY_MESSAGE, screenApplication, SAFETY_CRITICAL_DOCS, simulatedDocumentStatuses } from "@workspace/api-zod";
 import { requirePortalUser, requireStaff, isStaff, canViewApplication } from "../middlewares/portal-auth";
 import { readRuleConfig, screenedResponse, toValues } from "../lib/permit-screening";
-import { analyzeIntake, refreshIntakeChecklist } from "../lib/intake-analysis";
-import { extendRequirementChecklist } from "@workspace/api-zod";
+import { analyzeIntake } from "../lib/intake-analysis";
 import { buildPermitTimeline } from "../lib/permit-timeline";
 
 const router = Router();
@@ -32,9 +31,9 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
   const claimedAffordable = parsed.data.claimed_affordable ?? parsed.data.affordableHousing;
   // New permit submissions retain only the simulated status fields. Ignore any
   // legacy client-supplied filenames or object paths; this flow stores no files.
-  const documents = simulatedDocumentStatuses(extendRequirementChecklist({ ...parsed.data, intakeAnalysis: null }, parsed.data.documents));
+  const documents = simulatedDocumentStatuses(parsed.data.documents);
   const now = new Date();
-  let screened = CreatePermitApplicationResponse.parse(screenApplication({
+  const screened = CreatePermitApplicationResponse.parse(screenApplication({
     ...parsed.data, documents, id: `SCC-${now.getFullYear()}-${randomUUID()}`, ownerUserId: user.id,
     email: isStaff(user) ? parsed.data.email : user.email,
     applicantName: isStaff(user) ? parsed.data.applicantName : user.name,
@@ -44,11 +43,7 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
   }, await readRuleConfig()));
   screened.timeline = buildPermitTimeline(screened.reviewStatus, now, screened.recommendedRouting.includes("Fire Marshal"));
   screened.intakeAnalysis = await analyzeIntake(screened);
-  screened = CreatePermitApplicationResponse.parse(screenApplication({
-    ...screened, documents: extendRequirementChecklist(screened, screened.documents),
-  }, await readRuleConfig()));
-  screened.intakeAnalysis = refreshIntakeChecklist(screened);
-  if (screened.intakeAnalysis?.status === "failed") req.log.warn("Permit saved with explicit AI intake failure; staff retry available");
+  if (screened.intakeAnalysis.status === "failed") req.log.warn("Permit saved with explicit AI intake failure; staff retry available");
   const [saved] = await db.insert(permitApplicationsTable).values(toValues(screened)).returning();
   res.status(201).json(await screenedResponse(saved!));
 });
@@ -125,10 +120,8 @@ router.patch("/permit-applications/:id/classification", requirePortalUser, async
   if (!isStaff(res.locals.portalUser) && (!original.ruleChecks?.classificationConflicts.length || ["Approved", "Denied"].includes(row.reviewStatus))) {
     res.status(403).json({ error: "Applicants may correct only pending classification conflicts, not finalized or otherwise reviewed records." }); return;
   }
-  let next = CreatePermitApplicationResponse.parse(screenApplication({ ...original, ...parsed.data, reviewDecisions: { ...original.reviewDecisions, safety: [] }, notes: [{ id: randomUUID(), author: res.locals.portalUser.id, body: `Classification corrected from ${row.projectType}, ${row.housingUnits} units to ${parsed.data.projectType}, ${parsed.data.housingUnits} units.`, createdAt: new Date() }, ...original.notes] }, await readRuleConfig()));
+  const next = CreatePermitApplicationResponse.parse(screenApplication({ ...original, ...parsed.data, reviewDecisions: { ...original.reviewDecisions, safety: [] }, notes: [{ id: randomUUID(), author: res.locals.portalUser.id, body: `Classification corrected from ${row.projectType}, ${row.housingUnits} units to ${parsed.data.projectType}, ${parsed.data.housingUnits} units.`, createdAt: new Date() }, ...original.notes] }, await readRuleConfig()));
   next.intakeAnalysis = await analyzeIntake(next);
-  next = CreatePermitApplicationResponse.parse(screenApplication({ ...next, documents: extendRequirementChecklist(next, next.documents) }, await readRuleConfig()));
-  next.intakeAnalysis = refreshIntakeChecklist(next);
   next.timeline = buildPermitTimeline(next.reviewStatus, row.submittedAt, next.recommendedRouting.includes("Fire Marshal"));
   const [saved] = await db.update(permitApplicationsTable).set(toValues(next)).where(eq(permitApplicationsTable.id, id)).returning();
   res.json(await screenedResponse(saved!));

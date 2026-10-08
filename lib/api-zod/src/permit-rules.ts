@@ -30,7 +30,7 @@ export function simulatedDocumentStatuses(documents: readonly {
   return documents.map(({ category, label, required, received }) => ({ category, label, required, received }));
 }
 export function checkJurisdiction(address: string): { status: RuleChecks['jurisdictionStatus']; city: string; zip: string } {
-  const normalized = address.replace(/\bSan José(?=$|[\s,])/gi, 'San Jose').trim();
+  const normalized = address.replace(/\bSan José\b/gi, 'San Jose').trim();
   const zip = normalized.match(/\b(\d{5})(?:-\d{4})?\b/)?.[1] ?? '';
   const statePattern = [...STATE_NAMES, 'CA', ...STATE_CODES].sort((a, b) => b.length - a.length).join('|');
   const trailingState = normalized.match(new RegExp(`(?:^|[,\\s])(${statePattern})(?:\\s+\\d{5}(?:-\\d{4})?)?\\s*$`, 'i'));
