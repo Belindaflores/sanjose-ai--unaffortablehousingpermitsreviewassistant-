@@ -18,3 +18,11 @@ The showcase must be **housing construction only**, such as apartment constructi
 **Why:** The user superseded the earlier two-draft request with explicit instructions to convert Opal into a submitted synthetic presentation, while keeping Meridian saved. They still prohibit claiming an official City submission or mixing either account record into public permit totals.
 
 **How to apply:** Use one account-owned data source for cards, submitted-project lists, details, documents, and timeline. Keep this presentation separate from the staff-reviewed submission workflow and public dataset. Respect the supplied presentation dates and statuses without inventing official decisions. SCC Plan Check Progress is environmental-health data, not housing-construction permitting.
+
+## Staff-portal change boundary
+
+When the user requests changes to City Worker Portal screens, leave the applicant-facing portal unchanged unless the user explicitly asks otherwise.
+
+**Why:** The user has reiterated that staff-portal changes must not alter the applicant-facing portal.
+
+**How to apply:** Keep staff-only UI work scoped to City Worker views, preserving applicant UI and flows.

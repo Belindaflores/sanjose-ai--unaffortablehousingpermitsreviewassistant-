@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getListPermitApplicationsQueryKey, useAnalyzePermitIntake } from '@workspace/api-client-react';
 import type { IntakeAnalysis, IntakeEvidence, IntakeFinding, PermitApplication as ApiPermitApplication } from '@workspace/api-client-react';
-import { AlertTriangle, Check, FileSearch, LoaderCircle, X } from 'lucide-react';
+import { AlertTriangle, FileSearch, LoaderCircle, X } from 'lucide-react';
 import './IntakeAnalysisPanel.css';
 
 type IntakeApplication = {
@@ -167,15 +167,6 @@ export function IntakeAnalysisPanel({ application, onSaved }: Props) {
           {analysis.fields.length ? <div className="intake-findings">{analysis.fields.map(finding => <FindingRow key={finding.key} finding={finding} />)}</div> : <p className="intake-empty">No extracted fields were returned.</p>}
         </section>
 
-        <section className="intake-documents-section" aria-labelledby="intake-documents-title">
-          <div className="intake-section-heading"><div><h3 id="intake-documents-title">Checklist item findings</h3><p>Submitted checklist entries and their returned findings. A document type is only a declared category.</p></div></div>
-          {analysis.documents.length ? <div className="intake-doc-list">{analysis.documents.map((document, index) => <article className="intake-doc-item" key={`${document.category}-${document.label}-${index}`} data-testid={`intake-document-${index}`}>
-            <header><div><span className="intake-doc-category">{document.category} · declared category only</span><h4>{document.label}</h4></div><span className={`intake-submitted ${document.submitted ? 'yes' : 'no'}`}>{document.submitted ? <><Check size={13} /> Submitted</> : 'Missing'}</span></header>
-            {document.fields.length
-              ? <div className="intake-findings">{document.fields.map(finding => <FindingRow key={finding.key} finding={finding} />)}</div>
-              : <p className="intake-empty">No document field findings were returned.</p>}
-          </article>)}</div> : <p className="intake-empty">No checklist item findings were returned.</p>}
-        </section>
         <div className="intake-legal-note" role="note"><AlertTriangle size={17} /><p>Any potential SB35, AB2162, SB330, or Density Bonus context is not a legal eligibility determination. Staff verification is required; the summary must not change application priority, routing, or review actions.</p></div>
       </>}
       {saveError && <div className="intake-save-error" role="alert" data-testid="error-save-intake-analysis">{saveError}</div>}
