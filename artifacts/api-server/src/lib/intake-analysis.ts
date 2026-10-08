@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { batchProcess } from "@workspace/integrations-openai-ai-server/batch";
 import { CreatePermitApplicationResponse, SAFETY_CRITICAL_DOCS } from "@workspace/api-zod";
+import { buildDocumentVerifications, buildSB35Screening, evaluatePermitRequirements } from "./permit-requirements";
 
 type Application = typeof CreatePermitApplicationResponse._output;
 export type IntakeAnalysis = NonNullable<Application["intakeAnalysis"]>;
@@ -142,6 +143,9 @@ export function assembleIntakeAnalysis(application: Application, extraction: Ext
       note: "Checklist category only. No document contents were analyzed." },
       ...documentFields.map(([key, label]) => missing(key!, label))],
   }));
+  const documentVerifications = buildDocumentVerifications(application);
+  const requirements = evaluatePermitRequirements(application);
+  const sb35Screening = buildSB35Screening(application);
   const safety = SAFETY_CRITICAL_DOCS.filter(rule => rule.applies(application));
   const required = application.documents.filter(document => document.required || safety.some(rule => rule.label === document.label));
   return { status: failed ? "failed" : "completed", mode: "application-only", model: INTAKE_MODEL,
@@ -150,7 +154,8 @@ export function assembleIntakeAnalysis(application: Application, extraction: Ext
     fields, documents, actualDocumentsAnalyzed: 0, checklistSubmitted: documents.length,
     requiredDocumentsExpected: required.length, missingRequired: required.filter(document => !document.received).length,
     potentialDocumentMismatches: null,
-    needsStaffVerification: fields.filter(field => field.value !== null && (field.confidence !== "HIGH" || field.key === "affordableUnits" || field.key === "affordablePercentage")).length };
+    needsStaffVerification: fields.filter(field => field.value !== null && (field.confidence !== "HIGH" || field.key === "affordableUnits" || field.key === "affordablePercentage")).length,
+    documentVerifications, requirements, sb35Screening };
 }
 
 export async function analyzeIntake(application: Application, extract: Extractor = extractDescription): Promise<IntakeAnalysis> {
