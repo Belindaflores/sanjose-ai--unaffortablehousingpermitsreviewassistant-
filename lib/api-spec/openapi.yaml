@@ -515,6 +515,82 @@ components:
           type: array
           items: { $ref: "#/components/schemas/IntakeFinding" }
       required: [label, category, submitted, fields]
+    RequirementSource:
+      type: object
+      properties:
+        title: { type: string }
+        reference: { type: string }
+        url: { type: string, format: uri }
+      required: [title, reference, url]
+    RequirementEvidence:
+      type: object
+      properties:
+        source: { type: string, enum: [Application, Checklist] }
+        description: { type: string }
+        quote: { type: string }
+        documentName: { type: ["string", "null"] }
+        page: { type: ["integer", "null"] }
+      required: [source, description, quote, documentName, page]
+    PermitRequirement:
+      type: object
+      properties:
+        requirementId: { type: string }
+        requirementName: { type: string }
+        projectTypes:
+          type: array
+          items: { type: string }
+        applicableWhen: { type: string }
+        requiredDocument: { type: string }
+        validationType: { type: string, enum: [simulated-checklist, conditional-referral, applicant-statement] }
+        applicability: { type: string, enum: [applicable, not_applicable, needs_review] }
+        status: { type: string, enum: [PASS, MISSING, REVIEW, NOT_APPLICABLE] }
+        explanation: { type: string }
+        documentChecklistStatus: { type: string, enum: [submitted, missing, unavailable] }
+        evidence:
+          type: array
+          items: { $ref: "#/components/schemas/RequirementEvidence" }
+        source: { $ref: "#/components/schemas/RequirementSource" }
+        recommendation: { type: string }
+      required: [requirementId, requirementName, projectTypes, applicableWhen, requiredDocument, validationType, applicability, status, explanation, documentChecklistStatus, evidence, source, recommendation]
+    PermitDocumentVerification:
+      type: object
+      properties:
+        documentLabel: { type: string }
+        checklistStatus: { type: string, enum: [submitted, missing, unavailable] }
+        status: { type: string, enum: [MISSING, REVIEW, NOT_APPLICABLE] }
+        detected: { type: array, items: { type: string } }
+        couldNotVerify: { type: array, items: { type: string } }
+        projectMatch: { type: string, enum: [Not assessed] }
+        projectMatchNotes: { type: array, items: { type: string } }
+        aiConfidence: { type: ["integer", "null"], minimum: 0, maximum: 100 }
+        explanation: { type: string }
+        source: { $ref: "#/components/schemas/RequirementSource" }
+        recommendation: { type: string }
+      required: [documentLabel, checklistStatus, status, detected, couldNotVerify, projectMatch, projectMatchNotes, aiConfidence, explanation, source, recommendation]
+    SB35Criterion:
+      type: object
+      properties:
+        name: { type: string }
+        observation: { type: string, enum: [OBSERVED, NOT_STATED, STAFF_REVIEW] }
+        explanation: { type: string }
+        evidence:
+          type: array
+          items: { $ref: "#/components/schemas/RequirementEvidence" }
+      required: [name, observation, explanation, evidence]
+    SB35Screening:
+      type: object
+      properties:
+        screeningMessage:
+          type: string
+          enum: ["Potentially eligible — Staff verification required", "Potential eligibility issue identified — Staff review required", "No potential SB 35 screening triggered — Staff review required"]
+        applicantIdentifiesAffordableHousing: { type: boolean }
+        criteria:
+          type: array
+          items: { $ref: "#/components/schemas/SB35Criterion" }
+        explanation: { type: string }
+        disclaimer: { type: string }
+        source: { $ref: "#/components/schemas/RequirementSource" }
+      required: [screeningMessage, applicantIdentifiesAffordableHousing, criteria, explanation, disclaimer, source]
     IntakeAnalysis:
       type: object
       properties:
@@ -535,6 +611,13 @@ components:
         missingRequired: { type: integer }
         potentialDocumentMismatches: { type: ["integer", "null"] }
         needsStaffVerification: { type: integer }
+        documentVerifications:
+          type: array
+          items: { $ref: "#/components/schemas/PermitDocumentVerification" }
+        requirements:
+          type: array
+          items: { $ref: "#/components/schemas/PermitRequirement" }
+        sb35Screening: { $ref: "#/components/schemas/SB35Screening" }
       required: [status, mode, analyzedAt, model, error, fields, documents, actualDocumentsAnalyzed, checklistSubmitted, requiredDocumentsExpected, missingRequired, potentialDocumentMismatches, needsStaffVerification]
     PermitApplication:
       type: object

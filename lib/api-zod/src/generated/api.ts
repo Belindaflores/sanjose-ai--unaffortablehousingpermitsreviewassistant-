@@ -214,6 +214,9 @@ export const analyzePermitIntakeResponseHousingUnitsMin = 0;
 export const analyzePermitIntakeResponseCompletenessScoreMin = 0;
 export const analyzePermitIntakeResponseCompletenessScoreMax = 100;
 
+export const analyzePermitIntakeResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin = 0;
+export const analyzePermitIntakeResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax = 100;
+
 
 
 export const AnalyzePermitIntakeResponse = zod.object({
@@ -333,7 +336,72 @@ export const AnalyzePermitIntakeResponse = zod.object({
   "requiredDocumentsExpected": zod.number().int(),
   "missingRequired": zod.number().int(),
   "potentialDocumentMismatches": zod.number().int().nullable(),
-  "needsStaffVerification": zod.number().int()
+  "needsStaffVerification": zod.number().int(),
+  "documentVerifications": zod.array(zod.object({
+  "documentLabel": zod.string(),
+  "checklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "status": zod.enum(['MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "detected": zod.array(zod.string()),
+  "couldNotVerify": zod.array(zod.string()),
+  "projectMatch": zod.enum(['Not assessed']),
+  "projectMatchNotes": zod.array(zod.string()),
+  "aiConfidence": zod.number().int().min(analyzePermitIntakeResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin).max(analyzePermitIntakeResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax).nullable(),
+  "explanation": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "requirements": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "requirementName": zod.string(),
+  "projectTypes": zod.array(zod.string()),
+  "applicableWhen": zod.string(),
+  "requiredDocument": zod.string(),
+  "validationType": zod.enum(['simulated-checklist', 'conditional-referral', 'applicant-statement']),
+  "applicability": zod.enum(['applicable', 'not_applicable', 'needs_review']),
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "explanation": zod.string(),
+  "documentChecklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "sb35Screening": zod.object({
+  "screeningMessage": zod.enum(['Potentially eligible — Staff verification required', 'Potential eligibility issue identified — Staff review required', 'No potential SB 35 screening triggered — Staff review required']),
+  "applicantIdentifiesAffordableHousing": zod.boolean(),
+  "criteria": zod.array(zod.object({
+  "name": zod.string(),
+  "observation": zod.enum(['OBSERVED', 'NOT_STATED', 'STAFF_REVIEW']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+}))
+})),
+  "explanation": zod.string(),
+  "disclaimer": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+})
+}).optional()
 }),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
@@ -381,6 +449,9 @@ export const reviewPermitChecksResponseHousingUnitsMin = 0;
 
 export const reviewPermitChecksResponseCompletenessScoreMin = 0;
 export const reviewPermitChecksResponseCompletenessScoreMax = 100;
+
+export const reviewPermitChecksResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin = 0;
+export const reviewPermitChecksResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax = 100;
 
 
 
@@ -501,7 +572,72 @@ export const ReviewPermitChecksResponse = zod.object({
   "requiredDocumentsExpected": zod.number().int(),
   "missingRequired": zod.number().int(),
   "potentialDocumentMismatches": zod.number().int().nullable(),
-  "needsStaffVerification": zod.number().int()
+  "needsStaffVerification": zod.number().int(),
+  "documentVerifications": zod.array(zod.object({
+  "documentLabel": zod.string(),
+  "checklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "status": zod.enum(['MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "detected": zod.array(zod.string()),
+  "couldNotVerify": zod.array(zod.string()),
+  "projectMatch": zod.enum(['Not assessed']),
+  "projectMatchNotes": zod.array(zod.string()),
+  "aiConfidence": zod.number().int().min(reviewPermitChecksResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin).max(reviewPermitChecksResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax).nullable(),
+  "explanation": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "requirements": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "requirementName": zod.string(),
+  "projectTypes": zod.array(zod.string()),
+  "applicableWhen": zod.string(),
+  "requiredDocument": zod.string(),
+  "validationType": zod.enum(['simulated-checklist', 'conditional-referral', 'applicant-statement']),
+  "applicability": zod.enum(['applicable', 'not_applicable', 'needs_review']),
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "explanation": zod.string(),
+  "documentChecklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "sb35Screening": zod.object({
+  "screeningMessage": zod.enum(['Potentially eligible — Staff verification required', 'Potential eligibility issue identified — Staff review required', 'No potential SB 35 screening triggered — Staff review required']),
+  "applicantIdentifiesAffordableHousing": zod.boolean(),
+  "criteria": zod.array(zod.object({
+  "name": zod.string(),
+  "observation": zod.enum(['OBSERVED', 'NOT_STATED', 'STAFF_REVIEW']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+}))
+})),
+  "explanation": zod.string(),
+  "disclaimer": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+})
+}).optional()
 }),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
@@ -539,6 +675,9 @@ export const correctPermitClassificationResponseHousingUnitsMin = 0;
 
 export const correctPermitClassificationResponseCompletenessScoreMin = 0;
 export const correctPermitClassificationResponseCompletenessScoreMax = 100;
+
+export const correctPermitClassificationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin = 0;
+export const correctPermitClassificationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax = 100;
 
 
 
@@ -659,7 +798,72 @@ export const CorrectPermitClassificationResponse = zod.object({
   "requiredDocumentsExpected": zod.number().int(),
   "missingRequired": zod.number().int(),
   "potentialDocumentMismatches": zod.number().int().nullable(),
-  "needsStaffVerification": zod.number().int()
+  "needsStaffVerification": zod.number().int(),
+  "documentVerifications": zod.array(zod.object({
+  "documentLabel": zod.string(),
+  "checklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "status": zod.enum(['MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "detected": zod.array(zod.string()),
+  "couldNotVerify": zod.array(zod.string()),
+  "projectMatch": zod.enum(['Not assessed']),
+  "projectMatchNotes": zod.array(zod.string()),
+  "aiConfidence": zod.number().int().min(correctPermitClassificationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin).max(correctPermitClassificationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax).nullable(),
+  "explanation": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "requirements": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "requirementName": zod.string(),
+  "projectTypes": zod.array(zod.string()),
+  "applicableWhen": zod.string(),
+  "requiredDocument": zod.string(),
+  "validationType": zod.enum(['simulated-checklist', 'conditional-referral', 'applicant-statement']),
+  "applicability": zod.enum(['applicable', 'not_applicable', 'needs_review']),
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "explanation": zod.string(),
+  "documentChecklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "sb35Screening": zod.object({
+  "screeningMessage": zod.enum(['Potentially eligible — Staff verification required', 'Potential eligibility issue identified — Staff review required', 'No potential SB 35 screening triggered — Staff review required']),
+  "applicantIdentifiesAffordableHousing": zod.boolean(),
+  "criteria": zod.array(zod.object({
+  "name": zod.string(),
+  "observation": zod.enum(['OBSERVED', 'NOT_STATED', 'STAFF_REVIEW']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+}))
+})),
+  "explanation": zod.string(),
+  "disclaimer": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+})
+}).optional()
 }),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
@@ -698,6 +902,9 @@ export const listPermitApplicationsResponseHousingUnitsMin = 0;
 
 export const listPermitApplicationsResponseCompletenessScoreMin = 0;
 export const listPermitApplicationsResponseCompletenessScoreMax = 100;
+
+export const listPermitApplicationsResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin = 0;
+export const listPermitApplicationsResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax = 100;
 
 
 
@@ -818,7 +1025,72 @@ export const ListPermitApplicationsResponseItem = zod.object({
   "requiredDocumentsExpected": zod.number().int(),
   "missingRequired": zod.number().int(),
   "potentialDocumentMismatches": zod.number().int().nullable(),
-  "needsStaffVerification": zod.number().int()
+  "needsStaffVerification": zod.number().int(),
+  "documentVerifications": zod.array(zod.object({
+  "documentLabel": zod.string(),
+  "checklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "status": zod.enum(['MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "detected": zod.array(zod.string()),
+  "couldNotVerify": zod.array(zod.string()),
+  "projectMatch": zod.enum(['Not assessed']),
+  "projectMatchNotes": zod.array(zod.string()),
+  "aiConfidence": zod.number().int().min(listPermitApplicationsResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin).max(listPermitApplicationsResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax).nullable(),
+  "explanation": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "requirements": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "requirementName": zod.string(),
+  "projectTypes": zod.array(zod.string()),
+  "applicableWhen": zod.string(),
+  "requiredDocument": zod.string(),
+  "validationType": zod.enum(['simulated-checklist', 'conditional-referral', 'applicant-statement']),
+  "applicability": zod.enum(['applicable', 'not_applicable', 'needs_review']),
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "explanation": zod.string(),
+  "documentChecklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "sb35Screening": zod.object({
+  "screeningMessage": zod.enum(['Potentially eligible — Staff verification required', 'Potential eligibility issue identified — Staff review required', 'No potential SB 35 screening triggered — Staff review required']),
+  "applicantIdentifiesAffordableHousing": zod.boolean(),
+  "criteria": zod.array(zod.object({
+  "name": zod.string(),
+  "observation": zod.enum(['OBSERVED', 'NOT_STATED', 'STAFF_REVIEW']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+}))
+})),
+  "explanation": zod.string(),
+  "disclaimer": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+})
+}).optional()
 }),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
@@ -845,6 +1117,9 @@ export const createPermitApplicationBodyHousingUnitsMin = 0;
 
 export const createPermitApplicationBodyCompletenessScoreMin = 0;
 export const createPermitApplicationBodyCompletenessScoreMax = 100;
+
+export const createPermitApplicationBodyIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin = 0;
+export const createPermitApplicationBodyIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax = 100;
 
 
 
@@ -965,7 +1240,72 @@ export const CreatePermitApplicationBody = zod.object({
   "requiredDocumentsExpected": zod.number().int(),
   "missingRequired": zod.number().int(),
   "potentialDocumentMismatches": zod.number().int().nullable(),
-  "needsStaffVerification": zod.number().int()
+  "needsStaffVerification": zod.number().int(),
+  "documentVerifications": zod.array(zod.object({
+  "documentLabel": zod.string(),
+  "checklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "status": zod.enum(['MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "detected": zod.array(zod.string()),
+  "couldNotVerify": zod.array(zod.string()),
+  "projectMatch": zod.enum(['Not assessed']),
+  "projectMatchNotes": zod.array(zod.string()),
+  "aiConfidence": zod.number().int().min(createPermitApplicationBodyIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin).max(createPermitApplicationBodyIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax).nullable(),
+  "explanation": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "requirements": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "requirementName": zod.string(),
+  "projectTypes": zod.array(zod.string()),
+  "applicableWhen": zod.string(),
+  "requiredDocument": zod.string(),
+  "validationType": zod.enum(['simulated-checklist', 'conditional-referral', 'applicant-statement']),
+  "applicability": zod.enum(['applicable', 'not_applicable', 'needs_review']),
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "explanation": zod.string(),
+  "documentChecklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "sb35Screening": zod.object({
+  "screeningMessage": zod.enum(['Potentially eligible — Staff verification required', 'Potential eligibility issue identified — Staff review required', 'No potential SB 35 screening triggered — Staff review required']),
+  "applicantIdentifiesAffordableHousing": zod.boolean(),
+  "criteria": zod.array(zod.object({
+  "name": zod.string(),
+  "observation": zod.enum(['OBSERVED', 'NOT_STATED', 'STAFF_REVIEW']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+}))
+})),
+  "explanation": zod.string(),
+  "disclaimer": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+})
+}).optional()
 }),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
@@ -986,6 +1326,9 @@ export const createPermitApplicationResponseHousingUnitsMin = 0;
 
 export const createPermitApplicationResponseCompletenessScoreMin = 0;
 export const createPermitApplicationResponseCompletenessScoreMax = 100;
+
+export const createPermitApplicationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin = 0;
+export const createPermitApplicationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax = 100;
 
 
 
@@ -1106,7 +1449,72 @@ export const CreatePermitApplicationResponse = zod.object({
   "requiredDocumentsExpected": zod.number().int(),
   "missingRequired": zod.number().int(),
   "potentialDocumentMismatches": zod.number().int().nullable(),
-  "needsStaffVerification": zod.number().int()
+  "needsStaffVerification": zod.number().int(),
+  "documentVerifications": zod.array(zod.object({
+  "documentLabel": zod.string(),
+  "checklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "status": zod.enum(['MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "detected": zod.array(zod.string()),
+  "couldNotVerify": zod.array(zod.string()),
+  "projectMatch": zod.enum(['Not assessed']),
+  "projectMatchNotes": zod.array(zod.string()),
+  "aiConfidence": zod.number().int().min(createPermitApplicationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin).max(createPermitApplicationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax).nullable(),
+  "explanation": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "requirements": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "requirementName": zod.string(),
+  "projectTypes": zod.array(zod.string()),
+  "applicableWhen": zod.string(),
+  "requiredDocument": zod.string(),
+  "validationType": zod.enum(['simulated-checklist', 'conditional-referral', 'applicant-statement']),
+  "applicability": zod.enum(['applicable', 'not_applicable', 'needs_review']),
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "explanation": zod.string(),
+  "documentChecklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "sb35Screening": zod.object({
+  "screeningMessage": zod.enum(['Potentially eligible — Staff verification required', 'Potential eligibility issue identified — Staff review required', 'No potential SB 35 screening triggered — Staff review required']),
+  "applicantIdentifiesAffordableHousing": zod.boolean(),
+  "criteria": zod.array(zod.object({
+  "name": zod.string(),
+  "observation": zod.enum(['OBSERVED', 'NOT_STATED', 'STAFF_REVIEW']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+}))
+})),
+  "explanation": zod.string(),
+  "disclaimer": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+})
+}).optional()
 }),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
@@ -1136,6 +1544,9 @@ export const updatePermitApplicationBodyHousingUnitsMin = 0;
 
 export const updatePermitApplicationBodyCompletenessScoreMin = 0;
 export const updatePermitApplicationBodyCompletenessScoreMax = 100;
+
+export const updatePermitApplicationBodyIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin = 0;
+export const updatePermitApplicationBodyIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax = 100;
 
 
 
@@ -1256,7 +1667,72 @@ export const UpdatePermitApplicationBody = zod.object({
   "requiredDocumentsExpected": zod.number().int(),
   "missingRequired": zod.number().int(),
   "potentialDocumentMismatches": zod.number().int().nullable(),
-  "needsStaffVerification": zod.number().int()
+  "needsStaffVerification": zod.number().int(),
+  "documentVerifications": zod.array(zod.object({
+  "documentLabel": zod.string(),
+  "checklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "status": zod.enum(['MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "detected": zod.array(zod.string()),
+  "couldNotVerify": zod.array(zod.string()),
+  "projectMatch": zod.enum(['Not assessed']),
+  "projectMatchNotes": zod.array(zod.string()),
+  "aiConfidence": zod.number().int().min(updatePermitApplicationBodyIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin).max(updatePermitApplicationBodyIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax).nullable(),
+  "explanation": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "requirements": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "requirementName": zod.string(),
+  "projectTypes": zod.array(zod.string()),
+  "applicableWhen": zod.string(),
+  "requiredDocument": zod.string(),
+  "validationType": zod.enum(['simulated-checklist', 'conditional-referral', 'applicant-statement']),
+  "applicability": zod.enum(['applicable', 'not_applicable', 'needs_review']),
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "explanation": zod.string(),
+  "documentChecklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "sb35Screening": zod.object({
+  "screeningMessage": zod.enum(['Potentially eligible — Staff verification required', 'Potential eligibility issue identified — Staff review required', 'No potential SB 35 screening triggered — Staff review required']),
+  "applicantIdentifiesAffordableHousing": zod.boolean(),
+  "criteria": zod.array(zod.object({
+  "name": zod.string(),
+  "observation": zod.enum(['OBSERVED', 'NOT_STATED', 'STAFF_REVIEW']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+}))
+})),
+  "explanation": zod.string(),
+  "disclaimer": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+})
+}).optional()
 }),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
@@ -1277,6 +1753,9 @@ export const updatePermitApplicationResponseHousingUnitsMin = 0;
 
 export const updatePermitApplicationResponseCompletenessScoreMin = 0;
 export const updatePermitApplicationResponseCompletenessScoreMax = 100;
+
+export const updatePermitApplicationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin = 0;
+export const updatePermitApplicationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax = 100;
 
 
 
@@ -1397,7 +1876,72 @@ export const UpdatePermitApplicationResponse = zod.object({
   "requiredDocumentsExpected": zod.number().int(),
   "missingRequired": zod.number().int(),
   "potentialDocumentMismatches": zod.number().int().nullable(),
-  "needsStaffVerification": zod.number().int()
+  "needsStaffVerification": zod.number().int(),
+  "documentVerifications": zod.array(zod.object({
+  "documentLabel": zod.string(),
+  "checklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "status": zod.enum(['MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "detected": zod.array(zod.string()),
+  "couldNotVerify": zod.array(zod.string()),
+  "projectMatch": zod.enum(['Not assessed']),
+  "projectMatchNotes": zod.array(zod.string()),
+  "aiConfidence": zod.number().int().min(updatePermitApplicationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMin).max(updatePermitApplicationResponseIntakeAnalysisOneDocumentVerificationsItemAiConfidenceMax).nullable(),
+  "explanation": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "requirements": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "requirementName": zod.string(),
+  "projectTypes": zod.array(zod.string()),
+  "applicableWhen": zod.string(),
+  "requiredDocument": zod.string(),
+  "validationType": zod.enum(['simulated-checklist', 'conditional-referral', 'applicant-statement']),
+  "applicability": zod.enum(['applicable', 'not_applicable', 'needs_review']),
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "explanation": zod.string(),
+  "documentChecklistStatus": zod.enum(['submitted', 'missing', 'unavailable']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+}),
+  "recommendation": zod.string()
+})).optional(),
+  "sb35Screening": zod.object({
+  "screeningMessage": zod.enum(['Potentially eligible — Staff verification required', 'Potential eligibility issue identified — Staff review required', 'No potential SB 35 screening triggered — Staff review required']),
+  "applicantIdentifiesAffordableHousing": zod.boolean(),
+  "criteria": zod.array(zod.object({
+  "name": zod.string(),
+  "observation": zod.enum(['OBSERVED', 'NOT_STATED', 'STAFF_REVIEW']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist']),
+  "description": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+}))
+})),
+  "explanation": zod.string(),
+  "disclaimer": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "reference": zod.string(),
+  "url": zod.string().url()
+})
+}).optional()
 }),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({

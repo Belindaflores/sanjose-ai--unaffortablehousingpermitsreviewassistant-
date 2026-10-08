@@ -172,6 +172,161 @@ export interface IntakeDocument {
   fields: IntakeFinding[];
 }
 
+export interface RequirementSource {
+  title: string;
+  reference: string;
+  url: string;
+}
+
+export type RequirementEvidenceSource = typeof RequirementEvidenceSource[keyof typeof RequirementEvidenceSource];
+
+
+export const RequirementEvidenceSource = {
+  Application: 'Application',
+  Checklist: 'Checklist',
+} as const;
+
+export interface RequirementEvidence {
+  source: RequirementEvidenceSource;
+  description: string;
+  quote: string;
+  /** @nullable */
+  documentName: string | null;
+  /** @nullable */
+  page: number | null;
+}
+
+export type PermitRequirementValidationType = typeof PermitRequirementValidationType[keyof typeof PermitRequirementValidationType];
+
+
+export const PermitRequirementValidationType = {
+  'simulated-checklist': 'simulated-checklist',
+  'conditional-referral': 'conditional-referral',
+  'applicant-statement': 'applicant-statement',
+} as const;
+
+export type PermitRequirementApplicability = typeof PermitRequirementApplicability[keyof typeof PermitRequirementApplicability];
+
+
+export const PermitRequirementApplicability = {
+  applicable: 'applicable',
+  not_applicable: 'not_applicable',
+  needs_review: 'needs_review',
+} as const;
+
+export type PermitRequirementStatus = typeof PermitRequirementStatus[keyof typeof PermitRequirementStatus];
+
+
+export const PermitRequirementStatus = {
+  PASS: 'PASS',
+  MISSING: 'MISSING',
+  REVIEW: 'REVIEW',
+  NOT_APPLICABLE: 'NOT_APPLICABLE',
+} as const;
+
+export type PermitRequirementDocumentChecklistStatus = typeof PermitRequirementDocumentChecklistStatus[keyof typeof PermitRequirementDocumentChecklistStatus];
+
+
+export const PermitRequirementDocumentChecklistStatus = {
+  submitted: 'submitted',
+  missing: 'missing',
+  unavailable: 'unavailable',
+} as const;
+
+export interface PermitRequirement {
+  requirementId: string;
+  requirementName: string;
+  projectTypes: string[];
+  applicableWhen: string;
+  requiredDocument: string;
+  validationType: PermitRequirementValidationType;
+  applicability: PermitRequirementApplicability;
+  status: PermitRequirementStatus;
+  explanation: string;
+  documentChecklistStatus: PermitRequirementDocumentChecklistStatus;
+  evidence: RequirementEvidence[];
+  source: RequirementSource;
+  recommendation: string;
+}
+
+export type PermitDocumentVerificationChecklistStatus = typeof PermitDocumentVerificationChecklistStatus[keyof typeof PermitDocumentVerificationChecklistStatus];
+
+
+export const PermitDocumentVerificationChecklistStatus = {
+  submitted: 'submitted',
+  missing: 'missing',
+  unavailable: 'unavailable',
+} as const;
+
+export type PermitDocumentVerificationStatus = typeof PermitDocumentVerificationStatus[keyof typeof PermitDocumentVerificationStatus];
+
+
+export const PermitDocumentVerificationStatus = {
+  MISSING: 'MISSING',
+  REVIEW: 'REVIEW',
+  NOT_APPLICABLE: 'NOT_APPLICABLE',
+} as const;
+
+export type PermitDocumentVerificationProjectMatch = typeof PermitDocumentVerificationProjectMatch[keyof typeof PermitDocumentVerificationProjectMatch];
+
+
+export const PermitDocumentVerificationProjectMatch = {
+  Not_assessed: 'Not assessed',
+} as const;
+
+export interface PermitDocumentVerification {
+  documentLabel: string;
+  checklistStatus: PermitDocumentVerificationChecklistStatus;
+  status: PermitDocumentVerificationStatus;
+  detected: string[];
+  couldNotVerify: string[];
+  projectMatch: PermitDocumentVerificationProjectMatch;
+  projectMatchNotes: string[];
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  aiConfidence: number | null;
+  explanation: string;
+  source: RequirementSource;
+  recommendation: string;
+}
+
+export type SB35CriterionObservation = typeof SB35CriterionObservation[keyof typeof SB35CriterionObservation];
+
+
+export const SB35CriterionObservation = {
+  OBSERVED: 'OBSERVED',
+  NOT_STATED: 'NOT_STATED',
+  STAFF_REVIEW: 'STAFF_REVIEW',
+} as const;
+
+export interface SB35Criterion {
+  name: string;
+  observation: SB35CriterionObservation;
+  explanation: string;
+  evidence: RequirementEvidence[];
+}
+
+export type SB35ScreeningScreeningMessage = typeof SB35ScreeningScreeningMessage[keyof typeof SB35ScreeningScreeningMessage];
+
+
+export const SB35ScreeningScreeningMessage = {
+  'Potentially_eligible_—_Staff_verification_required': 'Potentially eligible — Staff verification required',
+  'Potential_eligibility_issue_identified_—_Staff_review_required': 'Potential eligibility issue identified — Staff review required',
+  'No_potential_SB_35_screening_triggered_—_Staff_review_required': 'No potential SB 35 screening triggered — Staff review required',
+} as const;
+
+export interface SB35Screening {
+  screeningMessage: SB35ScreeningScreeningMessage;
+  applicantIdentifiesAffordableHousing: boolean;
+  criteria: SB35Criterion[];
+  explanation: string;
+  disclaimer: string;
+  source: RequirementSource;
+}
+
 export type IntakeAnalysisStatus = typeof IntakeAnalysisStatus[keyof typeof IntakeAnalysisStatus];
 
 
@@ -203,6 +358,9 @@ export interface IntakeAnalysis {
   /** @nullable */
   potentialDocumentMismatches: number | null;
   needsStaffVerification: number;
+  documentVerifications?: PermitDocumentVerification[];
+  requirements?: PermitRequirement[];
+  sb35Screening?: SB35Screening;
 }
 
 export type PermitApplicationVerificationStatus = typeof PermitApplicationVerificationStatus[keyof typeof PermitApplicationVerificationStatus];

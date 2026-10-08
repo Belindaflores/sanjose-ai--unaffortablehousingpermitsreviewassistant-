@@ -9,6 +9,9 @@ import type { IntakeAnalysisMode } from './intakeAnalysisMode';
 import type { IntakeAnalysisStatus } from './intakeAnalysisStatus';
 import type { IntakeDocument } from './intakeDocument';
 import type { IntakeFinding } from './intakeFinding';
+import type { PermitDocumentVerification } from './permitDocumentVerification';
+import type { PermitRequirement } from './permitRequirement';
+import type { SB35Screening } from './sB35Screening';
 
 export interface IntakeAnalysis {
   status: IntakeAnalysisStatus;
@@ -26,4 +29,7 @@ export interface IntakeAnalysis {
   /** @nullable */
   potentialDocumentMismatches: number | null;
   needsStaffVerification: number;
+  documentVerifications?: PermitDocumentVerification[];
+  requirements?: PermitRequirement[];
+  sb35Screening?: SB35Screening;
 }
