@@ -205,6 +205,310 @@ export const UpdatePermitRuleConfigResponse = zod.object({
 })
 
 
+export const GetPermitRequirementsCatalogResponseItem = zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+})
+export const GetPermitRequirementsCatalogResponse = zod.array(GetPermitRequirementsCatalogResponseItem)
+
+
+export const GetPermitRequirementsEvaluationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetPermitRequirementsEvaluationResponse = zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+})
+
+
+export const UpdatePermitRequirementDocumentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdatePermitRequirementDocumentBody = zod.object({
+  "requirement_id": zod.string(),
+  "received": zod.boolean()
+})
+
+export const updatePermitRequirementDocumentResponseHousingUnitsMin = 0;
+
+export const updatePermitRequirementDocumentResponseCompletenessScoreMin = 0;
+export const updatePermitRequirementDocumentResponseCompletenessScoreMax = 100;
+
+
+
+export const UpdatePermitRequirementDocumentResponse = zod.object({
+  "id": zod.string(),
+  "ownerUserId": zod.string().nullish(),
+  "claimed_affordable": zod.boolean().optional(),
+  "claimed_underserved": zod.boolean().optional(),
+  "censusTract": zod.string().optional(),
+  "verification_status": zod.enum(['Unverified', 'Verified', 'Rejected']).optional(),
+  "priorityClaims": zod.object({
+  "affordable": zod.object({
+  "status": zod.enum(['Unverified', 'Verified', 'Rejected']),
+  "note": zod.string().optional(),
+  "by": zod.string().optional(),
+  "at": zod.string().optional()
+}),
+  "underserved": zod.object({
+  "status": zod.enum(['Unverified', 'Verified', 'Rejected']),
+  "note": zod.string().optional(),
+  "by": zod.string().optional(),
+  "at": zod.string().optional()
+})
+}).optional(),
+  "reviewDecisions": zod.object({
+  "jurisdiction": zod.object({
+  "note": zod.string(),
+  "by": zod.string(),
+  "at": zod.string(),
+  "document": zod.string().optional()
+}).optional(),
+  "safety": zod.array(zod.object({
+  "note": zod.string(),
+  "by": zod.string(),
+  "at": zod.string(),
+  "document": zod.string()
+})).optional()
+}).optional(),
+  "ruleChecks": zod.object({
+  "jurisdictionStatus": zod.enum(['In County', 'Needs Verification', 'Outside County']),
+  "classificationConflicts": zod.array(zod.string()),
+  "safetyCriticalFlags": zod.array(zod.string()),
+  "underservedMatch": zod.string(),
+  "completenessLabel": zod.string()
+}).optional(),
+  "requiredReviewers": zod.array(zod.string()).optional(),
+  "dataSource": zod.enum(['Prototype Submission', 'Synthetic']).optional(),
+  "applicantName": zod.string(),
+  "companyName": zod.string(),
+  "email": zod.string().email(),
+  "projectName": zod.string(),
+  "projectAddress": zod.string(),
+  "permitType": zod.string(),
+  "projectType": zod.string(),
+  "housingUnits": zod.number().int().min(updatePermitRequirementDocumentResponseHousingUnitsMin),
+  "affordableHousing": zod.boolean(),
+  "underservedCommunity": zod.boolean(),
+  "estimatedCost": zod.number(),
+  "description": zod.string(),
+  "submittedAt": zod.coerce.date(),
+  "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
+  "priority": zod.enum(['Normal', 'High', 'Urgent']),
+  "assignedDepartment": zod.string(),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "completenessScore": zod.number().int().min(updatePermitRequirementDocumentResponseCompletenessScoreMin).max(updatePermitRequirementDocumentResponseCompletenessScoreMax),
+  "documents": zod.array(zod.object({
+  "category": zod.string(),
+  "label": zod.string(),
+  "required": zod.boolean(),
+  "received": zod.boolean(),
+  "fileName": zod.string().optional(),
+  "objectPath": zod.string().optional(),
+  "receivedAt": zod.coerce.date().optional()
+})),
+  "flags": zod.array(zod.string()),
+  "aiSummary": zod.string(),
+  "intakeAnalysis": zod.union([zod.object({
+  "status": zod.enum(['completed', 'failed']),
+  "mode": zod.enum(['application-only']),
+  "analyzedAt": zod.string(),
+  "model": zod.string(),
+  "error": zod.string().nullable(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "label": zod.string(),
+  "category": zod.string(),
+  "submitted": zod.boolean(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+}))
+})),
+  "actualDocumentsAnalyzed": zod.number().int(),
+  "checklistSubmitted": zod.number().int(),
+  "requiredDocumentsExpected": zod.number().int(),
+  "missingRequired": zod.number().int(),
+  "potentialDocumentMismatches": zod.number().int().nullable(),
+  "needsStaffVerification": zod.number().int()
+}),zod.null()]).optional(),
+  "requirementsEvaluation": zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+}).optional(),
+  "recommendedRouting": zod.array(zod.string()),
+  "timeline": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['completed', 'current', 'upcoming']),
+  "date": zod.string(),
+  "detail": zod.string()
+})),
+  "notes": zod.array(zod.object({
+  "id": zod.string(),
+  "author": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
 export const AnalyzePermitIntakeParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -335,6 +639,69 @@ export const AnalyzePermitIntakeResponse = zod.object({
   "potentialDocumentMismatches": zod.number().int().nullable(),
   "needsStaffVerification": zod.number().int()
 }),zod.null()]).optional(),
+  "requirementsEvaluation": zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+}).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -503,6 +870,69 @@ export const ReviewPermitChecksResponse = zod.object({
   "potentialDocumentMismatches": zod.number().int().nullable(),
   "needsStaffVerification": zod.number().int()
 }),zod.null()]).optional(),
+  "requirementsEvaluation": zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+}).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -661,6 +1091,69 @@ export const CorrectPermitClassificationResponse = zod.object({
   "potentialDocumentMismatches": zod.number().int().nullable(),
   "needsStaffVerification": zod.number().int()
 }),zod.null()]).optional(),
+  "requirementsEvaluation": zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+}).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -820,6 +1313,69 @@ export const ListPermitApplicationsResponseItem = zod.object({
   "potentialDocumentMismatches": zod.number().int().nullable(),
   "needsStaffVerification": zod.number().int()
 }),zod.null()]).optional(),
+  "requirementsEvaluation": zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+}).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -967,6 +1523,69 @@ export const CreatePermitApplicationBody = zod.object({
   "potentialDocumentMismatches": zod.number().int().nullable(),
   "needsStaffVerification": zod.number().int()
 }),zod.null()]).optional(),
+  "requirementsEvaluation": zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+}).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -1108,6 +1727,69 @@ export const CreatePermitApplicationResponse = zod.object({
   "potentialDocumentMismatches": zod.number().int().nullable(),
   "needsStaffVerification": zod.number().int()
 }),zod.null()]).optional(),
+  "requirementsEvaluation": zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+}).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -1258,6 +1940,69 @@ export const UpdatePermitApplicationBody = zod.object({
   "potentialDocumentMismatches": zod.number().int().nullable(),
   "needsStaffVerification": zod.number().int()
 }),zod.null()]).optional(),
+  "requirementsEvaluation": zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+}).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -1399,6 +2144,69 @@ export const UpdatePermitApplicationResponse = zod.object({
   "potentialDocumentMismatches": zod.number().int().nullable(),
   "needsStaffVerification": zod.number().int()
 }),zod.null()]).optional(),
+  "requirementsEvaluation": zod.object({
+  "mode": zod.enum(['simulation-only']),
+  "ruleset_version": zod.string(),
+  "project_category": zod.string(),
+  "category_explanation": zod.string(),
+  "jurisdiction_scope": zod.string(),
+  "disclaimer": zod.string(),
+  "intake_status": zod.enum(['completed', 'failed', 'not-run']),
+  "evaluated_at": zod.string(),
+  "requirements": zod.array(zod.object({
+  "requirement_id": zod.string(),
+  "requirement_name": zod.string(),
+  "project_types": zod.array(zod.string()),
+  "applicable_when": zod.object({
+  "all": zod.array(zod.string()),
+  "description": zod.string()
+}),
+  "required_document": zod.string(),
+  "document_aliases": zod.array(zod.string()),
+  "validation_type": zod.enum(['document-content']),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+}),
+  "group": zod.enum(['Multifamily', 'Affordable housing / SB 35'])
+}).and(zod.object({
+  "status": zod.enum(['PASS', 'MISSING', 'REVIEW', 'NOT_APPLICABLE']),
+  "applicability": zod.enum(['APPLIES', 'UNKNOWN', 'DOES_NOT_APPLY']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "matched_documents": zod.array(zod.string())
+}))),
+  "sb35_screening": zod.object({
+  "status": zod.enum(['POTENTIAL', 'ISSUE', 'NOT_REQUESTED']),
+  "message": zod.string(),
+  "disclaimer": zod.string(),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['OBSERVED', 'ISSUE', 'UNKNOWN']),
+  "explanation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "source": zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "section": zod.string()
+})
+}))
+})
+}).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),

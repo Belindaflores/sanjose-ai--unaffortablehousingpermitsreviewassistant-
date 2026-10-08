@@ -5,6 +5,7 @@ import countyPublicRecordsRouter from "./county-public-records";
 import savedApplicationsRouter from "./saved-applications";
 import portalUserRouter from "./portal-user";
 import permitRuleConfigRouter from "./permit-rule-config";
+import permitRequirementsRouter from "./permit-requirements";
 import storageRouter from "./storage";
 
 const router: IRouter = Router();
@@ -12,6 +13,7 @@ const router: IRouter = Router();
 router.use(healthRouter);
 router.use(portalUserRouter);
 router.use(permitRuleConfigRouter);
+router.use(permitRequirementsRouter);
 router.use(storageRouter);
 router.use(permitApplicationsRouter);
 router.use(countyPublicRecordsRouter);

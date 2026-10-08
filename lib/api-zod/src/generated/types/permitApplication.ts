@@ -12,6 +12,7 @@ import type { PermitApplicationPriority } from './permitApplicationPriority';
 import type { PermitApplicationReviewStatus } from './permitApplicationReviewStatus';
 import type { PermitApplicationVerificationStatus } from './permitApplicationVerificationStatus';
 import type { PermitDocument } from './permitDocument';
+import type { PermitRequirementsEvaluation } from './permitRequirementsEvaluation';
 import type { PermitStaffNote } from './permitStaffNote';
 import type { PermitTimelineEvent } from './permitTimelineEvent';
 import type { PriorityClaims } from './priorityClaims';
@@ -58,6 +59,7 @@ export interface PermitApplication {
   flags: string[];
   aiSummary: string;
   intakeAnalysis?: IntakeAnalysis | null;
+  requirementsEvaluation?: PermitRequirementsEvaluation;
   recommendedRouting: string[];
   timeline: PermitTimelineEvent[];
   notes: PermitStaffNote[];

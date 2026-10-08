@@ -161,3 +161,13 @@ export async function analyzeIntake(application: Application, extract: Extractor
     return assembleIntakeAnalysis(application, null, true);
   }
 }
+
+/** Checklist-only refresh never reruns the model or changes extracted application findings. */
+export function refreshIntakeChecklist(application: Application): IntakeAnalysis | null {
+  if (!application.intakeAnalysis) return null;
+  const checklist = assembleIntakeAnalysis(application, null);
+  return { ...application.intakeAnalysis, documents: checklist.documents,
+    actualDocumentsAnalyzed: 0, checklistSubmitted: checklist.checklistSubmitted,
+    requiredDocumentsExpected: checklist.requiredDocumentsExpected, missingRequired: checklist.missingRequired,
+    potentialDocumentMismatches: null };
+}

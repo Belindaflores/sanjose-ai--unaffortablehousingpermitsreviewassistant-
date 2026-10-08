@@ -4,8 +4,8 @@ import { Link, Route, Switch, Redirect, useLocation, useRoute, Router as WouterR
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { getListPermitApplicationsQueryKey, useCreatePermitApplication, useListPermitApplications, useUpdatePermitApplication } from '@workspace/api-client-react';
-import type { IntakeAnalysis } from '@workspace/api-client-react';
-import { checkJurisdiction, screenApplication, EVIDENCE_LABEL, OUTSIDE_COUNTY_MESSAGE, type PriorityClaims, type RuleChecks, type ReviewDecisions } from '@workspace/api-zod';
+import type { IntakeAnalysis, PermitRequirementsEvaluation } from '@workspace/api-client-react';
+import { checkJurisdiction, screenApplication, extendRequirementChecklist, EVIDENCE_LABEL, OUTSIDE_COUNTY_MESSAGE, type PriorityClaims, type RuleChecks, type ReviewDecisions } from '@workspace/api-zod';
 import { PortalAuth, SignOutButton } from './PortalAuth';
 import { usePortalProfile, usePortalSession } from './PortalProfile';
 import { StaffChecksPanel, ClassificationCorrection, UnderservedConfigPanel } from './ReviewSafeguards';
@@ -16,6 +16,7 @@ import { ApplicantApplicationsPage, ApplicantDashboard, ApplicantDetailPage, App
 import { SavedApplicationPage } from './SavedApplications';
 import { WorkerAnalytics } from './WorkerAnalytics';
 import { IntakeAnalysisPanel } from './IntakeAnalysisPanel';
+import { PermitRequirementsPanel } from './PermitRequirementsPanel';
 import {
   Activity, AlertCircle, BarChart3, Bell, Building2, Check, CheckCircle2, ChevronRight,
   ClipboardCheck, Clock3, FileCheck2, FilePlus2, FileText, HelpCircle, Home, Info,
@@ -48,6 +49,7 @@ export type PermitApplication = {
   reviewStatus: ReviewStatus; completenessScore: number; documents: Document[]; flags: string[];
   aiSummary: string; recommendedRouting: string[]; timeline: TimelineEvent[]; notes: StaffNote[];
   intakeAnalysis?: IntakeAnalysis | null;
+  requirementsEvaluation?: PermitRequirementsEvaluation;
 };
 
 const today = new Date();
@@ -335,6 +337,12 @@ function NewApplication({ onAdd, role }: { onAdd: (app: PermitApplication) => vo
       return form.affordableHousing ? [...core, existing ?? { category: 'Priority claim evidence', label: EVIDENCE_LABEL, required: true, received: false }] : core;
     });
   }, [form.affordableHousing]);
+  useEffect(() => {
+    setDocs(previous => extendRequirementChecklist({
+      projectAddress: form.projectAddress, projectType: form.projectType, description: form.description,
+      housingUnits: Number(form.housingUnits), affordableHousing: form.affordableHousing,
+    }, previous) as Document[]);
+  }, [form.projectAddress, form.projectType, form.description, form.housingUnits, form.affordableHousing]);
   const jurisdiction = checkJurisdiction(form.projectAddress);
   const fireRequired = /multifamily/i.test(form.projectType) || Number(form.housingUnits) >= 5;
   const toggleDoc = (index: number) => setDocs(prev =>
@@ -436,6 +444,7 @@ function DetailPage({ applications, updateApp }: { applications: PermitApplicati
     <div className={`notice ${app.requiredReviewers?.length ? 'rule-alert rule-incomplete' : ''}`} style={{ margin: '18px 0' }}><strong>{app.ruleChecks?.completenessLabel}</strong>{app.requiredReviewers?.length ? <p>Required reviewers: {app.requiredReviewers.join(' · ')}</p> : null}</div>
     {dbApp && <><StaffChecksPanel application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} /><ClassificationCorrection key={app.id} application={app} onSaved={saved => { updateApp(saved); void queryClient.invalidateQueries({ queryKey: getListPermitApplicationsQueryKey() }); }} /></>}
     {dbApp && <IntakeAnalysisPanel application={app} onSaved={saved => updateApp(saved as PermitApplication)} />}
+    {dbApp && <PermitRequirementsPanel application={app} onSaved={saved => updateApp(saved as PermitApplication)} />}
     {(saveError || recordUnavailable) && <div className="notice" role="alert" data-testid="error-update-record" style={{ borderColor: '#ddb1ac', background: '#fff3f1', color: '#7e403a', marginBottom: 18 }}><AlertCircle size={15} style={{ verticalAlign: 'middle', marginRight: 7 }} /> {recordUnavailable ? 'Saved records are unavailable. Review actions are paused until this record can be verified in the database.' : saveError}{recordUnavailable && <button className="button outline" onClick={() => refetch()} data-testid="button-retry-record-detail" style={{ marginLeft: 12 }}>Retry</button>}</div>}
     <div className="card" style={{ marginBottom: 20 }}><div className="card-header"><div><h2>Human review actions</h2><p className="section-note">These actions update saved records for database-backed applications and the demo queue for seeded examples. Approval requires an explicit staff action.</p></div><ShieldCheck size={20} color="#1b7c7b" /></div><fieldset disabled={updateRecord.isPending || recordUnavailable} className="card-body actions action-fieldset"><button className="button teal" onClick={() => action('Ready for review', 'Ready for Review')} data-testid="button-mark-ready"><CheckCircle2 /> Mark Ready for Review</button><button className="button secondary" onClick={() => action('Information request', 'More Information Requested')} data-testid="button-request-information"><MessageSquare /> Request More Information</button><button className="button secondary" onClick={() => action('Planning routing', 'Planning Review', 'Planning')} data-testid="button-send-planning"><Building2 /> Send to Planning</button><button className="button secondary" onClick={() => action('Building routing', 'Building Review', 'Building')} data-testid="button-send-building"><ClipboardCheck /> Send to Building</button><button className="button secondary" onClick={() => action('Fire routing', 'Fire Review', 'Fire Prevention')} data-testid="button-send-fire"><Siren /> Send to Fire</button><button className="button secondary" onClick={() => action('Environmental routing', 'Environmental Review', 'Environmental Health')} data-testid="button-send-environmental"><Activity /> Send to Environmental</button><button className="button danger" onClick={() => action('Revisions request', 'Revisions Required')} data-testid="button-mark-revisions"><XCircle /> Mark Revisions Required</button><button className="button danger" onClick={() => action('Denial', 'Denied')} data-testid="button-mark-denied"><XCircle /> Mark Denied</button><button className="button primary" onClick={() => action('Approval', 'Approved')} data-testid="button-mark-approved"><ShieldCheck /> Mark Approved</button></fieldset></div>
     <div className="grid-2"><div className="stack"><div className="card"><div className="card-header"><div><h2>Applicant and project</h2><p className="section-note">Submitted information for staff verification.</p></div><Pencil size={16} color="#6b828d" /></div><div className="card-body"><div className="info-list"><InfoItem label="Applicant" value={`${app.applicantName} · ${app.companyName}`} /><InfoItem label="Contact" value={app.email} /><InfoItem label="Project address" value={app.projectAddress} /><InfoItem label="Permit / project type" value={`${app.permitType} · ${app.projectType}`} /><InfoItem label="Housing units" value={String(app.housingUnits)} /><InfoItem label="Estimated cost" value={currency(app.estimatedCost)} /><InfoItem label="Priority context" value={`${app.affordableHousing ? 'Affordable housing' : 'Market-rate'}${app.underservedCommunity ? ' · Underserved community' : ''}`} /><InfoItem label="Assigned department" value={app.assignedDepartment} /><InfoItem label="Description" value={app.description} /></div></div></div><div className="card"><div className="card-header"><div><h2>Submitted documents</h2><p className="section-note">{app.documents.filter(d => d.received).length} of {app.documents.length} document categories received.</p></div><FileCheck2 size={17} color="#2b8282" /></div><div className="card-body doc-list">{app.documents.map(d => {

@@ -1,6 +1,6 @@
 import { db, permitRuleConfigsTable, permitApplicationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { screenApplication, PLACEHOLDER_UNDERSERVED_CONFIG, CreatePermitApplicationResponse } from "@workspace/api-zod";
+import { screenApplication, PLACEHOLDER_UNDERSERVED_CONFIG, CreatePermitApplicationResponse, evaluatePermitRequirements } from "@workspace/api-zod";
 
 export async function readRuleConfig() {
   const [config] = await db.select().from(permitRuleConfigsTable).where(eq(permitRuleConfigsTable.id, "underserved-areas"));
@@ -8,7 +8,7 @@ export async function readRuleConfig() {
 }
 export type PermitRow = typeof permitApplicationsTable.$inferSelect;
 export async function screenedResponse(row: PermitRow) {
-  return CreatePermitApplicationResponse.parse(screenApplication({
+  const screened = CreatePermitApplicationResponse.parse(screenApplication({
     ...row,
     submittedAt: row.submittedAt.toISOString(),
     claimed_affordable: row.priorityClaims ? row.claimed_affordable : row.affordableHousing,
@@ -16,9 +16,10 @@ export async function screenedResponse(row: PermitRow) {
     priorityClaims: row.priorityClaims ?? undefined,
     reviewDecisions: row.reviewDecisions ?? {},
   }, await readRuleConfig()));
+  return CreatePermitApplicationResponse.parse({ ...screened, requirementsEvaluation: evaluatePermitRequirements(screened) });
 }
 export function toValues(application: typeof CreatePermitApplicationResponse._output) {
-  const { ruleChecks: _checks, ...values } = application;
+  const { ruleChecks: _checks, requirementsEvaluation: _requirements, ...values } = application;
   return {
     ...values, dataSource: "Prototype Submission",
     submittedAt: new Date(application.submittedAt),
