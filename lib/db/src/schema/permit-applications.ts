@@ -66,6 +66,7 @@ export const permitApplicationsTable = pgTable("permit_applications", {
   documents: jsonb("documents").$type<PermitDocument[]>().notNull(),
   flags: jsonb("flags").$type<string[]>().notNull(),
   aiSummary: text("ai_summary").notNull(),
+  intakeAnalysis: jsonb("intake_analysis").$type<Record<string, unknown>>(),
   recommendedRouting: jsonb("recommended_routing").$type<string[]>().notNull(),
   timeline: jsonb("timeline").$type<PermitTimelineEvent[]>().notNull(),
   notes: jsonb("notes").$type<PermitStaffNote[]>().notNull(),

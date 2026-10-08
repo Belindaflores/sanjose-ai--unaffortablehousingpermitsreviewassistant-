@@ -3,3 +3,5 @@
 - [Public permit separation](applicant-showcase.md) — synthetic account presentations and drafts stay separate from public City records and official filings.
 - [Development database resets](development-db-resets.md) — an administrative connection reset can stop the API while the frontend still serves; it is not a credential failure.
 - [Passcode scope](passcode-scope.md) — four-digit server gate protects pages, files, and APIs; both prototype roles use confirmed passcode-only access.
+- [AI intake scope](intake-analysis-scope.md) — user chose application-only analysis with simulated statuses; no invented document/page evidence or legal eligibility decisions.
+- [Protected browser testing](protected-browser-testing.md) — authenticate secret-dependent flows in the workspace runtime; the test sandbox has no workspace process.env.

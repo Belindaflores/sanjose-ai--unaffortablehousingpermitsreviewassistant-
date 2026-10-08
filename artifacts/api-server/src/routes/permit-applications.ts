@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db, permitApplicationsTable, permitRejectedAttemptsTable } from "@workspace/db";
 import { CreatePermitApplicationBody, CreatePermitApplicationResponse, ListPermitApplicationsQueryParams, ListPermitApplicationsResponse, UpdatePermitApplicationBody, UpdatePermitApplicationParams, UpdatePermitApplicationResponse, ReviewPermitChecksBody, CorrectPermitClassificationBody, checkJurisdiction, OUTSIDE_COUNTY_MESSAGE, screenApplication, SAFETY_CRITICAL_DOCS, simulatedDocumentStatuses } from "@workspace/api-zod";
 import { requirePortalUser, requireStaff, isStaff, canViewApplication } from "../middlewares/portal-auth";
 import { readRuleConfig, screenedResponse, toValues } from "../lib/permit-screening";
+import { analyzeIntake } from "../lib/intake-analysis";
 import { buildPermitTimeline } from "../lib/permit-timeline";
 
 const router = Router();
@@ -36,13 +37,38 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
     ...parsed.data, documents, id: `SCC-${now.getFullYear()}-${randomUUID()}`, ownerUserId: user.id,
     email: isStaff(user) ? parsed.data.email : user.email,
     applicantName: isStaff(user) ? parsed.data.applicantName : user.name,
-    submittedAt: now, reviewStatus: "New", notes: [], reviewDecisions: {},
+    submittedAt: now, reviewStatus: "New", notes: [], reviewDecisions: {}, intakeAnalysis: null,
     priorityClaims: { affordable: { status: "Unverified" }, underserved: { status: "Unverified" } },
     claimed_affordable: claimedAffordable, claimed_underserved: parsed.data.claimed_underserved ?? parsed.data.underservedCommunity,
   }, await readRuleConfig()));
   screened.timeline = buildPermitTimeline(screened.reviewStatus, now, screened.recommendedRouting.includes("Fire Marshal"));
+  screened.intakeAnalysis = await analyzeIntake(screened);
+  if (screened.intakeAnalysis.status === "failed") req.log.warn("Permit saved with explicit AI intake failure; staff retry available");
   const [saved] = await db.insert(permitApplicationsTable).values(toValues(screened)).returning();
   res.status(201).json(await screenedResponse(saved!));
+});
+const intakeInProgress = new Set<string>();
+router.post("/permit-applications/:id/intake-analysis", requirePortalUser, requireStaff, async (req, res): Promise<void> => {
+  const id = typeof req.params.id === "string" ? req.params.id : "";
+  if (intakeInProgress.has(id)) { res.status(409).json({ error: "Intake analysis is already running for this application." }); return; }
+  intakeInProgress.add(id);
+  try {
+    const [row] = await db.select().from(permitApplicationsTable).where(eq(permitApplicationsTable.id, id));
+    if (!row) { res.status(404).json({ error: "Application not found." }); return; }
+    const intakeAnalysis = await analyzeIntake(await screenedResponse(row));
+    // Patch just analysis; concurrent staff notes/decisions must not be overwritten.
+    const [saved] = await db.update(permitApplicationsTable).set({ intakeAnalysis }).where(and(
+      eq(permitApplicationsTable.id, id),
+      eq(permitApplicationsTable.description, row.description),
+      eq(permitApplicationsTable.projectType, row.projectType),
+      eq(permitApplicationsTable.housingUnits, row.housingUnits),
+      eq(permitApplicationsTable.affordableHousing, row.affordableHousing),
+    )).returning();
+    if (!saved) { res.status(409).json({ error: "The application changed during analysis. Please run intake analysis again." }); return; }
+    res.json(await screenedResponse(saved!));
+  } finally {
+    intakeInProgress.delete(id);
+  }
 });
 router.patch("/permit-applications/:id", requirePortalUser, requireStaff, async (req, res): Promise<void> => {
   const params = UpdatePermitApplicationParams.safeParse(req.params);
@@ -95,6 +121,7 @@ router.patch("/permit-applications/:id/classification", requirePortalUser, async
     res.status(403).json({ error: "Applicants may correct only pending classification conflicts, not finalized or otherwise reviewed records." }); return;
   }
   const next = CreatePermitApplicationResponse.parse(screenApplication({ ...original, ...parsed.data, reviewDecisions: { ...original.reviewDecisions, safety: [] }, notes: [{ id: randomUUID(), author: res.locals.portalUser.id, body: `Classification corrected from ${row.projectType}, ${row.housingUnits} units to ${parsed.data.projectType}, ${parsed.data.housingUnits} units.`, createdAt: new Date() }, ...original.notes] }, await readRuleConfig()));
+  next.intakeAnalysis = await analyzeIntake(next);
   next.timeline = buildPermitTimeline(next.reviewStatus, row.submittedAt, next.recommendedRouting.includes("Fire Marshal"));
   const [saved] = await db.update(permitApplicationsTable).set(toValues(next)).where(eq(permitApplicationsTable.id, id)).returning();
   res.json(await screenedResponse(saved!));

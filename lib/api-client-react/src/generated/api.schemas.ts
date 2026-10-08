@@ -127,6 +127,84 @@ export interface PermitStaffNote {
   createdAt: string;
 }
 
+export type IntakeEvidenceSource = typeof IntakeEvidenceSource[keyof typeof IntakeEvidenceSource];
+
+
+export const IntakeEvidenceSource = {
+  Application: 'Application',
+  Checklist: 'Checklist',
+  Derived: 'Derived',
+} as const;
+
+export interface IntakeEvidence {
+  source: IntakeEvidenceSource;
+  sourceField: string;
+  quote: string;
+  /** @nullable */
+  documentName: string | null;
+  /** @nullable */
+  page: number | null;
+}
+
+export type IntakeFindingConfidence = typeof IntakeFindingConfidence[keyof typeof IntakeFindingConfidence];
+
+
+export const IntakeFindingConfidence = {
+  HIGH: 'HIGH',
+  MEDIUM: 'MEDIUM',
+  LOW: 'LOW',
+} as const;
+
+export interface IntakeFinding {
+  key: string;
+  label: string;
+  /** @nullable */
+  value: string | null;
+  confidence: IntakeFindingConfidence;
+  evidence: IntakeEvidence[];
+  note: string;
+}
+
+export interface IntakeDocument {
+  label: string;
+  category: string;
+  submitted: boolean;
+  fields: IntakeFinding[];
+}
+
+export type IntakeAnalysisStatus = typeof IntakeAnalysisStatus[keyof typeof IntakeAnalysisStatus];
+
+
+export const IntakeAnalysisStatus = {
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+export type IntakeAnalysisMode = typeof IntakeAnalysisMode[keyof typeof IntakeAnalysisMode];
+
+
+export const IntakeAnalysisMode = {
+  'application-only': 'application-only',
+} as const;
+
+export interface IntakeAnalysis {
+  status: IntakeAnalysisStatus;
+  mode: IntakeAnalysisMode;
+  analyzedAt: string;
+  model: string;
+  /** @nullable */
+  error: string | null;
+  fields: IntakeFinding[];
+  documents: IntakeDocument[];
+  actualDocumentsAnalyzed: number;
+  checklistSubmitted: number;
+  requiredDocumentsExpected: number;
+  missingRequired: number;
+  /** @nullable */
+  potentialDocumentMismatches: number | null;
+  needsStaffVerification: number;
+}
+
 export type PermitApplicationVerificationStatus = typeof PermitApplicationVerificationStatus[keyof typeof PermitApplicationVerificationStatus];
 
 
@@ -280,6 +358,7 @@ export interface PermitApplication {
   documents: PermitDocument[];
   flags: string[];
   aiSummary: string;
+  intakeAnalysis?: IntakeAnalysis | null;
   recommendedRouting: string[];
   timeline: PermitTimelineEvent[];
   notes: PermitStaffNote[];

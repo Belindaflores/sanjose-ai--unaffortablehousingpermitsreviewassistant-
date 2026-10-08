@@ -176,6 +176,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PermitRuleConfig"
+  /permit-applications/{id}/intake-analysis:
+    post:
+      operationId: analyzePermitIntake
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Application with saved advisory intake analysis (or explicit analysis failure)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PermitApplication" }
+        "403": { description: Staff access required }
+        "404": { description: Application not found }
+        "409": { description: Analysis already running }
   /storage/uploads/request-url:
     post:
       operationId: requestUploadUrl
@@ -467,6 +484,58 @@ components:
           type: string
           format: date-time
       required: [id, author, body, createdAt]
+    IntakeEvidence:
+      type: object
+      properties:
+        source: { type: string, enum: [Application, Checklist, Derived] }
+        sourceField: { type: string }
+        quote: { type: string }
+        documentName: { type: ["string", "null"] }
+        page: { type: ["integer", "null"] }
+      required: [source, sourceField, quote, documentName, page]
+    IntakeFinding:
+      type: object
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value: { type: ["string", "null"] }
+        confidence: { type: string, enum: [HIGH, MEDIUM, LOW] }
+        evidence:
+          type: array
+          items: { $ref: "#/components/schemas/IntakeEvidence" }
+        note: { type: string }
+      required: [key, label, value, confidence, evidence, note]
+    IntakeDocument:
+      type: object
+      properties:
+        label: { type: string }
+        category: { type: string }
+        submitted: { type: boolean }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/IntakeFinding" }
+      required: [label, category, submitted, fields]
+    IntakeAnalysis:
+      type: object
+      properties:
+        status: { type: string, enum: [completed, failed] }
+        mode: { type: string, enum: [application-only] }
+        analyzedAt: { type: string }
+        model: { type: string }
+        error: { type: ["string", "null"] }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/IntakeFinding" }
+        documents:
+          type: array
+          items: { $ref: "#/components/schemas/IntakeDocument" }
+        actualDocumentsAnalyzed: { type: integer }
+        checklistSubmitted: { type: integer }
+        requiredDocumentsExpected: { type: integer }
+        missingRequired: { type: integer }
+        potentialDocumentMismatches: { type: ["integer", "null"] }
+        needsStaffVerification: { type: integer }
+      required: [status, mode, analyzedAt, model, error, fields, documents, actualDocumentsAnalyzed, checklistSubmitted, requiredDocumentsExpected, missingRequired, potentialDocumentMismatches, needsStaffVerification]
     PermitApplication:
       type: object
       properties:
@@ -559,6 +628,10 @@ components:
             type: string
         aiSummary:
           type: string
+        intakeAnalysis:
+          anyOf:
+            - $ref: "#/components/schemas/IntakeAnalysis"
+            - type: "null"
         recommendedRouting:
           type: array
           items:

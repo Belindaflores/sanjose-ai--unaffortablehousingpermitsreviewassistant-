@@ -825,6 +825,74 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getUpdatePermitRuleConfigMutationOptions(options));
     }
 
+export const getAnalyzePermitIntakeUrl = (id: string,) => {
+
+
+
+
+  return `/api/permit-applications/${id}/intake-analysis`
+}
+
+export const analyzePermitIntake = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<PermitApplication> => {
+
+  return customFetch<PermitApplication>(getAnalyzePermitIntakeUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAnalyzePermitIntakeMutationKey = () => ['analyzePermitIntake'] as const;
+
+export const getAnalyzePermitIntakeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzePermitIntake>>, TError,AnalyzePermitIntakeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof analyzePermitIntake>>, TError,AnalyzePermitIntakeMutationVariables, TContext> => {
+
+const mutationKey = getAnalyzePermitIntakeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzePermitIntake>>, AnalyzePermitIntakeMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  analyzePermitIntake(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzePermitIntakeMutationResult = NonNullable<Awaited<ReturnType<typeof analyzePermitIntake>>>
+
+    export type AnalyzePermitIntakeMutationError = ErrorType<void>
+    export type AnalyzePermitIntakeMutationVariables = {id: string}
+
+    export const useAnalyzePermitIntake = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzePermitIntake>>, TError,AnalyzePermitIntakeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof analyzePermitIntake>>,
+        TError,
+        AnalyzePermitIntakeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAnalyzePermitIntakeMutationOptions(options));
+    }
+
 export const getRequestUploadUrlUrl = () => {
 
 

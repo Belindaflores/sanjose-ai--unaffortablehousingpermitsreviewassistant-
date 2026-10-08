@@ -1,0 +1,109 @@
+Add a new “Permit Requirements Rules Engine” to the existing application.
+
+Do NOT replace the existing document checklist. Extend it.
+
+The purpose of the rules engine is to determine which requirements apply to an application based on the information extracted during AI Intake.
+
+The rules engine should work as:
+
+PROJECT INFORMATION
+→ determine applicable project category
+→ determine applicable requirements
+→ compare requirements against uploaded documents
+→ identify PASS / MISSING / REVIEW
+→ provide explanation and evidence
+
+Create requirements as structured data rather than hard-coding the results into the UI.
+
+Each requirement should contain:
+
+requirement_id
+requirement_name
+project_types
+applicable_when
+required_document
+validation_type
+source
+status
+explanation
+Use these statuses:
+
+PASS = required item was found and the AI found no obvious issue
+
+MISSING = requirement appears applicable but the required document/information was not submitted
+
+REVIEW = document exists, but AI cannot confidently determine whether it satisfies the requirement
+
+NOT_APPLICABLE = requirement does not apply to this project
+
+For multifamily projects, create initial rules based on the City of San José Multifamily Projects Submittal Checklist.
+
+Include rules for:
+
+Cover Sheet with project description
+Architectural Plans / Site Plan / Floor Plan / Elevations
+Structural Plans and Details
+Electrical Plan
+Mechanical Plan
+Plumbing Plan
+Structural Calculations
+Energy Calculations / Title 24 documents
+Soil Report
+Special Inspection Form
+Accessibility Compliance Form
+Building Permit Application
+Deferred Submittal Form when applicable
+Special Inspection New Building Form
+applicable Public Works clearances
+applicable Fire Department clearances
+applicable Environmental Services approvals
+applicable County Health Department approvals
+Do NOT mark conditional requirements as missing unless the project information indicates that they apply.
+
+Example:
+If the project includes fire sprinklers, require the applicable Fire Department review/clearance.
+If the project includes food service or a public swimming pool, flag the applicable Health Department requirement.
+If the project is new construction, require the preliminary title report where applicable.
+
+For affordable housing/SB 35 projects, add rules for:
+
+SB 35 Streamlined Ministerial Project Application
+Transportation Demand Management Checklist
+Citywide Design Guidelines Checklist
+Stormwater Evaluation Form
+Stormwater Submittal Checklist
+Legal Description
+Preliminary Title Report for new construction
+Plan Set
+Density Bonus Application when applicable
+Prevailing Wage Certification when applicable
+Skilled and Trained Workforce Certification when applicable
+The rules engine should NOT decide final SB 35 eligibility.
+
+Instead, create a separate “Potential SB 35 Screening” section that checks observable criteria and says:
+
+“Potentially eligible — Staff verification required”
+
+or
+
+“Potential eligibility issue identified — Staff review required.”
+
+The system must show WHY a rule received its status.
+
+Example:
+
+PRELIMINARY TITLE REPORT
+Status: MISSING
+Reason: New construction project; preliminary title report is required.
+Evidence: No title report detected among submitted documents.
+
+PLAN SET
+Status: REVIEW
+Reason: Plan set detected, but AI could not verify all required plan components.
+Evidence: Plan_Set.pdf, pages 1–42.
+
+DENSITY BONUS APPLICATION
+Status: NOT APPLICABLE
+Reason: No density bonus request identified in the submitted application.
+
+Every rule must display its source/reference.

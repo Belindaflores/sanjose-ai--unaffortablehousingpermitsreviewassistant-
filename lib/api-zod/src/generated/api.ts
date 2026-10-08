@@ -205,6 +205,152 @@ export const UpdatePermitRuleConfigResponse = zod.object({
 })
 
 
+export const AnalyzePermitIntakeParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const analyzePermitIntakeResponseHousingUnitsMin = 0;
+
+export const analyzePermitIntakeResponseCompletenessScoreMin = 0;
+export const analyzePermitIntakeResponseCompletenessScoreMax = 100;
+
+
+
+export const AnalyzePermitIntakeResponse = zod.object({
+  "id": zod.string(),
+  "ownerUserId": zod.string().nullish(),
+  "claimed_affordable": zod.boolean().optional(),
+  "claimed_underserved": zod.boolean().optional(),
+  "censusTract": zod.string().optional(),
+  "verification_status": zod.enum(['Unverified', 'Verified', 'Rejected']).optional(),
+  "priorityClaims": zod.object({
+  "affordable": zod.object({
+  "status": zod.enum(['Unverified', 'Verified', 'Rejected']),
+  "note": zod.string().optional(),
+  "by": zod.string().optional(),
+  "at": zod.string().optional()
+}),
+  "underserved": zod.object({
+  "status": zod.enum(['Unverified', 'Verified', 'Rejected']),
+  "note": zod.string().optional(),
+  "by": zod.string().optional(),
+  "at": zod.string().optional()
+})
+}).optional(),
+  "reviewDecisions": zod.object({
+  "jurisdiction": zod.object({
+  "note": zod.string(),
+  "by": zod.string(),
+  "at": zod.string(),
+  "document": zod.string().optional()
+}).optional(),
+  "safety": zod.array(zod.object({
+  "note": zod.string(),
+  "by": zod.string(),
+  "at": zod.string(),
+  "document": zod.string()
+})).optional()
+}).optional(),
+  "ruleChecks": zod.object({
+  "jurisdictionStatus": zod.enum(['In County', 'Needs Verification', 'Outside County']),
+  "classificationConflicts": zod.array(zod.string()),
+  "safetyCriticalFlags": zod.array(zod.string()),
+  "underservedMatch": zod.string(),
+  "completenessLabel": zod.string()
+}).optional(),
+  "requiredReviewers": zod.array(zod.string()).optional(),
+  "dataSource": zod.enum(['Prototype Submission', 'Synthetic']).optional(),
+  "applicantName": zod.string(),
+  "companyName": zod.string(),
+  "email": zod.string().email(),
+  "projectName": zod.string(),
+  "projectAddress": zod.string(),
+  "permitType": zod.string(),
+  "projectType": zod.string(),
+  "housingUnits": zod.number().int().min(analyzePermitIntakeResponseHousingUnitsMin),
+  "affordableHousing": zod.boolean(),
+  "underservedCommunity": zod.boolean(),
+  "estimatedCost": zod.number(),
+  "description": zod.string(),
+  "submittedAt": zod.coerce.date(),
+  "aiStatus": zod.enum(['Ready for Human Review', 'Missing Information', 'Potential Issues Detected', 'Additional Agency Review Required']),
+  "priority": zod.enum(['Normal', 'High', 'Urgent']),
+  "assignedDepartment": zod.string(),
+  "reviewStatus": zod.enum(['New', 'In County Intake', 'Ready for Review', 'More Information Requested', 'Planning Review', 'Building Review', 'Fire Review', 'Environmental Review', 'Senior Review', 'Approved', 'Denied', 'Revisions Required', 'Needs Jurisdiction Verification', 'Blocked — Safety Review Required', 'Needs Human Review — Data Inconsistency']),
+  "completenessScore": zod.number().int().min(analyzePermitIntakeResponseCompletenessScoreMin).max(analyzePermitIntakeResponseCompletenessScoreMax),
+  "documents": zod.array(zod.object({
+  "category": zod.string(),
+  "label": zod.string(),
+  "required": zod.boolean(),
+  "received": zod.boolean(),
+  "fileName": zod.string().optional(),
+  "objectPath": zod.string().optional(),
+  "receivedAt": zod.coerce.date().optional()
+})),
+  "flags": zod.array(zod.string()),
+  "aiSummary": zod.string(),
+  "intakeAnalysis": zod.union([zod.object({
+  "status": zod.enum(['completed', 'failed']),
+  "mode": zod.enum(['application-only']),
+  "analyzedAt": zod.string(),
+  "model": zod.string(),
+  "error": zod.string().nullable(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "label": zod.string(),
+  "category": zod.string(),
+  "submitted": zod.boolean(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+}))
+})),
+  "actualDocumentsAnalyzed": zod.number().int(),
+  "checklistSubmitted": zod.number().int(),
+  "requiredDocumentsExpected": zod.number().int(),
+  "missingRequired": zod.number().int(),
+  "potentialDocumentMismatches": zod.number().int().nullable(),
+  "needsStaffVerification": zod.number().int()
+}),zod.null()]).optional(),
+  "recommendedRouting": zod.array(zod.string()),
+  "timeline": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['completed', 'current', 'upcoming']),
+  "date": zod.string(),
+  "detail": zod.string()
+})),
+  "notes": zod.array(zod.object({
+  "id": zod.string(),
+  "author": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
 export const RequestUploadUrlResponse = zod.void()
 
 
@@ -311,6 +457,52 @@ export const ReviewPermitChecksResponse = zod.object({
 })),
   "flags": zod.array(zod.string()),
   "aiSummary": zod.string(),
+  "intakeAnalysis": zod.union([zod.object({
+  "status": zod.enum(['completed', 'failed']),
+  "mode": zod.enum(['application-only']),
+  "analyzedAt": zod.string(),
+  "model": zod.string(),
+  "error": zod.string().nullable(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "label": zod.string(),
+  "category": zod.string(),
+  "submitted": zod.boolean(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+}))
+})),
+  "actualDocumentsAnalyzed": zod.number().int(),
+  "checklistSubmitted": zod.number().int(),
+  "requiredDocumentsExpected": zod.number().int(),
+  "missingRequired": zod.number().int(),
+  "potentialDocumentMismatches": zod.number().int().nullable(),
+  "needsStaffVerification": zod.number().int()
+}),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -423,6 +615,52 @@ export const CorrectPermitClassificationResponse = zod.object({
 })),
   "flags": zod.array(zod.string()),
   "aiSummary": zod.string(),
+  "intakeAnalysis": zod.union([zod.object({
+  "status": zod.enum(['completed', 'failed']),
+  "mode": zod.enum(['application-only']),
+  "analyzedAt": zod.string(),
+  "model": zod.string(),
+  "error": zod.string().nullable(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "label": zod.string(),
+  "category": zod.string(),
+  "submitted": zod.boolean(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+}))
+})),
+  "actualDocumentsAnalyzed": zod.number().int(),
+  "checklistSubmitted": zod.number().int(),
+  "requiredDocumentsExpected": zod.number().int(),
+  "missingRequired": zod.number().int(),
+  "potentialDocumentMismatches": zod.number().int().nullable(),
+  "needsStaffVerification": zod.number().int()
+}),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -536,6 +774,52 @@ export const ListPermitApplicationsResponseItem = zod.object({
 })),
   "flags": zod.array(zod.string()),
   "aiSummary": zod.string(),
+  "intakeAnalysis": zod.union([zod.object({
+  "status": zod.enum(['completed', 'failed']),
+  "mode": zod.enum(['application-only']),
+  "analyzedAt": zod.string(),
+  "model": zod.string(),
+  "error": zod.string().nullable(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "label": zod.string(),
+  "category": zod.string(),
+  "submitted": zod.boolean(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+}))
+})),
+  "actualDocumentsAnalyzed": zod.number().int(),
+  "checklistSubmitted": zod.number().int(),
+  "requiredDocumentsExpected": zod.number().int(),
+  "missingRequired": zod.number().int(),
+  "potentialDocumentMismatches": zod.number().int().nullable(),
+  "needsStaffVerification": zod.number().int()
+}),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -637,6 +921,52 @@ export const CreatePermitApplicationBody = zod.object({
 })),
   "flags": zod.array(zod.string()),
   "aiSummary": zod.string(),
+  "intakeAnalysis": zod.union([zod.object({
+  "status": zod.enum(['completed', 'failed']),
+  "mode": zod.enum(['application-only']),
+  "analyzedAt": zod.string(),
+  "model": zod.string(),
+  "error": zod.string().nullable(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "label": zod.string(),
+  "category": zod.string(),
+  "submitted": zod.boolean(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+}))
+})),
+  "actualDocumentsAnalyzed": zod.number().int(),
+  "checklistSubmitted": zod.number().int(),
+  "requiredDocumentsExpected": zod.number().int(),
+  "missingRequired": zod.number().int(),
+  "potentialDocumentMismatches": zod.number().int().nullable(),
+  "needsStaffVerification": zod.number().int()
+}),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -732,6 +1062,52 @@ export const CreatePermitApplicationResponse = zod.object({
 })),
   "flags": zod.array(zod.string()),
   "aiSummary": zod.string(),
+  "intakeAnalysis": zod.union([zod.object({
+  "status": zod.enum(['completed', 'failed']),
+  "mode": zod.enum(['application-only']),
+  "analyzedAt": zod.string(),
+  "model": zod.string(),
+  "error": zod.string().nullable(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "label": zod.string(),
+  "category": zod.string(),
+  "submitted": zod.boolean(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+}))
+})),
+  "actualDocumentsAnalyzed": zod.number().int(),
+  "checklistSubmitted": zod.number().int(),
+  "requiredDocumentsExpected": zod.number().int(),
+  "missingRequired": zod.number().int(),
+  "potentialDocumentMismatches": zod.number().int().nullable(),
+  "needsStaffVerification": zod.number().int()
+}),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -836,6 +1212,52 @@ export const UpdatePermitApplicationBody = zod.object({
 })),
   "flags": zod.array(zod.string()),
   "aiSummary": zod.string(),
+  "intakeAnalysis": zod.union([zod.object({
+  "status": zod.enum(['completed', 'failed']),
+  "mode": zod.enum(['application-only']),
+  "analyzedAt": zod.string(),
+  "model": zod.string(),
+  "error": zod.string().nullable(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "label": zod.string(),
+  "category": zod.string(),
+  "submitted": zod.boolean(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+}))
+})),
+  "actualDocumentsAnalyzed": zod.number().int(),
+  "checklistSubmitted": zod.number().int(),
+  "requiredDocumentsExpected": zod.number().int(),
+  "missingRequired": zod.number().int(),
+  "potentialDocumentMismatches": zod.number().int().nullable(),
+  "needsStaffVerification": zod.number().int()
+}),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
@@ -931,6 +1353,52 @@ export const UpdatePermitApplicationResponse = zod.object({
 })),
   "flags": zod.array(zod.string()),
   "aiSummary": zod.string(),
+  "intakeAnalysis": zod.union([zod.object({
+  "status": zod.enum(['completed', 'failed']),
+  "mode": zod.enum(['application-only']),
+  "analyzedAt": zod.string(),
+  "model": zod.string(),
+  "error": zod.string().nullable(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "label": zod.string(),
+  "category": zod.string(),
+  "submitted": zod.boolean(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string().nullable(),
+  "confidence": zod.enum(['HIGH', 'MEDIUM', 'LOW']),
+  "evidence": zod.array(zod.object({
+  "source": zod.enum(['Application', 'Checklist', 'Derived']),
+  "sourceField": zod.string(),
+  "quote": zod.string(),
+  "documentName": zod.string().nullable(),
+  "page": zod.number().int().nullable()
+})),
+  "note": zod.string()
+}))
+})),
+  "actualDocumentsAnalyzed": zod.number().int(),
+  "checklistSubmitted": zod.number().int(),
+  "requiredDocumentsExpected": zod.number().int(),
+  "missingRequired": zod.number().int(),
+  "potentialDocumentMismatches": zod.number().int().nullable(),
+  "needsStaffVerification": zod.number().int()
+}),zod.null()]).optional(),
   "recommendedRouting": zod.array(zod.string()),
   "timeline": zod.array(zod.object({
   "label": zod.string(),
