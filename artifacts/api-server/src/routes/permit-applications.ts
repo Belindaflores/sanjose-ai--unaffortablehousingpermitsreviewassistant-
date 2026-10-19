@@ -15,7 +15,12 @@ router.get("/permit-applications", async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const user = res.locals.portalUser;
   // Applicant-supplied email filters can never broaden ownership.
-  const rows = await db.select().from(permitApplicationsTable).where(isStaff(user) ? (parsed.data.applicantEmail ? eq(permitApplicationsTable.email, parsed.data.applicantEmail) : undefined) : eq(permitApplicationsTable.ownerUserId, user.id)).orderBy(desc(permitApplicationsTable.submittedAt));
+  const rows = await db.select().from(permitApplicationsTable).where(isStaff(user)
+    ? (parsed.data.applicantEmail ? eq(permitApplicationsTable.email, parsed.data.applicantEmail.toLowerCase()) : undefined)
+    : and(
+      eq(permitApplicationsTable.ownerUserId, user.id),
+      eq(permitApplicationsTable.email, (parsed.data.applicantEmail ?? user.email).toLowerCase()),
+    )).orderBy(desc(permitApplicationsTable.submittedAt));
   const applications = await Promise.all(rows.filter(row => checkJurisdiction(row.projectAddress).status !== "Outside County").map(screenedResponse));
   res.json(ListPermitApplicationsResponse.parse(applications));
 });
@@ -35,8 +40,8 @@ router.post("/permit-applications", async (req, res): Promise<void> => {
   const now = new Date();
   const screened = CreatePermitApplicationResponse.parse(screenApplication({
     ...parsed.data, documents, id: `SCC-${now.getFullYear()}-${randomUUID()}`, ownerUserId: user.id,
-    email: isStaff(user) ? parsed.data.email : user.email,
-    applicantName: isStaff(user) ? parsed.data.applicantName : user.name,
+    email: parsed.data.email.trim().toLowerCase(),
+    applicantName: parsed.data.applicantName.trim(),
     submittedAt: now, reviewStatus: "New", notes: [], reviewDecisions: {}, intakeAnalysis: null,
     priorityClaims: { affordable: { status: "Unverified" }, underserved: { status: "Unverified" } },
     claimed_affordable: claimedAffordable, claimed_underserved: parsed.data.claimed_underserved ?? parsed.data.underservedCommunity,

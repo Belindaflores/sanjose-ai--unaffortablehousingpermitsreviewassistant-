@@ -1,5 +1,6 @@
 import type { PermitApplication } from './App';
 import { Link } from 'wouter';
+import { useState } from 'react';
 import {
   ArrowRight, ArrowUpRight, Building2, CheckCircle2, ChevronRight, ClipboardList,
   FilePlus2, FolderOpen, HelpCircle, Info, MapPin, ShieldCheck, UserRound
@@ -71,7 +72,38 @@ export function RoleChooser({ onSelect }: { onSelect: (role: 'applicant' | 'work
           <ArrowRight aria-hidden="true" />
         </button>
       </div>
-      <div className="role-demo-note"><Info aria-hidden="true" /><span>Sign in to access your own saved work and submissions. City Worker access requires administrator-assigned permissions. Selecting a view does not grant staff access. This is not an official County system.</span></div>
+      <div className="role-demo-note"><Info aria-hidden="true" /><span>Applicant access asks for your name and email. This shared prototype passcode does not verify your identity or create a private account. City Worker access requires administrator-assigned permissions.</span></div>
+    </section>
+  </main>;
+}
+
+export function ApplicantIdentityForm({ onComplete, onCancel, busy = false }: {
+  onComplete: (identity: { name: string; email: string }) => void;
+  onCancel: () => void;
+  busy?: boolean;
+}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  return <main className="role-chooser">
+    <section className="role-intro" aria-label="Applicant portal introduction">
+      <div className="role-brand"><span className="role-mark" aria-hidden="true">SC</span><span>Santa Clara County<br />Permit Portal</span></div>
+      <div><h1>Your applicant <span>profile</span></h1><p>Enter the contact details you want associated with your application session.</p></div>
+      <small>Independent educational portal · Not an official County service</small>
+    </section>
+    <section className="role-main" aria-labelledby="applicant-profile-title">
+      <p className="ap-kicker">Applicant information</p>
+      <h2 id="applicant-profile-title">Who is using the portal?</h2>
+      <p>Your name and email will appear on new submissions in this browser session.</p>
+      <form className="worker-login-form" onSubmit={event => {
+        event.preventDefault();
+        onComplete({ name: name.trim(), email: email.trim().toLowerCase() });
+      }}>
+        <div><label htmlFor="applicant-profile-name">Full name</label><input id="applicant-profile-name" className="worker-login-input" autoComplete="name" maxLength={160} minLength={2} required value={name} onChange={event => setName(event.target.value)} data-testid="input-applicant-profile-name" /></div>
+        <div><label htmlFor="applicant-profile-email">Email address</label><input id="applicant-profile-email" className="worker-login-input" type="email" autoComplete="email" maxLength={254} required value={email} onChange={event => setEmail(event.target.value)} data-testid="input-applicant-profile-email" /></div>
+        <div className="role-demo-note"><Info aria-hidden="true" /><span>This is a shared prototype, not individual sign-in. These details are self-reported and do not verify identity or provide private account access.</span></div>
+        <button type="submit" className="worker-login-submit" disabled={busy} data-testid="button-save-applicant-profile">{busy ? 'Opening portal…' : 'Continue to applicant portal'} <ArrowRight aria-hidden="true" /></button>
+      </form>
+      <button type="button" className="worker-login-back" onClick={onCancel} disabled={busy} data-testid="button-back-from-applicant-profile">Back</button>
     </section>
   </main>;
 }
