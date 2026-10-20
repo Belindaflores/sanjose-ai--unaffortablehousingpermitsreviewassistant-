@@ -5,3 +5,4 @@
 - [Passcode scope](passcode-scope.md) — four-digit server gate protects pages, files, and APIs; both prototype roles use confirmed passcode-only access.
 - [AI intake scope](intake-analysis-scope.md) — user chose application-only analysis with simulated statuses; no invented document/page evidence or legal eligibility decisions.
 - [Protected browser testing](protected-browser-testing.md) — authenticate secret-dependent flows in the workspace runtime; the test sandbox has no workspace process.env.
+- [GitHub source-control authorization](github-source-control-auth.md) — trust actual Git access over healthy connection metadata; unsupported connection forms require Connected Services.
